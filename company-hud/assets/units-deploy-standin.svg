@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+<defs>
+<circle id="id" r="7" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6"/>
+<rect id="ad" x="-6.5" y="-6.5" width="13" height="13" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6"/>
+<path id="td" d="M0 -8 L7.5 6 L-7.5 6 Z" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
+<path id="ed" d="M0 -8 L7 -4 L7 4 L0 8 L-7 4 L-7 -4 Z" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6"/>
+</defs>
+<path d="M0 0 H1440 V560 C 1380 572 1320 584 1250 594 C 1200 600 1170 632 1120 636 C 1080 640 1060 630 1010 622 C 960 614 930 594 880 584 C 830 574 800 552 750 546 C 712 542 690 552 640 560 C 600 566 560 578 520 596 C 500 606 480 620 440 622 C 390 624 370 644 310 648 C 250 652 220 622 160 616 C 110 612 70 626 0 638 Z" fill="#7a2cbf" fill-opacity="0.07"/>
+<path d="M1440 560 C 1380 572 1320 584 1250 594 C 1200 600 1170 632 1120 636 C 1080 640 1060 630 1010 622 C 960 614 930 594 880 584 C 830 574 800 552 750 546 C 712 542 690 552 640 560 C 600 566 560 578 520 596 C 500 606 480 620 440 622 C 390 624 370 644 310 648 C 250 652 220 622 160 616 C 110 612 70 626 0 638" fill="none" stroke="#7a2cbf" stroke-width="2" stroke-dasharray="8 6"/>
+<g fill="none" stroke-linejoin="round" stroke-linecap="round">
+<g stroke="#2a1f17" stroke-width="7" stroke-opacity="0.55">
+<path d="M360 596 L376 586 L392 596 L408 586 L424 596 L440 586 L456 594 L472 584"/>
+<path d="M664 512 L680 502 L696 512 L712 502 L728 512 L744 504 L760 512 L776 504 L792 514 L808 506 L824 516"/>
+<path d="M980 574 L996 566 L1012 576 L1028 568 L1044 580 L1060 572 L1076 584 L1092 578 L1108 590"/>
+<path d="M1000 268 L1016 258 L1032 268 L1048 258 L1064 268 L1080 260 L1096 270"/>
+</g>
+<g stroke="#c9a46a" stroke-width="3.5">
+<path d="M360 596 L376 586 L392 596 L408 586 L424 596 L440 586 L456 594 L472 584"/>
+<path d="M664 512 L680 502 L696 512 L712 502 L728 512 L744 504 L760 512 L776 504 L792 514 L808 506 L824 516"/>
+<path d="M980 574 L996 566 L1012 576 L1028 568 L1044 580 L1060 572 L1076 584 L1092 578 L1108 590"/>
+<path d="M1000 268 L1016 258 L1032 268 L1048 258 L1064 268 L1080 260 L1096 270"/>
+</g>
+<path d="M1150 584 L1260 560" stroke="#111111" stroke-opacity="0.5" stroke-width="6"/>
+<path d="M1150 584 L1260 560" stroke="#ffffff" stroke-width="2.5" stroke-dasharray="7 5"/>
+</g>
+<circle cx="1150" cy="584" r="5" fill="#ffffff" stroke="#111111" stroke-width="1.5"/>
+<circle cx="1260" cy="560" r="5" fill="#ffffff" stroke="#111111" stroke-width="1.5"/>
+<g transform="translate(1268 532)"><rect x="0" y="0" width="58" height="20" rx="3" fill="#111111" fill-opacity="0.8"/><text x="29" y="14" font-family="Helvetica, Arial, sans-serif" font-size="11" fill="#ffffff" text-anchor="middle">0.11 km</text></g>
+<g fill="none" stroke-width="2.5">
+<circle cx="520" cy="596" r="52" stroke="#7a2cbf" stroke-dasharray="2 5"/>
+<circle cx="775" cy="440" r="86" stroke="#7a2cbf" stroke-dasharray="2 5"/>
+<circle cx="1046" cy="216" r="74" stroke="#7a2cbf" stroke-dasharray="2 5"/>
+</g>
+<g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="13" text-anchor="middle">
+<circle cx="462" cy="560" r="12" fill="#ffffff" stroke="#7a2cbf" stroke-width="3"/><text x="462" y="565" fill="#17181c">A</text>
+<circle cx="702" cy="388" r="12" fill="#ffffff" stroke="#7a2cbf" stroke-width="3"/><text x="702" y="393" fill="#17181c">B</text>
+<circle cx="984" cy="170" r="12" fill="#ffffff" stroke="#7a2cbf" stroke-width="3"/><text x="984" y="175" fill="#17181c">C</text>
+</g>
+<use href="#id" x="400" y="572"/><use href="#id" x="446" y="568"/><use href="#id" x="540" y="560"/><use href="#ed" x="580" y="548"/>
+<use href="#id" x="700" y="492"/><use href="#id" x="750" y="490"/><use href="#id" x="800" y="494"/><use href="#id" x="720" y="430"/><use href="#id" x="820" y="420"/>
+<use href="#ad" x="640" y="400"/><use href="#ad" x="900" y="330"/><use href="#ad" x="860" y="380"/>
+<use href="#id" x="1010" y="556"/><use href="#id" x="1070" y="562"/><use href="#ed" x="1120" y="566"/>
+<use href="#id" x="1020" y="250"/><use href="#id" x="1076" y="248"/>
+<use href="#td" x="1040" y="200"/><use href="#td" x="1090" y="214"/><use href="#td" x="990" y="214"/>
+<use href="#id" x="250" y="590"/><use href="#ad" x="300" y="460"/>
+</svg>

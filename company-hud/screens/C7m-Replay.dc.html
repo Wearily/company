@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>C7m · Replay</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ap{font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#f5f5f7;font-size:13px;line-height:1.3;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.gl{background:rgba(30,30,32,.74);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border-radius:22px;box-shadow:0 0 0 .5px rgba(255,255,255,.14),inset 0 1px 0 rgba(255,255,255,.08),0 12px 32px rgba(0,0,0,.4),0 2px 6px rgba(0,0,0,.08)}
+.tn{font-variant-numeric:tabular-nums}
+.s2{color:#98989f}
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:44px;min-width:44px;padding:0 14px;border-radius:22px;border:0;background:transparent;color:#f5f5f7;font:500 13px Inter,-apple-system,sans-serif;cursor:pointer;white-space:nowrap;flex:none}
+.bt:hover{background:rgba(255,255,255,.08)}
+.bt.gl{background:rgba(30,30,32,.74)}
+.tr{position:relative;display:flex;align-items:center;justify-content:center;width:48px;height:48px;border:0;border-radius:24px;background:transparent;color:#f5f5f7;cursor:pointer;font:600 9px Inter,sans-serif}
+.tr:hover{background:rgba(255,255,255,.08)}
+.mk{position:absolute;top:-2px;width:14px;height:14px;margin-left:-7px;padding:0;border:0;border-radius:7px;cursor:pointer;box-shadow:0 0 0 2px #1c1c1e}
+.bandl{width:12px;font-size:10px;font-weight:700;color:#98989f;text-align:center}
+</style>
+</helmet>
+<div class="ap" style="position: relative; width: 400px; height: 860px; overflow: hidden; background: #3d4430">
+<img src="../assets/map-real.jpg" alt="Replay of the battle at 04:12" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+
+<div style="position: absolute; left: 16px; right: 16px; top: 16px; display: flex; gap: 8px; align-items: center">
+<button class="bt gl" style="flex: 1; min-width: 0; height: 52px; border-radius: 26px; justify-content: space-between; padding: 0 12px 0 16px" aria-label="Replay. A contested 60 percent, B and C held by defender">
+<span style="font-size: 15px; font-weight: 600; letter-spacing: -.015em">Replay</span>
+<span style="display: flex; gap: 4px">
+<svg width="28" height="28" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="none" stroke="rgba(255,255,255,.12)" stroke-width="3.5"/><circle cx="15" cy="15" r="12" fill="none" stroke="#ff9500" stroke-width="3.5" stroke-dasharray="45 75.4" transform="rotate(-90 15 15)" stroke-linecap="round"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#f5f5f7">A</text></svg>
+<svg width="28" height="28" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="none" stroke="#9d5cdb" stroke-width="3.5"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#f5f5f7">B</text></svg>
+<svg width="28" height="28" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="none" stroke="#9d5cdb" stroke-width="3.5"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#f5f5f7">C</text></svg>
+</span>
+</button>
+<button class="bt gl" style="height: 52px; border-radius: 26px; padding: 0 16px">Exit</button>
+</div>
+
+<section class="gl" aria-label="Replay controls" style="position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 32px; background: rgba(30,30,32,.88); padding: 16px 18px 14px">
+<div style="position: relative">
+<div style="position: relative; height: 40px; margin-left: 18px">
+<svg width="100%" height="40" viewBox="0 0 1000 40" preserveAspectRatio="none" role="img" aria-label="Unit strength over time: attacker 19 to 15, defender 21 to 12" style="display: block">
+<path d="M0 9 L120 9 L200 12 L310 14 L450 16 L620 18 L800 19 L1000 20" fill="none" stroke="#f5f5f7" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+<path d="M0 5 L120 8 L200 10 L310 14 L450 19 L620 24 L800 29 L1000 32" fill="none" stroke="#9d5cdb" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+</svg>
+<button class="mk" style="left: 12%; background: #0a84ff" aria-label="02:14 Air strike on Selitz east"></button>
+<button class="mk" style="left: 31%; background: #ff9500" aria-label="03:34 Polow Bridge contested"></button>
+<button class="mk" style="left: 45%; background: #ff3b30" aria-label="05:10 Armor lost"></button>
+<button class="mk" style="left: 62%; background: #17181c" aria-label="07:08 Selitz captured"></button>
+<button class="mk" style="left: 85%; background: #17181c" aria-label="09:46 Hill 400 captured"></button>
+</div>
+<div style="display: flex; flex-direction: column; gap: 3px; margin-top: 6px">
+<div style="display: flex; align-items: center; gap: 6px"><span class="bandl">A</span><div style="flex: 1; height: 7px; border-radius: 4px; overflow: hidden; display: flex"><span style="width: 30%; background: #7a2cbf"></span><span style="width: 8%; background: #ff9500"></span><span style="flex: 1; background: #17181c"></span></div></div>
+<div style="display: flex; align-items: center; gap: 6px"><span class="bandl">B</span><div style="flex: 1; height: 7px; border-radius: 4px; overflow: hidden; display: flex"><span style="width: 55%; background: #7a2cbf"></span><span style="width: 10%; background: #ff9500"></span><span style="flex: 1; background: #17181c"></span></div></div>
+<div style="display: flex; align-items: center; gap: 6px"><span class="bandl">C</span><div style="flex: 1; height: 7px; border-radius: 4px; overflow: hidden; display: flex"><span style="width: 80%; background: #7a2cbf"></span><span style="width: 8%; background: #ff9500"></span><span style="flex: 1; background: #17181c"></span></div></div>
+</div>
+<div style="position: absolute; top: -4px; bottom: -4px; left: calc(18px + (100% - 18px) * .365); width: 2px; margin-left: -1px; background: #0a84ff; border-radius: 1px; pointer-events: none">
+<span style="position: absolute; top: -4px; left: -6px; width: 14px; height: 14px; border-radius: 7px; background: #0a84ff; box-shadow: 0 0 0 2px #1c1c1e"></span>
+</div>
+</div>
+<div style="display: flex; justify-content: space-between; margin: 10px 0 6px" class="tn">
+<span style="font-size: 13px; font-weight: 600">04:12</span>
+<span class="s2" style="font-size: 13px">11:30</span>
+</div>
+<div style="display: flex; align-items: center; justify-content: space-between">
+<button class="tr" aria-label="Restart"><svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="3.5" y="4" width="2.2" height="12" rx="1"/><path d="M16 4.6v10.8c0 .6-.7 1-1.2.6l-7.6-5.4a.75.75 0 0 1 0-1.2l7.6-5.4c.5-.4 1.2 0 1.2.6z"/></svg></button>
+<button class="tr" aria-label="Back 15 seconds"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M6.5 3v3.8h3.8"/></svg><span style="position: absolute; top: 19px; font-size: 8px">15</span></button>
+<button class="tr" style="width: 60px; height: 60px; border-radius: 30px; background: #f5f5f7; color: #fff" aria-label="Pause"><svg width="20" height="20" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/></svg></button>
+<button class="tr" aria-label="Forward 15 seconds"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M17.5 3v3.8h-3.8"/></svg><span style="position: absolute; top: 19px; font-size: 8px">15</span></button>
+<button class="tr" style="font-size: 14px; font-weight: 600; background: rgba(118,118,128,.24); width: 56px" aria-label="Replay speed 4×, tap to change">4×</button>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"map":{"editor":"enum","options":["satellite","paper (stand-in)"],"default":"satellite"},"$preview":{"width":400,"height":860}}'>
+class Component extends DCLogic {
+renderVals() {
+const paper = (this.props.map ?? 'satellite') !== 'satellite';
+return { paper, mapSrc: paper ? '../assets/map-paper-standin.svg' : '../assets/map-real.jpg' };
+}
+}
+</script>
+</body>
+</html>

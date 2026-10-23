@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>B7 · Replay</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.bp{font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#f5f5f7;font-size:13px;line-height:1.3;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.mat{background:rgba(28,28,30,.86);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%)}
+.tn{font-variant-numeric:tabular-nums}
+.s2{color:#98989f}
+.b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 10px;border-radius:999px;border:0;background:transparent;color:#f5f5f7;font:500 13px Inter,-apple-system,sans-serif;cursor:pointer;white-space:nowrap}
+.b:hover{background:rgba(255,255,255,.08)}
+.ic{width:32px;padding:0}
+.dv{width:1px;align-self:stretch;background:rgba(255,255,255,.1);margin:12px 8px}
+.seg{display:flex;padding:2px;border-radius:10px;background:rgba(118,118,128,.24)}
+.sg{height:26px;min-width:36px;border:0;border-radius:8px;background:transparent;color:#f5f5f7;font:600 12px Inter,sans-serif;cursor:pointer}
+.sg.on{background:rgba(255,255,255,.24);box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.tr{position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:999px;background:transparent;color:#f5f5f7;cursor:pointer;font:600 8px Inter,sans-serif}
+.tr:hover{background:rgba(255,255,255,.08)}
+.mk{position:absolute;top:-2px;width:12px;height:12px;margin-left:-6px;padding:0;border:0;border-radius:6px;cursor:pointer;box-shadow:0 0 0 2px #1c1c1e}
+.trk{font-size:11px;font-weight:600;color:#98989f;width:64px;flex:none}
+</style>
+</helmet>
+<div class="bp" style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #3d4430">
+<img src="../assets/map-real.jpg" alt="Replay of the battle at 04:12" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+
+<header class="mat" style="position: absolute; left: 0; right: 0; top: 0; height: 56px; box-sizing: border-box; padding: 0 12px; display: flex; align-items: center; box-shadow: inset 0 -1px 0 rgba(255,255,255,.08), 0 1px 0 rgba(0,0,0,.4)">
+<div style="flex: 1; display: flex; align-items: center; gap: 10px; min-width: 0">
+<img src="../assets/logo-light.svg" alt="COMPANY" style="height: 20px; width: auto; margin-left: 6px">
+<div class="dv" style="margin: 14px 4px"></div>
+<div style="display: flex; flex-direction: column; min-width: 0">
+<span style="font-weight: 600; white-space: nowrap">Replay <span style="font-weight: 500; color: #fff; background: #3a3a3c; padding: 1px 8px; border-radius: 10px; margin-left: 4px; font-size: 11.5px">Victory</span></span>
+<span class="s2 tn" style="font-size: 11px; white-space: nowrap">Standard Battle · River Town · ST-RT-TE-ASN-PGW</span>
+</div>
+</div>
+<div style="display: flex; align-items: center; gap: 2px">
+<button class="b" style="height: 40px; gap: 8px" aria-label="Objective A, Polow Bridge, contested, 60 percent"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12.5" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="3"/><circle cx="15" cy="15" r="12.5" fill="none" stroke="#ff9f0a" stroke-width="3" stroke-dasharray="47 78.5" transform="rotate(-90 15 15)" stroke-linecap="round"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#f5f5f7">A</text></svg><span style="display: flex; flex-direction: column; align-items: flex-start"><span>Polow Bridge</span><span style="font-size: 11px; font-weight: 600; color: #ffb340">Contested · 60%</span></span></button>
+<button class="b" style="height: 40px; gap: 8px" aria-label="Objective B, Selitz, held by defender"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12.5" fill="none" stroke="#9d5cdb" stroke-width="3"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#f5f5f7">B</text></svg><span style="display: flex; flex-direction: column; align-items: flex-start"><span>Selitz</span><span style="font-size: 11px; color: #c49bf0">Defender</span></span></button>
+<button class="b" style="height: 40px; gap: 8px" aria-label="Objective C, Hill 400, held by defender"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12.5" fill="none" stroke="#9d5cdb" stroke-width="3"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#f5f5f7">C</text></svg><span style="display: flex; flex-direction: column; align-items: flex-start"><span>Hill 400</span><span style="font-size: 11px; color: #c49bf0">Defender</span></span></button>
+</div>
+<div style="flex: 1; display: flex; align-items: center; justify-content: flex-end; gap: 4px">
+<button class="b ic" aria-label="Settings"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="2.8"/><path d="M10 2v2.2M10 15.8V18M2 10h2.2M15.8 10H18M4.3 4.3l1.6 1.6M14.1 14.1l1.6 1.6M4.3 15.7l1.6-1.6M14.1 5.9l1.6-1.6"/></svg></button>
+<button class="b ic" aria-label="Controls"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.8"/><path d="M7.8 7.7a2.3 2.3 0 1 1 3.3 2.1c-.7.4-1.1.9-1.1 1.6"/><circle cx="10" cy="14.2" r=".4" fill="currentColor"/></svg></button>
+<button class="b ic" aria-label="Hide interface (U)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.4"/><path d="M3.5 16.5l13-13"/></svg></button>
+<div class="dv" style="margin: 14px 4px"></div>
+<button class="b" style="background: rgba(255,255,255,.1)">Exit Replay</button>
+</div>
+</header>
+
+<section class="mat" aria-label="Replay timeline" style="position: absolute; left: 0; right: 0; bottom: 0; height: 176px; box-sizing: border-box; padding: 8px 16px 14px; box-shadow: inset 0 1px 0 rgba(255,255,255,.08), 0 -1px 0 rgba(0,0,0,.4)">
+<div style="display: flex; align-items: center; gap: 4px; height: 44px">
+<button class="tr" aria-label="Restart"><svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="3.5" y="4" width="2.2" height="12" rx="1"/><path d="M16 4.6v10.8c0 .6-.7 1-1.2.6l-7.6-5.4a.75.75 0 0 1 0-1.2l7.6-5.4c.5-.4 1.2 0 1.2.6z"/></svg></button>
+<button class="tr" aria-label="Back 15 seconds"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M6.5 3v3.8h3.8"/></svg><span style="position: absolute; top: 14px">15</span></button>
+<button class="tr" style="width: 44px; height: 36px; background: #f5f5f7; color: #1c1c1e" aria-label="Pause (Space)"><svg width="15" height="15" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/></svg></button>
+<button class="tr" aria-label="Forward 15 seconds"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M17.5 3v3.8h-3.8"/></svg><span style="position: absolute; top: 14px">15</span></button>
+<div class="seg" style="margin-left: 10px" role="radiogroup" aria-label="Replay speed">
+<button class="sg" role="radio" aria-checked="false">1×</button><button class="sg" role="radio" aria-checked="false">2×</button><button class="sg on" role="radio" aria-checked="true">4×</button><button class="sg" role="radio" aria-checked="false">8×</button><button class="sg" role="radio" aria-checked="false">16×</button>
+</div>
+<span class="tn" style="margin-left: 14px; font-size: 15px; font-weight: 600">04:12 <span class="s2" style="font-weight: 400">/ 11:30</span></span>
+<span style="flex: 1"></span>
+<span class="s2" style="font-size: 12px; display: flex; gap: 14px; align-items: center">
+<span style="display: flex; gap: 6px; align-items: center"><span style="width: 14px; height: 2.5px; border-radius: 2px; background: #f5f5f7"></span>Attacker</span>
+<span style="display: flex; gap: 6px; align-items: center"><span style="width: 14px; height: 2.5px; border-radius: 2px; background: #9d5cdb"></span>Defender</span>
+<span style="display: flex; gap: 6px; align-items: center"><span style="width: 14px; height: 6px; border-radius: 2px; background: #ff9f0a"></span>Contested</span>
+</span>
+</div>
+
+<div style="position: relative; margin-top: 8px">
+<div style="display: flex; align-items: center">
+<span class="trk">Strength</span>
+<div style="position: relative; flex: 1; height: 46px; border-radius: 6px; background: rgba(255,255,255,.04)">
+<svg width="100%" height="46" viewBox="0 0 1000 46" preserveAspectRatio="none" role="img" aria-label="Unit strength over time: attacker 19 to 15, defender 21 to 12" style="display: block">
+<path d="M0 10 L120 10 L200 13 L310 15 L450 17 L620 19 L800 21 L1000 22" fill="none" stroke="#f5f5f7" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+<path d="M0 6 L120 9 L200 11 L310 16 L450 22 L620 27 L800 33 L1000 36" fill="none" stroke="#9d5cdb" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round"/>
+</svg>
+<button class="mk" style="left: 12%; background: #0a84ff" aria-label="02:14 Air strike on Selitz east"></button>
+<button class="mk" style="left: 20%; background: #8e8e93" aria-label="02:18 Enemy seen in Selitz"></button>
+<button class="mk" style="left: 31%; background: #ff9f0a" aria-label="03:34 Polow Bridge contested"></button>
+<button class="mk" style="left: 45%; background: #ff453a" aria-label="05:10 Armor lost near the bridge"></button>
+<button class="mk" style="left: 62%; background: #f5f5f7" aria-label="07:08 Selitz captured"></button>
+<button class="mk" style="left: 85%; background: #f5f5f7" aria-label="09:46 Hill 400 captured"></button>
+</div>
+</div>
+<div style="display: flex; align-items: center; margin-top: 5px"><span class="trk">A · Bridge</span><div style="flex: 1; height: 9px; border-radius: 4px; overflow: hidden; display: flex"><span style="width: 30%; background: #7a2cbf"></span><span style="width: 8%; background: #ff9f0a"></span><span style="flex: 1; background: #17181c; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25)"></span></div></div>
+<div style="display: flex; align-items: center; margin-top: 4px"><span class="trk">B · Selitz</span><div style="flex: 1; height: 9px; border-radius: 4px; overflow: hidden; display: flex"><span style="width: 55%; background: #7a2cbf"></span><span style="width: 10%; background: #ff9f0a"></span><span style="flex: 1; background: #17181c; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25)"></span></div></div>
+<div style="display: flex; align-items: center; margin-top: 4px"><span class="trk">C · Hill 400</span><div style="flex: 1; height: 9px; border-radius: 4px; overflow: hidden; display: flex"><span style="width: 80%; background: #7a2cbf"></span><span style="width: 8%; background: #ff9f0a"></span><span style="flex: 1; background: #17181c; box-shadow: inset 0 0 0 1px rgba(255,255,255,.25)"></span></div></div>
+<div style="position: absolute; top: -6px; bottom: -4px; left: calc(64px + (100% - 64px) * .365); width: 2px; margin-left: -1px; background: #0a84ff; border-radius: 1px; pointer-events: none">
+<span style="position: absolute; top: -3px; left: -5px; width: 12px; height: 12px; border-radius: 6px; background: #0a84ff; box-shadow: 0 0 0 2px #1c1c1e"></span>
+</div>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"map":{"editor":"enum","options":["satellite","paper (stand-in)"],"default":"satellite"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const paper = (this.props.map ?? 'satellite') !== 'satellite';
+return { paper, mapSrc: paper ? '../assets/map-paper-standin.svg' : '../assets/map-real.jpg' };
+}
+}
+</script>
+</body>
+</html>

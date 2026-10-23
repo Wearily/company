@@ -4,6 +4,6 @@ A real-time, pausable strategy game that runs in the browser. Attack or defend t
 
 ## Play
 
-Open `bridgehead satalite map.html` in a browser. It's the current version, with satellite and strategic map views, scenarios, game codes and replays. `bridgehead.html` is the older version with only the paper map.
+Open `index.html` in a browser. It's the current version, with satellite and strategic map views, scenarios, game codes and replays. `bridgehead.html` is the older version with only the paper map.
 
 Each version is a single HTML file with no build step and nothing to install. `CLAUDE.md` has the design notes.

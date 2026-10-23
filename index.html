@@ -1,267 +1,680 @@
 <title>COMPANY</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil+Display:wght@700;800&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&family=Big+Shoulders+Stencil+Display:wght@700;800&family=IBM+Plex+Mono:wght@500&family=IBM+Plex+Sans+Condensed:wght@400;500;600&display=swap">
 <style>
-/* Layout: full-bleed paper map on a canvas; the HUD is a set of printed legend boxes pinned to the edges.
-   Single deliberate light look (a paper map), so colors are set explicitly and there is no dark block. */
+/* HUD: frosted-glass panels over the full-screen map canvas (company-hud handoff; direction A, light and floating, is the
+   default). data-appearance (light | dark) and data-layout (floating | docked) on <html> switch the look. The map, unit
+   symbols and side colours are drawn by the canvas and don't change; its label fonts are --display, --body and --mono. */
+:root,:root[data-appearance="light"]{
+  --ink:#1d1d1f; --ink-2:#6e6e73; --ink-3:#86868b; --ink-disabled:rgba(29,29,31,.3); --ink-strong:#3a3a3c;
+  --glass:rgba(248,248,250,.74); --glass-strong:rgba(246,246,248,.88); --bar:rgba(246,246,248,.84);
+  --glass-edge:0 0 0 .5px rgba(0,0,0,.14); --glass-highlight:inset 0 1px 0 rgba(255,255,255,.85);
+  --lift:0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.08);
+  --hairline:rgba(0,0,0,.14); --row-divider:rgba(0,0,0,.1); --group:rgba(255,255,255,.66); --group-solid:#fff;
+  --fill:rgba(118,118,128,.14); --fill-hover:rgba(118,118,128,.22); --hover:rgba(0,0,0,.055); --track:rgba(118,118,128,.2);
+  --segment-thumb:#fff; --badge-ring:#f8f8fa; --field:rgba(255,255,255,.75);
+  --accent:#007aff; --accent-hover:#0a6fe6; --accent-text:#007aff; --accent-soft:rgba(0,122,255,.12); --on-map-accent:#64b5ff;
+  --contested:#ff9500; --contested-text:#c25e00; --ok:#34c759; --ok-text:#248a3d; --danger:#ff3b30; --neutral:#8e8e93;
+  --attacker:#17181c; --defender:#7a2cbf; --defender-ring:#7a2cbf; --defender-text:#7a2cbf;
+  --atk-ring:#17181c; --atk-disc:none; --atk-edge:none; --atk-letter:#1d1d1f; --logo-ink:#000;
+  --on-map:#fff; --on-map-shadow:0 1px 2px rgba(0,0,0,.85),0 0 8px rgba(0,0,0,.55);
+  --tooltip:rgba(28,28,30,.9); --scrim:rgba(0,0,0,.16);
+  color-scheme:light;
+}
+:root[data-appearance="dark"]{
+  --ink:#f5f5f7; --ink-2:#98989f; --ink-3:#8d8d93; --ink-disabled:rgba(245,245,247,.3); --ink-strong:#d1d1d6;
+  --glass:rgba(30,30,32,.74); --glass-strong:rgba(30,30,32,.88); --bar:rgba(28,28,30,.82);
+  --glass-edge:0 0 0 1px rgba(255,255,255,.1); --glass-highlight:inset 0 1px 0 rgba(255,255,255,.08); --lift:0 12px 32px rgba(0,0,0,.4);
+  --hairline:rgba(255,255,255,.1); --row-divider:rgba(255,255,255,.06); --group:rgba(255,255,255,.06); --group-solid:rgba(255,255,255,.14);
+  --fill:rgba(118,118,128,.24); --fill-hover:rgba(118,118,128,.34); --hover:rgba(255,255,255,.08); --track:rgba(255,255,255,.14);
+  --segment-thumb:rgba(255,255,255,.24); --badge-ring:#1e1e20; --field:rgba(255,255,255,.08);
+  --accent:#0a84ff; --accent-hover:#2491ff; --accent-text:#409cff; --accent-soft:rgba(10,132,255,.22);
+  --contested:#ff9f0a; --contested-text:#ffb340; --ok:#30d158; --ok-text:#30d158; --danger:#ff453a;
+  --defender-ring:#9d5cdb; --defender-text:#c49bf0;
+  --atk-ring:#f5f5f7; --atk-disc:#17181c; --atk-edge:#f5f5f7; --atk-letter:#fff; --logo-ink:#fff; --scrim:rgba(0,0,0,.3);
+  color-scheme:dark;
+}
 :root{
-  --paper:#ffffff; --wash:#e8e9e4; --ink:#1b1d1a; --muted:#5b6058; --hair:#c9cbc4;
-  --atk:#17181c; --def:#7a2cbf; --sel:#ffc400; --road:#e3120b; --water:#0b57f0;
+  --font:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;
   --display:"Big Shoulders Stencil Display","Arial Narrow",Impact,sans-serif;
   --body:"IBM Plex Sans Condensed","Arial Narrow",system-ui,sans-serif;
   --mono:"IBM Plex Mono",ui-monospace,Menlo,Consolas,monospace;
-  color-scheme: light;
+  --glass-blur:blur(30px) saturate(180%);
+  --r-panel:22px; --r-sheet:28px; --bar-h:56px; --dock-h:60px; --side-w:272px;
 }
 [hidden]{display:none!important}
 html,body{height:100%;margin:0;overflow:hidden}
-body{background:var(--wash);color:var(--ink);font:14px/1.4 var(--body)}
+body{background:#3d4430;color:var(--ink);font:13px/1.3 var(--font);letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
 #app{position:fixed;left:0;right:0;top:env(safe-area-inset-top,0px);bottom:env(safe-area-inset-bottom,0px);touch-action:none;-webkit-user-select:none;user-select:none;overflow:hidden}
 #cv{position:absolute;inset:0;width:100%;height:100%;display:block;cursor:crosshair}
-.box{background:var(--paper);border:1.5px solid var(--ink);box-shadow:3px 3px 0 rgba(27,29,26,.16)}
-.top{position:absolute;left:12px;right:12px;top:10px;display:flex;flex-wrap:wrap;gap:8px;align-items:stretch;pointer-events:none}
-.top>*{pointer-events:auto}
-.brand{padding:6px 10px 5px}
-.mark{font:800 26px/1 var(--display);letter-spacing:.05em}
-.logo{display:block;height:32px;width:106px}
-.sub{font:500 10.5px/1.2 var(--mono);color:var(--muted);text-transform:uppercase;letter-spacing:.06em;margin-top:3px}
-.clock{padding:6px 10px;min-width:86px}
-.lbl{font:600 10px/1.2 var(--body);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-.time{font:500 22px/1.1 var(--mono);font-variant-numeric:tabular-nums}
-.objs{display:flex}
-.obj{padding:5px 10px;display:flex;gap:8px;align-items:center;min-width:0}
-.obj+.obj{border-left:1.5px solid var(--ink)}
-.obj .k{font:800 22px/1 var(--display)}
-.obj .nm{font:600 12px/1.2 var(--body);white-space:nowrap}
-.obj .bar{height:5px;width:72px;background:var(--atk);margin-top:4px;position:relative}
-.obj .bar i{position:absolute;left:0;top:0;bottom:0;background:var(--def)}
-.obj .st{font:500 10px/1.2 var(--mono);color:var(--muted);text-transform:uppercase;margin-top:2px}
-.obj .st.hot{color:var(--road)}
-.ctrls{display:flex;align-items:center;gap:6px;padding:6px;margin-left:auto;flex-wrap:wrap}
-button{font:600 12px/1 var(--body);letter-spacing:.05em;text-transform:uppercase;border:1.5px solid var(--ink);background:var(--paper);color:var(--ink);padding:7px 9px;cursor:pointer;border-radius:0;white-space:nowrap}
-button:hover{background:#f0f1ec}
-button.on{background:var(--ink);color:var(--paper)}
-button.primary{background:var(--road);border-color:var(--road);color:#fff}
-button.primary:hover{background:#c20e08}
-button:focus-visible,input:focus-visible{outline:2px solid var(--sel);outline-offset:2px}
-.seg{display:flex}.seg button+button{border-left:none}
-kbd{font:500 10px var(--mono);opacity:.55;margin-left:5px}
-.toolbar{position:absolute;left:12px;right:12px;bottom:10px;display:flex;gap:8px;overflow-x:auto;padding:0 4px 4px 0;pointer-events:none;scrollbar-width:thin}
-.tg{pointer-events:auto;display:flex;align-items:center;gap:4px;padding:5px;flex:none}
-.tl{font:600 10px var(--body);text-transform:uppercase;letter-spacing:.12em;color:var(--muted);padding:0 4px}
-.budget{font:500 11px var(--mono);padding:0 6px;font-variant-numeric:tabular-nums}
-.panel{position:absolute;right:12px;top:84px;width:220px;padding:10px 12px;display:grid;gap:10px}
-.panel .row{display:flex;justify-content:space-between;gap:8px;font-size:13px}
-.panel .num{font:500 12px var(--mono);font-variant-numeric:tabular-nums}
-.panel hr{border:0;border-top:1px solid var(--hair);margin:0}
-.panel .hp{height:4px;background:var(--hair);margin-top:4px}
-.panel .hp i{display:block;height:100%;background:var(--ink)}
-.warn{color:var(--road)}
-.hex{width:.78em;height:.78em;vertical-align:-.06em;fill:currentColor}
-.legend{display:grid;grid-template-columns:auto 1fr;gap:3px 8px;font-size:12px;align-items:center}
-.legend span:nth-child(odd){font-size:13px;text-align:center}
-.replaybar{position:absolute;left:12px;right:12px;bottom:10px;padding:8px 10px;display:grid;gap:6px}
-.rb-row{display:flex;gap:6px;align-items:center;flex-wrap:wrap}
-.rb-row .tl{font:600 11px var(--body);letter-spacing:.12em;text-transform:uppercase;margin-right:4px}
-.rb-row #rpExit{margin-left:auto}
-.rb-key{font-size:11px;color:var(--muted)}.rb-key i{display:inline-block;width:10px;height:3px;margin:0 3px 2px 6px;vertical-align:middle}
-#rpTime{font:500 12px var(--mono);margin:0 4px}
-#rpLine{width:100%;height:56px;display:block;cursor:pointer;touch-action:none}
-body.replaying .toolbar,body.replaying #btnPause,body.replaying #speed{display:none}
-body.replaying .log{bottom:118px}
-.log{position:absolute;left:12px;bottom:66px;display:grid;gap:3px;pointer-events:none;max-width:min(420px,70vw)}
-.log div{font:500 11px/1.3 var(--mono);background:rgba(255,255,255,.9);padding:3px 6px;border-left:3px solid var(--ink)}
-.log div.d{border-left-color:var(--def)}
-.log div.a{border-left-color:var(--road)}
-.banner{position:absolute;left:50%;top:84px;transform:translateX(-50%);transition:opacity .15s;font:600 12px var(--body);letter-spacing:.06em;text-transform:uppercase;padding:7px 12px;background:var(--ink);color:var(--paper);pointer-events:none;max-width:calc(100% - 520px);text-align:center}
-.banner.faded{opacity:.15}
-.modal{position:absolute;inset:0;display:flex;align-items:center;justify-content:flex-start;padding:16px;overflow:auto;background:linear-gradient(90deg,rgba(255,255,255,.82),rgba(255,255,255,.25) 60%,rgba(255,255,255,0))}
-.modal.center{justify-content:center;background:rgba(232,233,228,.6)}
-.card{max-width:440px;width:100%;padding:22px 22px 20px;display:grid;gap:14px;margin:auto 0}
-.modal.center .card{margin:auto}
-.card .mark{font-size:52px}
-.card .logo{height:88px;width:292px;margin:-6px 0 -4px -10px}
-.lede{margin:0;font-size:15px;max-width:38ch}
-.field{display:grid;gap:6px}
-.field .row{display:flex;gap:6px}
-input{font:500 14px var(--mono);border:1.5px solid var(--ink);padding:6px 8px;width:9ch;border-radius:0;background:var(--paper);color:var(--ink)}
-.modes{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
-.modes button{padding:7px 6px;font-size:12px}
-.modes.climates{grid-template-columns:repeat(5,1fr)}
-.modes.scens{grid-template-columns:repeat(3,minmax(0,1fr))}
-.modes{grid-template-columns:repeat(3,minmax(0,1fr))!important}.modes.climates{grid-template-columns:repeat(5,minmax(0,1fr))!important}
-.modes button{white-space:normal;line-height:1.15;min-width:0}
-#optCode{flex:1;min-width:0;font:500 13px var(--mono);letter-spacing:.04em;text-transform:uppercase}
-.mdesc{margin:0;font-size:13px;color:var(--muted);min-height:3.2em}
-.mdesc b{color:var(--ink);font-weight:600}
-.rules{margin:0;padding-left:18px;display:grid;gap:4px;font-size:13px;color:var(--muted)}
-.wide{width:100%;padding:12px;font-size:14px}
-.result{font:800 46px/1 var(--display);letter-spacing:.04em}
-.stats{display:grid;grid-template-columns:1fr auto;gap:4px 12px;font-size:13px}
-.stats b{font:500 13px var(--mono);font-weight:500}
-.keys{display:grid;grid-template-columns:auto 1fr;gap:5px 12px;font-size:13px}
-.keys dt{font:500 12px var(--mono)}
-.keys dd{margin:0}
-.setrow{display:flex;justify-content:space-between;align-items:center;gap:14px}
-.setrow .nm{font-weight:600;font-size:14px}
-.setrow .hint{font-size:12px;color:var(--muted);margin-top:2px}
-.setrow button{min-width:58px}
-h3{margin:4px 0 0;font:600 11px var(--body);text-transform:uppercase;letter-spacing:.12em;color:var(--muted)}
-@media (max-width:760px){
-  .panel{top:auto;bottom:66px;width:180px;padding:8px 10px;gap:6px}
-  .panel .legend,.panel .hide-sm{display:none}
-  .log{bottom:auto;top:150px}
-  .mark{font-size:22px}
-  .card .mark{font-size:40px}
-  .logo{height:28px;width:93px}
-  .card .logo{height:72px;width:239px}
-  .obj .bar{width:46px}
-  .obj .nm{max-width:70px;overflow:hidden;text-overflow:ellipsis}
-  .banner{top:150px;font-size:11px;max-width:calc(100% - 32px)}
-  .modal{background:rgba(255,255,255,.7)}
+.logo{display:block;height:26px;width:86px;flex:none}
+.tn{font-variant-numeric:tabular-nums}
+.s2{color:var(--ink-2)}
+button,input{font-family:var(--font)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* materials and components */
+.gl{background:var(--glass);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);border-radius:var(--r-panel);box-shadow:var(--glass-edge),var(--glass-highlight),var(--lift);color:var(--ink)}
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 13px;border-radius:999px;border:0;background:transparent;color:var(--ink);font:500 13px/1 var(--font);letter-spacing:-.005em;cursor:pointer;white-space:nowrap;flex:none}
+.bt:hover{background:var(--hover)}
+.bt.on{background:var(--accent);color:#fff}
+.bt:disabled{color:var(--ink-disabled);cursor:default;background:transparent}
+.bt.ic{width:40px;height:40px;padding:0}
+.bt.soft{background:var(--hover)}
+.bt.fill{background:var(--fill)}.bt.fill:hover{background:var(--fill-hover)}
+.bt.lg{height:44px;padding:0 20px;font-size:14px;letter-spacing:-.01em}
+.gl.bt{background:var(--glass)}.gl.bt:hover{background:var(--group-solid)}
+.cta{display:inline-flex;align-items:center;justify-content:center;gap:8px;height:44px;padding:0 26px;border:0;border-radius:22px;background:var(--accent);color:#fff;font:600 14px/1 var(--font);letter-spacing:-.01em;cursor:pointer;white-space:nowrap;box-shadow:0 1px 2px rgba(0,0,0,.12)}
+.cta:hover{background:var(--accent-hover)}
+.dv{width:.5px;align-self:stretch;background:var(--hairline);margin:8px 4px;flex:none}
+.seg{display:flex;padding:2px;border-radius:10px;background:var(--fill);flex:none}
+.seg button{height:30px;min-width:40px;padding:0 8px;border:0;border-radius:8px;background:transparent;font:600 12.5px/1 var(--font);color:var(--ink);cursor:pointer;white-space:nowrap}
+.seg button.on{background:var(--segment-thumb);box-shadow:0 1px 3px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.05)}
+.seg button:disabled{color:var(--ink-disabled);cursor:default;background:transparent;box-shadow:none}
+.seg.wide{width:100%}.seg.wide button{flex:1;min-width:0;font-weight:500}.seg.wide button.on{font-weight:600}
+.tb{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;min-width:62px;height:56px;padding:0 8px;border:0;border-radius:19px;background:transparent;color:var(--ink);font:500 11px/1 var(--font);cursor:pointer;white-space:nowrap;flex:none}
+.tb:hover{background:var(--hover)}
+.tb.on{background:var(--accent);color:#fff}
+.tb:disabled{color:var(--ink-disabled);cursor:default;background:transparent}
+.tk{position:absolute;top:5px;right:7px;font-size:9.5px;font-weight:600;color:var(--ink-3)}
+.tb.on .tk{color:rgba(255,255,255,.75)}.tb:disabled .tk{color:var(--ink-disabled)}
+.ico{position:relative;display:flex}
+.badge{position:absolute;left:14px;top:-5px;min-width:16px;height:16px;padding:0 4px;box-sizing:border-box;border-radius:8px;background:var(--accent);color:#fff;font:600 10px/16px var(--font);text-align:center;box-shadow:0 0 0 2px var(--badge-ring)}
+.tb.on .badge{background:#fff;color:var(--accent)}
+.grp{background:var(--group);border-radius:12px;overflow:hidden}
+.rw{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:34px;padding:0 12px;box-shadow:inset 0 -.5px 0 var(--row-divider)}
+.rw:last-child{box-shadow:none}
+.rw>span:last-child{text-align:right}
+.lb{font-size:12px;font-weight:600;color:var(--ink-2);margin:0 0 7px 4px}
+.chev{flex:none;transition:transform .15s}
+.ui{flex:none}.ui.A{fill:var(--attacker);stroke:var(--atk-edge);stroke-width:1.4}.ui.D{fill:var(--defender-ring)}.ui.N{fill:var(--neutral)}
+.cnt{display:flex;align-items:center;gap:3px}.cnts{display:flex;gap:10px;align-items:center}
+.cnts.D{color:var(--defender-text)}
+.bar6{height:6px;border-radius:3px;background:var(--track);overflow:hidden}.bar6 i{display:block;height:100%;border-radius:3px;background:var(--ok)}
+.bar6.acc i{background:var(--accent)}
+.dot{width:7px;height:7px;border-radius:4px;background:currentColor;flex:none}
+.warn{color:var(--danger)}.okt{color:var(--ok-text)}
+kbd{display:inline-block;min-width:18px;padding:2px 6px;box-sizing:border-box;border-radius:6px;background:var(--fill);font:600 11.5px/1.3 var(--font);text-align:center;color:var(--ink)}
+.tgl{position:relative;width:46px;height:28px;border-radius:14px;border:0;padding:0;flex:none;cursor:pointer;background:var(--fill);transition:background .15s}
+.tgl span{position:absolute;top:2px;left:2px;width:24px;height:24px;border-radius:12px;background:#fff;box-shadow:0 2px 4px rgba(0,0,0,.2);transition:left .15s}
+.tgl.on{background:var(--ok)}.tgl.on span{left:20px}
+@media (hover:none) and (pointer:coarse){.tk,.k{display:none!important}}
+
+/* the HUD layer: only the panels take pointer events, so the map stays clickable everywhere else */
+#hud{position:absolute;inset:0;pointer-events:none;z-index:1}
+#hud .gl,#hud button,#hud input,#hud .log li{pointer-events:auto}
+body.nogame #hud,body.hud-off #hud,body.ngopen #hud,body.endopen #hud,body.ngopen #btnShowUI,body.endopen #btnShowUI{display:none}
+#btnShowUI{position:absolute;right:16px;top:16px;height:40px;z-index:2}
+
+/* --- floating (default): capsules 16px from the edges */
+#leftcol{position:absolute;left:16px;top:16px;bottom:118px;width:318px;display:flex;flex-direction:column;align-items:flex-start;gap:10px;pointer-events:none}
+.scen{width:100%;box-sizing:border-box;padding:12px 16px 13px;display:flex;flex-direction:column;gap:6px;cursor:pointer;flex:none}
+.scen .hd{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.scen .ttl{display:none}
+.side-badge{font-size:11.5px;font-weight:600;color:#fff;background:var(--attacker);padding:3px 9px;border-radius:10px;white-space:nowrap}
+.side-badge.D{background:var(--defender)}.side-badge.R{background:var(--fill);color:var(--ink)}
+:root[data-appearance="dark"] .side-badge.A{background:#fff;color:#17181c}
+.scen .goal{font-weight:500}
+.scen .meta{font-size:11px;color:var(--ink-2)}
+.scen .meta .m2{display:none}
+.pill{height:44px;border-radius:22px;padding:0 12px 0 14px;gap:8px}
+.pill .logo{height:20px;width:66px}
+.rail{display:flex;flex-direction:column;gap:8px;flex:none}
+.rail .bt{width:44px;height:44px}
+#railInfo{display:none}
+.insp{width:300px;box-sizing:border-box;padding:0 0 12px;display:flex;flex-direction:column;min-height:0;overflow:auto;scrollbar-width:none;flex:0 1 auto}
+.insp::-webkit-scrollbar{display:none}
+.insp .tabs{display:none}
+.sec{display:flex;flex-direction:column}
+.sec+.sec{margin-top:8px}
+.secHd{display:flex;align-items:center;justify-content:space-between;width:100%;box-sizing:border-box;height:34px;padding:0 14px 0 20px;border:0;background:transparent;font:600 12px var(--font);color:var(--ink-2);cursor:pointer;flex:none}
+.secHd:hover{color:var(--ink)}
+.secHd .act{font-weight:500;color:var(--accent-text)}
+.sec.shut .secHd .chev{transform:rotate(180deg)}
+.sec.shut .secBody{display:none}
+.secBody .grp{margin:0 10px}
+.selHd{display:flex;align-items:center;justify-content:space-between;padding:12px 8px 6px 20px}
+.selHd b{font-size:15px;font-weight:600;letter-spacing:-.015em}
+.selHd .bt{width:30px;height:30px;background:var(--hover)}
+.selTypes{display:flex;flex-wrap:wrap;gap:4px 16px;padding:2px 20px 10px}
+.selTypes>span{display:flex;align-items:center;gap:6px}
+.selHp{padding:0 20px 12px;display:flex;flex-direction:column;gap:6px;font-size:12px}
+.selHp>div:first-child{display:flex;justify-content:space-between}
+.selNone{padding:12px 20px 4px;color:var(--ink-2)}
+.selNone b{display:block;color:var(--ink);font-size:15px;font-weight:600;letter-spacing:-.015em;margin-bottom:2px}
+.legend{padding:10px 12px;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px 10px;font-size:12px}
+.legend span{display:flex;gap:7px;align-items:center}
+#secObjs,#goalLine{display:none}
+.objRow{width:100%;min-height:44px;border:0;background:transparent;color:inherit;font:inherit;cursor:pointer}
+.objRow:hover{background:var(--hover)}
+.objRow>span:first-child{display:flex;align-items:center;gap:8px}
+
+#status{position:absolute;left:50%;top:16px;transform:translateX(-50%);display:flex;align-items:center;padding:8px 10px 8px 18px;gap:4px;border-radius:26px;white-space:nowrap}
+#status .clk{display:flex;flex-direction:column;align-items:flex-start;padding:0 12px 0 0;border:0;background:transparent;color:inherit;cursor:pointer;font:inherit}
+#status .clk b{font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1}
+#status .clk.dep b{font-size:17px;letter-spacing:-.015em;line-height:1.1}
+#status .clk span{font-size:11px;color:var(--ink-2);margin-top:2px}
+.obj{height:44px;padding:0 12px 0 8px;gap:9px;border-radius:22px}
+.obj .on2{display:flex;flex-direction:column;align-items:flex-start;gap:1px}
+.obj .st{font-size:11.5px;font-weight:500}
+.st.A{color:var(--ink)}.st.D{color:var(--defender-text)}.st.N{color:var(--ink-2)}.st.C{color:var(--contested-text)}
+.xtra{display:flex;flex-direction:column;padding:0 10px 0 8px}
+.xtra b{font-weight:600}.xtra span{font-size:11px;color:var(--ink-2)}
+#status.compact{padding:0 14px 0 16px;height:44px;gap:10px;border-radius:22px;cursor:pointer}
+#status.compact .clk b{font-size:17px}
+#status.compact .rings{display:flex;gap:4px}
+#status.compact .plus{font-size:12px;color:var(--ink-2)}
+#ctrls{position:absolute;right:16px;top:16px;display:flex;align-items:center;gap:2px;padding:6px;border-radius:26px}
+#ctrls .seg{margin:0 6px}
+#ctrls .cmp,#ctrls .tglR{display:none}
+#ctrls.compact{padding:2px;border-radius:24px}
+#ctrls.compact .full{display:none}#ctrls.compact .cmp{display:inline-flex}
+#btnPause{background:var(--hover)}
+#btnSpeedC{padding:0 10px;font-weight:600;height:40px}
+.hint{position:absolute;left:50%;top:92px;transform:translateX(-50%);padding:7px 14px;border-radius:16px;font-size:12.5px;white-space:nowrap;max-width:calc(100% - 700px);overflow:hidden;text-overflow:ellipsis;transition:opacity .15s;pointer-events:none!important}
+.hint b{font-weight:600;color:var(--accent-text)}
+.hint.faded{opacity:.15}
+.log{position:absolute;left:20px;bottom:18px;list-style:none;margin:0;padding:0 8px 0 0;display:flex;flex-direction:column;gap:3px;font-size:12px;line-height:18px;color:var(--on-map);text-shadow:var(--on-map-shadow);max-width:min(460px,60vw);
+  max-height:81px;overflow-y:auto;overscroll-behavior:contain;scrollbar-width:none;touch-action:pan-y;pointer-events:auto;
+  /* older lines fade toward the top of the four-line window; hovering shows them all at full strength */
+  -webkit-mask-image:linear-gradient(to top,#000 40px,rgba(0,0,0,.5) 81px);mask-image:linear-gradient(to top,#000 40px,rgba(0,0,0,.5) 81px);
+  -webkit-mask-size:100% 81px;mask-size:100% 81px;-webkit-mask-position:bottom;mask-position:bottom;-webkit-mask-repeat:no-repeat;mask-repeat:no-repeat}
+.log::-webkit-scrollbar{display:none}
+.log:hover{-webkit-mask-image:none;mask-image:none}
+.log li{flex:none}
+.log li{display:flex;gap:10px;cursor:pointer}
+.log li .t{width:34px;flex:none;color:rgba(255,255,255,.75)}
+.log li.n{font-weight:600}
+.log li.n .t{font-weight:400}
+.log .more{display:none;margin-left:4px;align-self:center}
+.log.compact li:not(.n){display:none}.log.compact .more{display:inline-flex}
+.callout{position:absolute;left:0;top:0;display:flex;align-items:center;pointer-events:auto;z-index:0}
+.callout .nub{width:12px;height:12px;background:var(--glass-strong);transform:rotate(45deg);margin-right:-7px;flex:none}
+.callout .gl{border:0;display:flex;align-items:center;gap:9px;padding:7px 14px 7px 8px;border-radius:18px;font:inherit;color:inherit;cursor:pointer;text-align:left;white-space:nowrap}
+.callout .bang{width:24px;height:24px;border-radius:12px;background:var(--contested);display:flex;align-items:center;justify-content:center;color:#fff;font-weight:700;font-size:14px;flex:none}
+.callout .tx{display:flex;flex-direction:column}.callout .tx b{font-weight:600;font-size:12.5px}.callout .tx span{font-size:11.5px;color:var(--ink-2)}
+.callout.dot .nub,.callout.dot .tx{display:none}.callout.dot .gl{padding:5px;border-radius:17px}.callout.dot .bang{width:22px;height:22px;font-size:13px}
+
+#dock{position:absolute;right:16px;bottom:16px;display:flex;flex-direction:column;align-items:flex-end;gap:10px;pointer-events:none;max-width:calc(100% - 32px)}
+.selbar{display:flex;align-items:center;gap:2px;padding:6px;border-radius:26px;max-width:100%;box-sizing:border-box}
+.selgrp,.ovgrp{display:flex;align-items:center;gap:2px}
+.selbar .bt{height:40px}
+.selbar .bt.ic{width:40px}
+.selbar .bt.part{background:var(--accent-soft)}
+.selbar .bt.part:hover{background:var(--accent-soft)}
+#selClear{color:var(--accent-text)}
+#selPill .chev{margin-left:2px}
+.orders{display:flex;align-items:center;gap:1px;padding:5px;border-radius:24px;max-width:100%;box-sizing:border-box;overflow-x:auto;scrollbar-width:none}
+.orders::-webkit-scrollbar{display:none}
+.orders .lbtoggle{width:32px;height:44px;padding:0;border-radius:16px}
+.orders.compact{padding:3px;border-radius:25px;gap:0}
+.orders.compact .tb{min-width:44px;width:44px;height:44px;border-radius:22px;padding:0;gap:0}
+.orders.compact .tb .tl{display:none}
+.orders.compact .tk{top:3px;right:5px}
+.orders.compact .badge{left:auto;right:-9px;top:auto;bottom:-6px;min-width:14px;height:14px;font-size:9px;line-height:14px;box-shadow:0 0 0 1.5px var(--badge-ring)}
+.deploybar{display:flex;align-items:center;gap:4px;padding:6px;border-radius:30px}
+.deploybar .tb.dig{align-self:stretch;height:auto;border-radius:24px;padding:0 14px}
+.budget{display:flex;flex-direction:column;gap:6px;width:168px;padding:0 10px}
+.budget>div:first-child{display:flex;justify-content:space-between;align-items:baseline}
+.budget .s2{font-size:11.5px}.budget b{font-weight:600}
+.budget .sub{font-size:11px;white-space:nowrap}
+.deploybar .cta{height:48px;padding:0 20px;margin-left:4px}
+
+/* replay */
+.replaybar{position:absolute;left:16px;right:16px;bottom:16px;padding:10px 18px 14px;border-radius:26px}
+.rb-row{display:flex;align-items:center;gap:4px}
+.tr{position:relative;display:flex;align-items:center;justify-content:center;width:40px;height:40px;border:0;border-radius:20px;background:transparent;color:var(--ink);cursor:pointer;font:600 8px var(--font);flex:none}
+.tr:hover{background:var(--hover)}
+.tr .n15{position:absolute;top:15px}
+.tr.big{width:48px;height:48px;border-radius:24px;background:var(--ink);color:var(--glass-strong)}
+:root[data-appearance="dark"] .tr.big{color:#1d1d1f}
+#rpTime{margin-left:14px;font-size:15px;font-weight:600}
+#rpTime span{color:var(--ink-2);font-weight:400}
+.rb-key{display:flex;gap:14px;margin-right:14px;align-items:center;font-size:12px;color:var(--ink-2)}
+.rb-key>span{display:flex;gap:6px;align-items:center}
+.rb-key i{width:14px;height:2.5px;border-radius:2px;display:block}
+#rpLine{width:100%;height:92px;display:block;margin-top:8px;cursor:pointer;touch-action:none}
+body.replaying #dock,body.replaying #btnPause,body.replaying #speed,body.replaying #btnMenu,body.replaying .hint,body.replaying #rail,body.replaying .insp,body.replaying #callouts{display:none!important}
+body.replaying #status .clk,body.replaying #status .xtra,body.replaying #status .dv{display:none}
+body.replaying #status{padding-left:10px}
+body.replaying .log{bottom:200px}
+
+/* popovers, menus, tooltip */
+.pop{position:absolute;right:16px;top:82px;box-sizing:border-box;padding:18px 18px 16px;border-radius:26px;background:var(--glass-strong);max-height:calc(100% - 100px);overflow:auto;scrollbar-width:none;z-index:3}
+.pop::before{content:"";position:absolute;right:var(--nub,136px);top:-6px;width:12px;height:12px;background:var(--glass-strong);transform:rotate(45deg)}
+.pop .hd{display:flex;align-items:center;justify-content:space-between;margin:0 0 14px 4px}
+.pop h2{margin:0;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.pop .hd .s2{font-size:11.5px}
+.pop .rw{min-height:44px;padding:0 14px}
+.pop .seg{width:200px}.pop .seg button{flex:1;font-weight:500}.pop .seg button.on{font-weight:600}
+#settingsModal{width:420px}
+.opts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:10px}
+.opt{display:flex;flex-direction:column;gap:8px;padding:8px;border:0;border-radius:16px;background:var(--group);text-align:left;font:inherit;color:inherit;cursor:pointer}
+.opt.on{background:var(--group-solid);box-shadow:0 0 0 2px var(--accent)}
+.opt .th{position:relative;display:block;height:76px;border-radius:10px;overflow:hidden;background:linear-gradient(135deg,#5d6b45,#45532f 45%,#6b7a4f 70%,#3f4a2c)}
+.opt .th i{position:absolute;background:rgba(248,248,250,.9);border-radius:6px}
+.opt .nm{display:flex;align-items:center;justify-content:space-between;padding:0 4px;font-weight:600}
+.opt .nm svg{visibility:hidden}.opt.on .nm svg{visibility:visible}
+.opt .s2{font-size:11.5px;padding:0 4px 2px}
+#helpModal{width:640px;font-size:12.5px}
+#helpModal .rw{min-height:38px;padding:0 12px}
+#helpModal .cols{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+#helpModal .legend{grid-template-columns:repeat(4,minmax(0,1fr));font-size:12.5px}
+#helpModal .col{display:flex;flex-direction:column;gap:12px}
+#helpModal .keys{display:flex;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+#helpModal .note{margin:12px 4px 0;font-size:11.5px;color:var(--ink-2);line-height:1.4}
+.menu{position:absolute;right:16px;top:70px;padding:6px;border-radius:18px;background:var(--glass-strong);display:flex;flex-direction:column;min-width:200px;z-index:3}
+.menu .bt{justify-content:flex-start;height:40px;border-radius:12px;gap:10px}
+.menu .bt .k{margin-left:auto;font-size:11.5px;color:var(--ink-3)}
+.tip{position:absolute;z-index:9;padding:5px 9px;border-radius:7px;background:var(--tooltip);color:#fff;font:500 12px/1.2 var(--font);white-space:nowrap;pointer-events:none}
+.tip .k{color:rgba(255,255,255,.6);margin-left:6px}
+
+/* sheets: New game and end of battle */
+.sheetwrap{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;background:var(--scrim);overflow:auto;z-index:4}
+.sheet{position:relative;box-sizing:border-box;border-radius:var(--r-sheet);background:var(--glass-strong);margin:auto}
+.sheet h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em}
+.ng{width:900px;max-width:100%;padding:22px 24px 20px}
+.ng>header{display:flex;align-items:center;justify-content:space-between;margin-bottom:18px}
+.ng>header>div{display:flex;align-items:center;gap:14px}
+.ngx{width:32px;height:32px;padding:0}
+.ng-body{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px}
+.ng-right{display:flex;flex-direction:column;gap:16px}
+.two{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.sr{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;min-height:50px;padding:7px 14px;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;box-shadow:inset 0 -.5px 0 var(--row-divider)}
+.sr:last-child{box-shadow:none}
+.sr:hover{background:var(--hover)}
+.sr>span{flex:1}.sr b{display:block;font-weight:500}.sr.on b{font-weight:600}.sr .s2{font-size:12px}
+.sr svg{visibility:hidden;flex:none}.sr.on svg{visibility:visible}
+.tiles{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.tile{height:40px;border:0;border-radius:10px;background:var(--group);font:500 12.5px var(--font);color:var(--ink);cursor:pointer;padding:0 6px}
+.tile:hover{background:var(--group-solid)}
+.tile.on{background:var(--group-solid);box-shadow:0 0 0 2px var(--accent);font-weight:600}
+.fld{display:flex;align-items:center;height:36px;padding:0 12px;box-sizing:border-box;border-radius:10px;background:var(--field);box-shadow:inset 0 0 0 .5px var(--hairline);font:500 13px var(--font);color:var(--ink);border:0;flex:1;min-width:0}
+#optCode{letter-spacing:.02em;text-overflow:clip;white-space:nowrap;text-transform:uppercase}
+.row8{display:flex;gap:8px}
+.ng-msg{font-size:11.5px;color:var(--ink-2);margin:6px 4px 0;min-height:15px}
+.ng>footer{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:20px;padding-top:16px;box-shadow:inset 0 .5px 0 var(--hairline)}
+.ng>footer .s2{font-size:12px}
+.ng>footer>div{display:flex;gap:10px;flex:none}
+.ng .bt.lg{background:var(--fill)}.ng .bt.lg:hover{background:var(--fill-hover)}
+.ng-mini{display:none}
+.mapctl{display:none}
+/* New game with the map shown: the settings become a sidebar and the map is live to pan and zoom */
+#startModal.showmap{background:none;justify-content:flex-start;align-items:stretch;pointer-events:none}
+#startModal.showmap .sheet{pointer-events:auto}
+#startModal.showmap .ng{width:392px;margin:0;display:flex;flex-direction:column;padding:0;max-height:100%}
+#startModal.showmap .ng>header{padding:20px 20px 0 24px;margin-bottom:12px}
+#startModal.showmap .ng-body{display:flex;flex-direction:column;gap:16px;overflow:auto;padding:0 20px 16px;scrollbar-width:thin}
+#startModal.showmap .ng>footer{margin:0;padding:12px 16px 16px;flex-wrap:wrap}
+#startModal.showmap .ng>footer>span{display:none}
+#startModal.showmap .mapctl{display:block}
+.mapctl>*{position:absolute;pointer-events:auto}
+.mapctl .hintc{left:50%;top:16px;transform:translateX(-50%);padding:6px 14px;border-radius:14px;font-size:12px;color:var(--ink-2)}
+.mapctl .zoom{right:16px;top:50%;transform:translateY(-50%);display:flex;flex-direction:column;padding:4px;border-radius:24px}
+.mapctl .zoom .bt{width:40px;height:40px}
+.mapctl .views{right:16px;bottom:16px;padding:6px;border-radius:24px}
+.mapctl .views .seg{width:184px}
+.end{width:640px;max-width:100%;padding:28px 28px 24px}
+.end>header{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-bottom:22px}
+.end>header .logo{height:22px;width:73px;margin-bottom:10px}
+.resIc{width:52px;height:52px;border-radius:26px;display:flex;align-items:center;justify-content:center;background:var(--ok)}
+.resIc.loss{background:var(--danger)}.resIc.draw{background:var(--neutral)}
+.end h1{margin:6px 0 0;font-size:34px;font-weight:700;letter-spacing:-.03em;line-height:1.1}
+.end header p{margin:0;font-size:15px;color:var(--ink-strong)}
+.endRings{display:flex;gap:6px;margin-top:6px}
+.tiles3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.tiles3>div{padding:12px 14px}.tiles3 .s2{font-size:12px}.tiles3 b{display:block;font-size:22px;font-weight:600;letter-spacing:-.02em}
+.end .rw{min-height:38px;padding:0 14px}
+.end footer{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:22px}
+.end footer>div{display:flex;gap:10px}
+.end .bt.lg{background:var(--fill)}.end .bt.lg:hover{background:var(--fill-hover)}
+.planTx{padding:12px 14px;line-height:1.45}
+
+/* --- docked: the top bar and the command dock run flush along the edges; outliner and inspector slide in from the sides */
+:root[data-layout="docked"] #bar{display:flex}
+#bar,#sideL,#sideR{display:none}
+#bar{position:absolute;left:0;right:0;top:0;height:var(--bar-h);box-sizing:border-box;padding:0 12px;align-items:center;gap:10px;background:var(--bar);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:inset 0 -.5px 0 var(--hairline),0 1px 0 rgba(0,0,0,.06);pointer-events:auto}
+#bar .barL{flex:1;display:flex;align-items:center;gap:10px;min-width:0}
+#bar .barR{flex:1;display:flex;align-items:center;justify-content:flex-end;min-width:0}
+:root[data-layout="docked"] #leftcol{display:none}
+:root[data-layout="docked"] #bar .scen,:root[data-layout="docked"] #bar #status,:root[data-layout="docked"] #bar #ctrls{position:static;transform:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;border-radius:0;padding:0}
+:root[data-layout="docked"] #bar .scen{width:auto;flex-direction:row;align-items:center;gap:10px;cursor:default;min-width:0}
+:root[data-layout="docked"] #bar .scen .goal{display:none}
+:root[data-layout="docked"] #bar .scen .hd .side-badge{display:none}
+:root[data-layout="docked"] #bar .scen .ttl{display:flex;flex-direction:column;min-width:0;padding-left:10px;box-shadow:inset .5px 0 0 var(--hairline)}
+.scen .ttl b{font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.scen .ttl b .side-badge{padding:1px 8px;font-weight:500}
+:root[data-layout="docked"] #bar .scen .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root[data-layout="docked"] #bar .scen .meta .m1{display:none}:root[data-layout="docked"] #bar .scen .meta .m2{display:inline}
+:root[data-layout="docked"] #bar .scen>.meta{display:none}
+:root[data-layout="docked"] #bar #status{gap:2px;flex:none}
+:root[data-layout="docked"] #bar #status .clk{align-items:flex-end;padding-right:12px;cursor:default}
+:root[data-layout="docked"] #bar #status .clk b{font-size:20px}
+:root[data-layout="docked"] #bar #status .dv{display:none}
+:root[data-layout="docked"] #bar .obj{height:40px;gap:8px;padding:0 10px 0 6px}
+:root[data-layout="docked"] #bar .xtra{padding-left:12px}
+:root[data-layout="docked"] #bar #ctrls{gap:4px}
+:root[data-layout="docked"] #bar #ctrls .bt.ic{width:32px;height:32px}
+:root[data-layout="docked"] #bar #ctrls .seg{margin:0}
+:root[data-layout="docked"] #bar #ctrls .seg button{height:26px;min-width:36px;font-size:12px}
+:root[data-layout="docked"] #bar #ctrls .tglR,:root[data-layout="docked"] #bar #ctrls .dvD{display:inline-flex}
+#ctrls .dvD{display:none;margin:14px 4px}
+.tglL,.tglR{width:32px;height:32px;padding:0}
+.tglL.on,.tglR.on{background:var(--fill-hover);color:var(--ink)}
+:root[data-layout="docked"] #sideL,:root[data-layout="docked"] #sideR{position:absolute;top:var(--bar-h);bottom:var(--dock-h);width:var(--side-w);box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--bar);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);overflow:auto;scrollbar-width:none;pointer-events:auto;transition:transform .2s}
+#sideL{left:0;box-shadow:inset -.5px 0 0 var(--hairline)}
+#sideR{right:0;box-shadow:inset .5px 0 0 var(--hairline);padding-top:4px!important}
+:root[data-layout="docked"] #sideL.off{transform:translateX(-100%)}
+:root[data-layout="docked"] #sideR.off{transform:translateX(100%)}
+:root[data-layout="docked"] .side .secHd{height:30px;padding:0 8px;border-radius:10px;justify-content:flex-start;gap:6px;font-size:11.5px}
+:root[data-layout="docked"] .side .secHd:hover{background:var(--group)}
+:root[data-layout="docked"] .side .secHd .act{margin-left:auto}
+:root[data-layout="docked"] .side .secHd .chev{order:-1;transform:rotate(180deg)}
+:root[data-layout="docked"] .side .sec.shut .secHd .chev{transform:rotate(90deg)}
+:root[data-layout="docked"] .side .secBody .grp{margin:0}
+:root[data-layout="docked"] .side .rw{min-height:32px;padding:0 10px}
+:root[data-layout="docked"] .side .sec+.sec{margin-top:4px}
+:root[data-layout="docked"] #secObjs,:root[data-layout="docked"] #goalLine{display:flex}
+#goalLine{font-size:11.5px;color:var(--ink-2);padding:6px 8px 4px;line-height:1.4}
+:root[data-layout="docked"] #sideR .selHd{padding:8px 6px 4px}
+:root[data-layout="docked"] #sideR .selHd .bt{display:none}
+:root[data-layout="docked"] #sideR .selTypes,:root[data-layout="docked"] #sideR .selHp{padding-left:6px;padding-right:6px}
+:root[data-layout="docked"] #sideR .secBody .grp{margin:0}
+:root[data-layout="docked"] #dock{left:0;right:0;bottom:0;height:var(--dock-h);flex-direction:row;align-items:center;justify-content:center;gap:2px;max-width:none;padding:0 12px;background:var(--bar);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:inset 0 .5px 0 var(--hairline);pointer-events:auto;overflow-x:auto;scrollbar-width:none}
+:root[data-layout="docked"] #dock .selbar{display:contents}
+:root[data-layout="docked"] #dock .selgrp{order:1}:root[data-layout="docked"] #dock .selbar>.dv{order:2;margin:14px 8px}
+:root[data-layout="docked"] #dock .orders,:root[data-layout="docked"] #dock .deploybar{order:3}
+:root[data-layout="docked"] #dock .ovgrp{order:5;padding-left:8px;margin-left:8px;box-shadow:inset .5px 0 0 var(--hairline)}
+:root[data-layout="docked"] #dock .orders,:root[data-layout="docked"] #dock .deploybar{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;padding:0;border-radius:0;overflow:visible}
+:root[data-layout="docked"] #dock .selbar .bt{height:32px;padding:0 10px}
+:root[data-layout="docked"] #dock .selbar .bt.ic{width:32px;padding:0}
+:root[data-layout="docked"] #dock .tb{flex-direction:row;height:32px;min-width:0;padding:0 10px;gap:6px;border-radius:16px;font-size:13px}
+:root[data-layout="docked"] #dock .tk{position:static;font-size:11.5px;font-weight:500;order:3}
+:root[data-layout="docked"] #dock .tb .ico svg{width:16px;height:16px}
+:root[data-layout="docked"] #dock .badge{position:static;order:2;margin-left:-2px;box-shadow:none}
+:root[data-layout="docked"] #dock .ico{display:contents}
+:root[data-layout="docked"] #dock .lbtoggle,:root[data-layout="docked"] #selPill{display:none!important}
+:root[data-layout="docked"] #dock .deploybar .tb.dig{height:40px;align-self:center}
+:root[data-layout="docked"] #dock .deploybar .cta{height:40px}
+:root[data-layout="docked"] .hint{top:calc(var(--bar-h) + 12px);background:none;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;color:var(--on-map);text-shadow:var(--on-map-shadow);padding:0;max-width:calc(100% - 600px)}
+:root[data-layout="docked"] .hint b{color:var(--on-map-accent)}
+:root[data-layout="docked"] .hint .s2{color:var(--on-map)}
+:root[data-layout="docked"] .log{bottom:calc(var(--dock-h) + 16px);left:calc(var(--logL,0px) + 20px)}
+:root[data-layout="docked"] .replaybar{left:0;right:0;bottom:0;border-radius:0;background:var(--bar);box-shadow:inset 0 .5px 0 var(--hairline)}
+:root[data-layout="docked"] .pop{top:64px}
+:root[data-layout="docked"] .menu{top:62px}
+:root[data-layout="docked"] #btnShowUI{top:8px}
+
+/* narrower screens */
+@media (max-width:1359px){
+  #status .obj .on2{display:none}
+  #status .obj{padding:0 6px;width:44px}
+  :root[data-layout="docked"] #bar .obj .on2{display:none}
 }
-@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+@media (max-width:1023px){
+  .orders .tb{min-width:44px;width:44px;height:44px;border-radius:22px;padding:0;gap:0}
+  .orders .tb .tl{display:none}
+  .orders .tk{top:3px;right:5px}
+  .orders .badge{left:auto;right:-9px;top:auto;bottom:-6px;min-width:14px;height:14px;font-size:9px;line-height:14px}
+  .orders .lbtoggle{display:none}
+  .hint{max-width:calc(100% - 32px);top:70px}
+  #leftcol{width:300px}
+  #status .xtra span{display:none}
+  :root[data-layout="docked"] #bar .scen .ttl{display:none}
+  :root[data-layout="docked"] #dock .tb .tl{display:none}
+}
+/* phones: compact top capsules, a rail of round buttons, the inspector as a bottom sheet, full-width command rows */
+@media (max-width:599px){
+  #leftcol{top:96px;bottom:auto;width:auto}
+  #scenCard,#scenPill{display:none!important}
+  #railInfo{display:inline-flex}
+  #status{left:12px;top:12px;transform:none}
+  #ctrls{right:12px;top:12px}
+  .insp{position:fixed;left:6px;right:6px;bottom:132px;width:auto;max-height:calc(100% - 200px);border-radius:var(--r-sheet);background:var(--glass-strong);padding-bottom:16px;z-index:3}
+  .insp .tabs{display:flex;margin:4px 14px 6px;width:auto}
+  .insp .sec{margin-top:0!important}
+  .insp .sec:not(.tabOn){display:none}
+  .insp .secHd{display:none}
+  .insp .sec.shut .secBody{display:block}
+  .insp .selHd .bt{background:var(--fill)}
+  #scenCard.phoneOpen{display:flex!important;position:fixed;left:12px;right:12px;top:68px;width:auto;z-index:3}
+  #dock{left:8px;right:8px;bottom:8px;align-items:stretch;gap:8px}
+  .selbar{overflow-x:auto;scrollbar-width:none;justify-content:flex-start}
+  .selbar::-webkit-scrollbar{display:none}
+  .orders{justify-content:flex-start}
+  .orders .tb{min-width:56px;width:auto;height:48px;flex-direction:column;gap:3px;border-radius:16px}
+  .orders .tb .tl{display:block;font-size:10px}
+  .deploybar{flex-wrap:wrap;justify-content:space-between}
+  .deploybar .cta{width:100%;justify-content:center;margin:0}
+  .budget{flex:1}
+  .log{left:14px;bottom:146px;font-size:11px;max-width:calc(100% - 28px);max-height:39px}
+  .hint{top:62px;font-size:11.5px;padding:5px 12px;max-width:calc(100% - 24px)}
+  :root[data-layout="docked"] #sideL,:root[data-layout="docked"] #sideR{width:min(272px,86vw)}
+  .pop,.menu{left:6px;right:6px;top:auto!important;bottom:6px;width:auto!important;max-height:80%;border-radius:var(--r-sheet)}
+  .pop::before{display:none}
+  #helpModal .cols{grid-template-columns:1fr}
+  #helpModal .legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .callout .tx{display:none}.callout .nub{display:none}.callout .gl{padding:5px;border-radius:17px}
+  .replaybar{left:6px;right:6px;bottom:6px;padding:12px 14px}
+  .rb-key,#rpTime{display:none}
+  body.replaying .log{bottom:192px}
+  .sheetwrap{padding:0;align-items:flex-end}
+  .sheet{margin:0;width:100%!important;border-radius:var(--r-sheet) var(--r-sheet) 0 0;max-height:100%;overflow:auto}
+  .ng{padding:16px 16px 0}
+  .ng-body{grid-template-columns:1fr;gap:16px}
+  .ng>footer{position:sticky;bottom:0;background:var(--glass-strong);margin:16px -16px 0;padding:12px 16px 16px}
+  .ng>footer>span{display:none}
+  .ng>footer>div{flex:1}.ng>footer>div>*{flex:1}
+  #ngShowMap{display:none}
+  #startModal.showmap .ng{width:100%;height:auto}
+  .end{padding:20px 16px 16px}
+  .end footer{flex-direction:column-reverse;align-items:stretch}
+  .end footer>div{display:grid;grid-template-columns:1fr 1fr}
+  .tiles3>div{padding:10px}
+  .tiles3 b{font-size:18px}
+}
+@media (prefers-reduced-transparency:reduce){.gl,#bar,#sideL,#sideR,#dock{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.gl{background:var(--glass-strong)}}
 </style>
 
 <div id="app">
-  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="logo" viewBox="90 176 730 220" ><g fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10"><path stroke="#ff0000" stroke-width="12.0" stroke-linejoin="round" stroke-linecap="butt" d="m100 386.26c112.21 0 168.32 -45.93 224.43 -91.86c28.05 -22.96 56.11 -45.93 91.17 -63.15c17.53 -8.61 36.82 -15.79 58.74 -20.81c0.68 -0.16 1.37 -0.31 2.06 -0.46l0.82 -0.18" fill-rule="evenodd"/><path fill="#ff0000" stroke="#ff0000" stroke-width="12.0" stroke-linecap="butt" d="m479.21 229.52l52.18 -25.2l-56.18 -14.24z" fill-rule="evenodd"/><path stroke="#cccccc" stroke-width="12.0" stroke-linejoin="round" stroke-linecap="butt" stroke-dasharray="48.0,36.0,12.0,36.0" d="m783.52 185.94c-4.4 0 19.09 34.35 -8.79 68.69c-13.94 17.17 -40.73 34.35 -77.42 47.23c-18.35 6.44 -39.17 11.81 -62.11 15.56c-5.73 0.94 -11.6 1.78 -17.59 2.51c-3 0.36 -6.02 0.7 -9.08 1.01c-0.76 0.08 -1.53 0.15 -2.3 0.23l-0.36 0.03" fill-rule="evenodd"/><path stroke="#cccccc" stroke-width="12.0" stroke-linecap="butt" d="m606.78 340.92l-39.44 1.84l-1.84 -39.44l39.44 -1.84l1.84 39.44z" fill-rule="nonzero"/><path fill="#000000" d="m198.85 330.79q-10.5 0 -19.33 -3.45q-8.83 -3.45 -15.3 -9.66q-6.47 -6.22 -9.98 -14.73q-3.52 -8.52 -3.52 -18.75q0 -10.11 3.64 -18.62q3.66 -8.52 10.17 -14.78q6.53 -6.27 15.48 -9.72q8.97 -3.47 19.59 -3.47q6.41 0 12.48 1.61q6.08 1.59 11.45 4.67q5.38 3.06 9.61 7.67l-15.23 17.67q-2.19 -2.44 -4.88 -4.36q-2.69 -1.92 -6.08 -3q-3.39 -1.09 -7.48 -1.09q-4.73 0 -8.91 1.61q-4.16 1.59 -7.23 4.67q-3.06 3.06 -4.8 7.42q-1.72 4.34 -1.72 9.97q0 5.38 1.72 9.67q1.73 4.28 5 7.3q3.27 3 7.81 4.67q4.55 1.66 10.17 1.66q3.97 0 7.48 -1.14q3.53 -1.16 6.47 -3.08q2.94 -1.92 5.25 -4.22l12.03 19.06q-3.2 3.59 -8.64 6.41q-5.44 2.81 -12.03 4.42q-6.59 1.59 -13.25 1.59zm89.21 0q-10.36 0 -19.06 -3.45q-8.7 -3.45 -15.11 -9.72q-6.41 -6.28 -9.92 -14.8q-3.52 -8.52 -3.52 -18.62q0 -10.23 3.52 -18.69q3.52 -8.45 9.92 -14.72q6.41 -6.27 15.11 -9.72q8.7 -3.47 19.06 -3.47q10.38 0 19.02 3.47q8.64 3.45 15.09 9.72q6.47 6.27 9.92 14.72q3.47 8.45 3.47 18.56q0 10.23 -3.47 18.75q-3.45 8.52 -9.92 14.8q-6.45 6.27 -15.09 9.72q-8.64 3.45 -19.02 3.45zm0 -23.55q4.61 0 8.58 -1.66q3.97 -1.67 6.91 -4.81q2.95 -3.14 4.55 -7.36q1.61 -4.22 1.61 -9.22q0 -4.98 -1.61 -9.2q-1.59 -4.23 -4.55 -7.38q-2.94 -3.14 -6.91 -4.8q-3.97 -1.67 -8.58 -1.67q-4.73 0 -8.7 1.67q-3.97 1.66 -6.92 4.8q-2.94 3.14 -4.53 7.3q-1.59 4.16 -1.59 9.28q0 5 1.59 9.22q1.59 4.22 4.53 7.36q2.95 3.14 6.92 4.81q3.97 1.66 8.7 1.66zm63.37 22.27l0 -89.59l22.14 0l32.64 53.11l-17.28 -0.12l33.03 -52.98l21.38 0l0 89.59l-24.45 0l0 -23.94q0 -11.52 0.58 -20.73q0.58 -9.22 1.98 -18.3l2.81 7.55l-22.91 35.45l-8.45 0l-22.39 -35.45l2.81 -7.55q1.41 8.56 1.98 17.59q0.58 9.02 0.58 21.44l0 23.94l-24.45 0zm113.15 0l0 -89.59l39.67 0q8.84 0 15.81 3.91q6.98 3.89 11.02 10.69q4.03 6.78 4.03 15.61q0 9.09 -4.03 16.2q-4.03 7.09 -11.02 11.19q-6.97 4.09 -15.81 4.09l-14.33 0l0 27.91l-25.34 0zm24.95 -49.8l10.38 0q2.69 0 4.73 -1.08q2.05 -1.09 3.27 -3.14q1.22 -2.05 1.22 -5q0 -2.94 -1.22 -4.86q-1.22 -1.92 -3.27 -2.88q-2.05 -0.97 -4.73 -0.97l-10.38 0l0 17.92zm40.97 49.8l35.7 -89.59l20.48 0l35.45 89.59l-25.22 0l-15.36 -41.59q-1.28 -3.47 -2.31 -6.41q-1.02 -2.94 -1.91 -5.75q-0.89 -2.83 -1.73 -5.77q-0.83 -2.95 -1.47 -6.41l4.09 -0.12q-0.77 3.7 -1.59 6.66q-0.83 2.94 -1.73 5.62q-0.89 2.69 -1.98 5.64q-1.08 2.94 -2.36 6.53l-15.36 41.59l-24.7 0zm17.41 -14.84l7.55 -17.92l41.47 0l7.05 17.92l-56.06 0zm83.33 14.84l0 -89.59l22.66 0l43.52 59.64l-5.25 -1.28q-0.64 -4.73 -1.09 -8.56q-0.44 -3.84 -0.77 -7.3q-0.31 -3.47 -0.52 -6.92q-0.19 -3.45 -0.19 -7.55q0 -4.09 0 -9.22l0 -18.81l24.45 0l0 89.59l-22.91 0l-46.84 -64l8.83 2.17q0.64 5.25 1.08 9.09q0.45 3.84 0.7 6.92q0.27 3.06 0.45 5.88q0.19 2.81 0.25 6.02q0.08 3.2 0.08 7.3l0 26.62l-24.45 0zm126.85 0l0 -44.67l0.89 6.27l-36.22 -51.19l28.42 0l27.64 39.67l-14.97 -0.38l24.95 -39.3l27.66 0l-34.69 52.61l1.92 -8.72l0 45.7l-25.61 0z" fill-rule="nonzero"/><path stroke="#4285f4" stroke-width="12.0" stroke-linejoin="round" stroke-linecap="butt" d="m100 386.2c61.63 0 92.44 -51.5 123.26 -103.01c15.41 -25.75 30.81 -51.5 50.07 -70.82c1.2 -1.21 2.42 -2.39 3.66 -3.54c0.62 -0.58 1.24 -1.15 1.86 -1.71l0.66 -0.59" fill-rule="evenodd"/><path fill="#4285f4" stroke="#4285f4" stroke-width="12.0" stroke-linecap="butt" d="m286.77 224.98l43.43 -38.37l-57.93 1.48z" fill-rule="evenodd"/></g></symbol></svg>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true"><symbol id="logo" viewBox="90 176 730 220" ><g fill="none" stroke="none" stroke-linecap="square" stroke-miterlimit="10"><path stroke="#ff0000" stroke-width="12.0" stroke-linejoin="round" stroke-linecap="butt" d="m100 386.26c112.21 0 168.32 -45.93 224.43 -91.86c28.05 -22.96 56.11 -45.93 91.17 -63.15c17.53 -8.61 36.82 -15.79 58.74 -20.81c0.68 -0.16 1.37 -0.31 2.06 -0.46l0.82 -0.18" fill-rule="evenodd"/><path fill="#ff0000" stroke="#ff0000" stroke-width="12.0" stroke-linecap="butt" d="m479.21 229.52l52.18 -25.2l-56.18 -14.24z" fill-rule="evenodd"/><path stroke="#cccccc" stroke-width="12.0" stroke-linejoin="round" stroke-linecap="butt" stroke-dasharray="48.0,36.0,12.0,36.0" d="m783.52 185.94c-4.4 0 19.09 34.35 -8.79 68.69c-13.94 17.17 -40.73 34.35 -77.42 47.23c-18.35 6.44 -39.17 11.81 -62.11 15.56c-5.73 0.94 -11.6 1.78 -17.59 2.51c-3 0.36 -6.02 0.7 -9.08 1.01c-0.76 0.08 -1.53 0.15 -2.3 0.23l-0.36 0.03" fill-rule="evenodd"/><path stroke="#cccccc" stroke-width="12.0" stroke-linecap="butt" d="m606.78 340.92l-39.44 1.84l-1.84 -39.44l39.44 -1.84l1.84 39.44z" fill-rule="nonzero"/><path style="fill:var(--logo-ink,#000)" d="m198.85 330.79q-10.5 0 -19.33 -3.45q-8.83 -3.45 -15.3 -9.66q-6.47 -6.22 -9.98 -14.73q-3.52 -8.52 -3.52 -18.75q0 -10.11 3.64 -18.62q3.66 -8.52 10.17 -14.78q6.53 -6.27 15.48 -9.72q8.97 -3.47 19.59 -3.47q6.41 0 12.48 1.61q6.08 1.59 11.45 4.67q5.38 3.06 9.61 7.67l-15.23 17.67q-2.19 -2.44 -4.88 -4.36q-2.69 -1.92 -6.08 -3q-3.39 -1.09 -7.48 -1.09q-4.73 0 -8.91 1.61q-4.16 1.59 -7.23 4.67q-3.06 3.06 -4.8 7.42q-1.72 4.34 -1.72 9.97q0 5.38 1.72 9.67q1.73 4.28 5 7.3q3.27 3 7.81 4.67q4.55 1.66 10.17 1.66q3.97 0 7.48 -1.14q3.53 -1.16 6.47 -3.08q2.94 -1.92 5.25 -4.22l12.03 19.06q-3.2 3.59 -8.64 6.41q-5.44 2.81 -12.03 4.42q-6.59 1.59 -13.25 1.59zm89.21 0q-10.36 0 -19.06 -3.45q-8.7 -3.45 -15.11 -9.72q-6.41 -6.28 -9.92 -14.8q-3.52 -8.52 -3.52 -18.62q0 -10.23 3.52 -18.69q3.52 -8.45 9.92 -14.72q6.41 -6.27 15.11 -9.72q8.7 -3.47 19.06 -3.47q10.38 0 19.02 3.47q8.64 3.45 15.09 9.72q6.47 6.27 9.92 14.72q3.47 8.45 3.47 18.56q0 10.23 -3.47 18.75q-3.45 8.52 -9.92 14.8q-6.45 6.27 -15.09 9.72q-8.64 3.45 -19.02 3.45zm0 -23.55q4.61 0 8.58 -1.66q3.97 -1.67 6.91 -4.81q2.95 -3.14 4.55 -7.36q1.61 -4.22 1.61 -9.22q0 -4.98 -1.61 -9.2q-1.59 -4.23 -4.55 -7.38q-2.94 -3.14 -6.91 -4.8q-3.97 -1.67 -8.58 -1.67q-4.73 0 -8.7 1.67q-3.97 1.66 -6.92 4.8q-2.94 3.14 -4.53 7.3q-1.59 4.16 -1.59 9.28q0 5 1.59 9.22q1.59 4.22 4.53 7.36q2.95 3.14 6.92 4.81q3.97 1.66 8.7 1.66zm63.37 22.27l0 -89.59l22.14 0l32.64 53.11l-17.28 -0.12l33.03 -52.98l21.38 0l0 89.59l-24.45 0l0 -23.94q0 -11.52 0.58 -20.73q0.58 -9.22 1.98 -18.3l2.81 7.55l-22.91 35.45l-8.45 0l-22.39 -35.45l2.81 -7.55q1.41 8.56 1.98 17.59q0.58 9.02 0.58 21.44l0 23.94l-24.45 0zm113.15 0l0 -89.59l39.67 0q8.84 0 15.81 3.91q6.98 3.89 11.02 10.69q4.03 6.78 4.03 15.61q0 9.09 -4.03 16.2q-4.03 7.09 -11.02 11.19q-6.97 4.09 -15.81 4.09l-14.33 0l0 27.91l-25.34 0zm24.95 -49.8l10.38 0q2.69 0 4.73 -1.08q2.05 -1.09 3.27 -3.14q1.22 -2.05 1.22 -5q0 -2.94 -1.22 -4.86q-1.22 -1.92 -3.27 -2.88q-2.05 -0.97 -4.73 -0.97l-10.38 0l0 17.92zm40.97 49.8l35.7 -89.59l20.48 0l35.45 89.59l-25.22 0l-15.36 -41.59q-1.28 -3.47 -2.31 -6.41q-1.02 -2.94 -1.91 -5.75q-0.89 -2.83 -1.73 -5.77q-0.83 -2.95 -1.47 -6.41l4.09 -0.12q-0.77 3.7 -1.59 6.66q-0.83 2.94 -1.73 5.62q-0.89 2.69 -1.98 5.64q-1.08 2.94 -2.36 6.53l-15.36 41.59l-24.7 0zm17.41 -14.84l7.55 -17.92l41.47 0l7.05 17.92l-56.06 0zm83.33 14.84l0 -89.59l22.66 0l43.52 59.64l-5.25 -1.28q-0.64 -4.73 -1.09 -8.56q-0.44 -3.84 -0.77 -7.3q-0.31 -3.47 -0.52 -6.92q-0.19 -3.45 -0.19 -7.55q0 -4.09 0 -9.22l0 -18.81l24.45 0l0 89.59l-22.91 0l-46.84 -64l8.83 2.17q0.64 5.25 1.08 9.09q0.45 3.84 0.7 6.92q0.27 3.06 0.45 5.88q0.19 2.81 0.25 6.02q0.08 3.2 0.08 7.3l0 26.62l-24.45 0zm126.85 0l0 -44.67l0.89 6.27l-36.22 -51.19l28.42 0l27.64 39.67l-14.97 -0.38l24.95 -39.3l27.66 0l-34.69 52.61l1.92 -8.72l0 45.7l-25.61 0z" fill-rule="nonzero"/><path stroke="#4285f4" stroke-width="12.0" stroke-linejoin="round" stroke-linecap="butt" d="m100 386.2c61.63 0 92.44 -51.5 123.26 -103.01c15.41 -25.75 30.81 -51.5 50.07 -70.82c1.2 -1.21 2.42 -2.39 3.66 -3.54c0.62 -0.58 1.24 -1.15 1.86 -1.71l0.66 -0.59" fill-rule="evenodd"/><path fill="#4285f4" stroke="#4285f4" stroke-width="12.0" stroke-linecap="butt" d="m286.77 224.98l43.43 -38.37l-57.93 1.48z" fill-rule="evenodd"/></g></symbol></svg>
   <canvas id="cv" aria-label="Battle map"></canvas>
 
-  <header class="top">
-    <div class="box brand"><svg class="logo" role="img" aria-label="COMPANY"><use href="#logo"/></svg><div class="sub" id="sector">Sector —</div></div>
-    <div class="box clock"><div class="lbl">Time left</div><div class="time" id="clock">15:00</div></div>
-    <div class="box objs" id="objs"></div>
-    <div class="box ctrls">
-      <button id="btnPause">Resume</button>
-      <div class="seg" id="speed"><button data-s="1" class="on">1×</button><button data-s="2">2×</button><button data-s="4">4×</button></div>
-      <button id="btnSettings">Settings</button>
-      <button id="btnHelp" aria-label="Controls">?</button>
-      <button id="btnMenu">New game</button>
+  <div id="hud">
+    <!-- docked layout containers; the floating capsules are moved into them by applyLayout() -->
+    <header id="bar"><div class="barL" id="barL"><button class="bt tglL" id="btnSideL" aria-label="Show outliner" data-tip="Outliner"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="2.5"/><path d="M7.5 4v12"/></svg></button></div><div id="barC"></div><div class="barR" id="barR"></div></header>
+    <aside id="sideL" class="side off" aria-label="Outliner"></aside>
+    <aside id="sideR" class="side off" aria-label="Inspector"></aside>
+
+    <div id="leftcol">
+      <section class="gl scen" id="scenCard" data-tip="Collapse">
+        <div class="hd"><svg class="logo" role="img" aria-label="COMPANY"><use href="#logo"/></svg><span class="side-badge" id="sideBadge">Attacking</span>
+          <div class="ttl"><b><span id="scenName">Standard Battle</span><span class="side-badge" id="sideBadge2">Attacking</span></b><span class="meta tn"><span class="m2" id="sector2"></span></span></div></div>
+        <div class="goal" id="goalCard"></div>
+        <div class="meta tn"><span class="m1" id="sector"></span></div>
+      </section>
+      <button class="bt gl pill" id="scenPill" hidden aria-label="Expand scenario card"><svg class="logo" aria-hidden="true"><use href="#logo"/></svg><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg></button>
+      <div class="rail" id="rail">
+        <button class="bt ic gl" id="railInfo" aria-label="Scenario and goal"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.8"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".5" fill="currentColor"/></svg></button>
+        <button class="bt ic gl" data-open="sel" aria-label="Show selection" data-tip="Selection"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4.5A1.5 1.5 0 0 1 4.5 3H7M13 3h2.5A1.5 1.5 0 0 1 17 4.5V7M17 13v2.5a1.5 1.5 0 0 1-1.5 1.5H13M7 17H4.5A1.5 1.5 0 0 1 3 15.5V13"/></svg></button>
+        <button class="bt ic gl" data-open="forces" aria-label="Show forces" data-tip="Forces"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><rect x="11" y="3" width="6" height="6" rx=".8"/><path d="M6 11.5l3.4 5.5H2.6z"/><path d="M14 11l3 1.7v3.6L14 18l-3-1.7v-3.6z"/></svg></button>
+      </div>
+      <aside class="gl insp" id="inspector" aria-label="Inspector" hidden>
+        <div class="seg tabs wide" id="inspTabs"><button data-tab="sel">Selection</button><button data-tab="forces">Forces</button></div>
+        <section class="sec" id="secSel"><div id="panel"></div></section>
+        <section class="sec" id="secObjs"><button class="secHd" data-sec="objs"><span>Objectives</span><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button><div class="secBody"><div class="grp" id="objList"></div><div id="goalLine"></div></div></section>
+        <section class="sec" id="secForces"><button class="secHd" data-sec="forces"><span>Forces</span><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button><div class="secBody"><div class="grp" id="forces"></div></div></section>
+      </aside>
     </div>
-  </header>
 
-  <aside class="box panel" id="panel"></aside>
-  <div class="log" id="log"></div>
-  <div class="banner" id="banner" hidden></div>
+    <div class="gl" id="status"></div>
+    <div class="gl" id="ctrls">
+      <button class="bt ic" id="btnPause" aria-label="Pause" data-tip="Pause" data-key="Space"></button>
+      <div class="seg full" id="speed" role="group" aria-label="Speed"><button data-s="1" class="on" data-tip="Speed" data-key="1">1×</button><button data-s="2" data-tip="Speed" data-key="2">2×</button><button data-s="4" data-tip="Speed" data-key="3">4×</button></div>
+      <button class="bt cmp" id="btnSpeedC" aria-label="Speed, press 1 2 3 or , . to change" data-tip="Speed" data-key=", .">1×</button>
+      <span class="dv dvD"></span>
+      <button class="bt ic full" id="btnSettings" aria-label="Settings" data-tip="Settings"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8.56 1.83L11.44 1.83L11.66 3.82L13.20 4.46L14.76 3.20L16.80 5.24L15.54 6.80L16.18 8.34L18.17 8.56L18.17 11.44L16.18 11.66L15.54 13.20L16.80 14.76L14.76 16.80L13.20 15.54L11.66 16.18L11.44 18.17L8.56 18.17L8.34 16.18L6.80 15.54L5.24 16.80L3.20 14.76L4.46 13.20L3.82 11.66L1.83 11.44L1.83 8.56L3.82 8.34L4.46 6.80L3.20 5.24L5.24 3.20L6.80 4.46L8.34 3.82z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.6"/></svg></button>
+      <button class="bt ic full" id="btnHelp" aria-label="Controls" data-tip="Controls" data-key="?"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.8"/><path d="M7.8 7.7a2.3 2.3 0 1 1 3.3 2.1c-.7.4-1.1.9-1.1 1.6"/><circle cx="10" cy="14.2" r=".4" fill="currentColor"/></svg></button>
+      <button class="bt ic full" id="btnHide" aria-label="Hide interface" data-tip="Hide interface" data-key="U"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.4"/><path d="M3.5 16.5l13-13"/></svg></button>
+      <button class="bt ic full" id="btnMenu" aria-label="New game" data-tip="New game"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button>
+      <button class="bt ic cmp" id="btnMore" aria-label="More: settings, controls, hide interface, new game" data-tip="More"><svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="15.5" cy="10" r="1.6"/></svg></button>
+      <span class="dv dvD"></span>
+      <button class="bt tglR" id="btnSideR" aria-label="Show inspector" data-tip="Inspector"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" aria-hidden="true"><rect x="2.5" y="4" width="15" height="12" rx="2.5"/><path d="M12.5 4v12"/></svg></button>
+    </div>
 
-  <div class="box replaybar" id="replayBar" hidden>
-    <div class="rb-row"><span class="tl">Replay</span>
-      <button id="rpRestart" title="Back to the start (Home)">⏮</button><button id="rpBack" title="Back 15 s ([)">−15 s</button>
-      <button id="rpPlay" class="primary" title="Play or pause (Space)">Pause</button><button id="rpFwd" title="Forward 15 s (])">+15 s</button>
-      <div class="seg" id="rpSpeed" title="Speed (, and .)"><button data-sp="1">1×</button><button data-sp="2">2×</button><button data-sp="4">4×</button><button data-sp="8">8×</button><button data-sp="16">16×</button></div>
-      <span class="num" id="rpTime">00:00 / 00:00</span><span class="rb-key"><i style="background:var(--atk)"></i>Attacker <i style="background:var(--def)"></i>Defender strength · bands: who held A, B, C</span>
-      <button id="rpExit">Exit replay</button></div>
-    <canvas id="rpLine"></canvas>
+    <div class="gl hint" id="banner" hidden></div>
+    <div id="callouts"></div>
+    <ol class="log" id="log" aria-label="Event log"></ol>
+
+    <div id="dock">
+      <div class="gl selbar" id="selBar">
+        <div class="selgrp" id="selGrp">
+          <button class="bt" data-sel="all" aria-label="Select all (Q)" data-tip="Select all" data-key="Q">All <span class="s2 tn" id="selAllN"></span></button>
+          <button class="bt" data-sel="inf" data-tip="Infantry"></button><button class="bt" data-sel="tank" data-tip="Armor"></button><button class="bt" data-sel="art" data-tip="Artillery"></button><button class="bt" data-sel="eng" data-tip="Engineers"></button>
+          <button class="bt" data-sel="none" id="selClear" data-tip="Clear selection" data-key="Esc">Clear</button>
+        </div>
+        <div class="dv"></div>
+        <div class="ovgrp" id="ovGrp">
+          <button class="bt ic" id="btnSup" aria-label="Supply lines (S)" data-tip="Supply lines" data-key="S"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="15" r="2"/><circle cx="16" cy="5" r="2"/><path d="M5.6 13.6c2-2 1.4-5.6 4.4-6.6 1.6-.5 3 .1 4.4-.6" stroke-dasharray="2 2.4"/></svg></button>
+          <button class="bt ic" id="btnFront" aria-label="Line of control (L)" data-tip="Line of control" data-key="L"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 12c2.5-4 4.5 2 7.5-1.5S15 7 18 9"/></svg></button>
+        </div>
+      </div>
+      <button class="bt gl pill" id="selPill" hidden aria-label="Expand select by type">Select <span class="s2 tn" id="selPillN"></span><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button>
+      <div class="gl orders" id="modes" role="toolbar" aria-label="Orders">
+        <button class="tb" data-mode="move" aria-label="Move (M)"><span class="tk">M</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10h12M11.5 5.5L16 10l-4.5 4.5"/></svg></span><span class="tl">Move</span></button>
+        <button class="tb" data-mode="amove" aria-label="Attack-move (A)"><span class="tk">A</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 10h9M8 6l4 4-4 4M16.5 4.5v11"/></svg></span><span class="tl">Attack-move</span></button>
+        <button class="tb" data-mode="fire" aria-label="Fire mission (F)"><span class="tk">F</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4"/></svg></span><span class="tl">Fire</span></button>
+        <button class="tb" data-mode="bridge" aria-label="Pontoon bridge (P), needs engineers"><span class="tk">P</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M2 14h16M4.5 14v-4M15.5 14v-4M4.5 10c3.5-3 7.5-3 11 0"/></svg></span><span class="tl">Pontoon</span></button>
+        <button class="tb" data-mode="repair" aria-label="Repair road (R), needs engineers"><span class="tk">R</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.8 3.2a3.8 3.8 0 0 0-4.9 4.9L3 13l4 4 4.9-4.9a3.8 3.8 0 0 0 4.9-4.9l-2.3 2.3-2.4-.6-.6-2.4z"/></svg></span><span class="tl">Repair</span></button>
+        <button class="tb" data-mode="air" aria-label="Air strike (X)"><span class="tk">X</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.8c.9 0 1.4.9 1.4 2v3.7l6.3 3.7v1.8l-6.3-1.9v3.6l2.1 1.6V18L10 17.3 6.5 18v-1.7l2.1-1.6v-3.6l-6.3 1.9v-1.8l6.3-3.7V3.8c0-1.1.5-2 1.4-2z"/></svg><span class="badge tn" id="airLeft">0</span></span><span class="tl">Air Strike</span></button>
+        <button class="tb" id="btnHold" aria-label="Hold (H)"><span class="tk">H</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5l6 2.2v4.6c0 3.8-2.6 6.6-6 8.2-3.4-1.6-6-4.4-6-8.2V4.7z"/></svg></span><span class="tl">Hold</span></button>
+        <button class="bt lbtoggle" id="btnOrdersCompact" aria-label="Hide order labels" data-tip="Compact"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 4l4 4-4 4"/></svg></button>
+      </div>
+      <div class="gl deploybar" id="deployTools" role="toolbar" aria-label="Deployment" hidden>
+        <button class="tb dig" id="btnTrench" aria-label="Dig trench: drag on the map to dig"><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12l2.7-4 2.7 4 2.6-4 2.7 4 2.6-4 2.7 4"/></svg></span><span class="tl">Dig Trench</span></button>
+        <div class="budget"><div><span class="s2">Trench budget</span><span class="tn" id="budget"></span></div><div class="bar6 acc"><i id="budgetBar"></i></div><span class="s2 sub" id="budgetSub"></span></div>
+        <button class="tb" id="btnUndo" aria-label="Undo last trench or order"><span class="tk" id="undoKey">⌘Z</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7.5 5L3.5 9l4 4"/><path d="M3.5 9h8a5 5 0 0 1 0 10h-2"/></svg></span><span class="tl">Undo</span></button>
+        <button class="cta" id="btnBegin">Begin Battle<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 3l5 5-5 5"/></svg></button>
+      </div>
+    </div>
+
+    <section class="gl replaybar" id="replayBar" aria-label="Replay controls" hidden>
+      <div class="rb-row">
+        <button class="tr" id="rpRestart" aria-label="Restart (Home)" data-tip="Restart" data-key="Home"><svg width="18" height="18" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><rect x="3.5" y="4" width="2.2" height="12" rx="1"/><path d="M16 4.6v10.8c0 .6-.7 1-1.2.6l-7.6-5.4a.75.75 0 0 1 0-1.2l7.6-5.4c.5-.4 1.2 0 1.2.6z"/></svg></button>
+        <button class="tr" id="rpBack" aria-label="Back 15 seconds ([)" data-tip="Back 15 s" data-key="["><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 12a7.5 7.5 0 1 0 2.2-5.3"/><path d="M6.5 3v3.8h3.8"/></svg><span class="n15">15</span></button>
+        <button class="tr big" id="rpPlay" aria-label="Play or pause (Space)"></button>
+        <button class="tr" id="rpFwd" aria-label="Forward 15 seconds (])" data-tip="Forward 15 s" data-key="]"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19.5 12a7.5 7.5 0 1 1-2.2-5.3"/><path d="M17.5 3v3.8h-3.8"/></svg><span class="n15">15</span></button>
+        <div class="seg" id="rpSpeed" style="margin-left:10px" role="radiogroup" aria-label="Replay speed (, and .)"><button data-sp="1">1×</button><button data-sp="2">2×</button><button data-sp="4">4×</button><button data-sp="8">8×</button><button data-sp="16">16×</button></div>
+        <span class="tn" id="rpTime">00:00 <span>/ 00:00</span></span>
+        <span style="flex:1"></span>
+        <span class="rb-key"><span><i style="background:var(--attacker)"></i>Attacker</span><span><i style="background:var(--defender)"></i>Defender</span><span><i style="background:var(--contested);height:6px"></i>Contested</span></span>
+        <button class="bt fill" id="rpExit" style="height:40px">Exit Replay</button>
+      </div>
+      <canvas id="rpLine" aria-label="Timeline: each side's strength, who held A, B and C, and events. Click to jump."></canvas>
+    </section>
+
+    <section class="gl pop" id="settingsModal" role="dialog" aria-label="Settings" hidden>
+      <div class="hd"><h2>Settings</h2><span class="s2">Esc to close</span></div>
+      <div class="lb">Interface layout</div>
+      <div class="opts" role="radiogroup" aria-label="Interface layout">
+        <button class="opt" data-layout="floating" role="radio"><span class="th"><i style="left:5px;top:5px;width:40px;height:12px"></i><i style="left:62px;top:5px;width:56px;height:12px"></i><i style="right:5px;top:5px;width:30px;height:12px"></i><i style="right:5px;bottom:5px;width:70px;height:14px;border-radius:7px"></i></span><span class="nm">Floating<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg></span><span class="s2">Default · panels hover over the map</span></button>
+        <button class="opt" data-layout="docked" role="radio"><span class="th"><i style="left:0;right:0;top:0;height:14px;border-radius:0"></i><i style="left:0;right:0;bottom:0;height:15px;border-radius:0"></i><i style="left:0;top:14px;bottom:15px;width:28px;border-radius:0;opacity:.9"></i></span><span class="nm">Docked<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg></span><span class="s2">Bars pinned to the screen edges</span></button>
+      </div>
+      <div class="grp" style="margin-bottom:14px"><div class="rw"><span>Appearance</span><div class="seg" id="setAppear"><button data-ap="light">Light</button><button data-ap="dark">Dark</button><button data-ap="auto">Auto</button></div></div></div>
+      <div class="lb">Game</div>
+      <div class="grp">
+        <div class="rw"><span>Order arrows <span class="s2 k">O</span></span><button class="tgl" data-set="arrows" role="switch" aria-label="Order arrows"><span></span></button></div>
+        <div class="rw"><span>Fog of war <span class="s2 k">V</span></span><button class="tgl" data-set="fog" role="switch" aria-label="Fog of war"><span></span></button></div>
+        <div class="rw"><span>Map view <span class="s2 k">T</span></span><div class="seg" id="setView" style="width:190px"><button data-view="satellite">Satellite</button><button data-view="paper">Strategic</button></div></div>
+        <div class="rw"><span>Line of control</span><div class="seg" id="setFrontStyle" style="width:190px"><button data-fs="one">Single line</button><button data-fs="two">Two lines</button></div></div>
+      </div>
+    </section>
+
+    <section class="gl pop" id="helpModal" role="dialog" aria-label="Controls" hidden>
+      <div class="hd"><h2>Controls</h2><span class="s2">Press <kbd>?</kbd> any time</span></div>
+      <div class="cols">
+        <div class="col">
+          <div><div class="lb">Mouse</div><div class="grp">
+            <div class="rw"><span>Select</span><span class="s2">Click · drag a box</span></div>
+            <div class="rw"><span>All of a type</span><span class="s2">Double-click a unit</span></div>
+            <div class="rw"><span>Add to selection</span><span class="s2">Shift-click</span></div>
+            <div class="rw"><span>Order</span><span class="s2">Click or right-click the map</span></div>
+            <div class="rw"><span>Straight line</span><span class="s2" id="ctlStraight">Ctrl-click</span></div>
+            <div class="rw"><span>Queue</span><span class="s2">Shift-click</span></div>
+            <div class="rw"><span>Pan · zoom</span><span class="s2">Right-drag · scroll</span></div></div></div>
+          <div><div class="lb">Touch</div><div class="grp">
+            <div class="rw"><span>Select</span><span class="s2">Tap units to add or remove</span></div>
+            <div class="rw"><span>Order</span><span class="s2">Pick a tool, tap the map</span></div>
+            <div class="rw"><span>Pan · zoom</span><span class="s2">Drag · pinch</span></div></div></div>
+        </div>
+        <div><div class="lb">Keys</div><div class="grp">
+          <div class="rw"><span>Pause</span><span class="keys"><kbd>Space</kbd></span></div>
+          <div class="rw"><span>Speed</span><span class="keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>,</kbd><kbd>.</kbd></span></div>
+          <div class="rw"><span>Move · Attack-move</span><span class="keys"><kbd>M</kbd><kbd>A</kbd></span></div>
+          <div class="rw"><span>Fire mission</span><span class="keys"><kbd>F</kbd></span></div>
+          <div class="rw"><span>Pontoon · Repair</span><span class="keys"><kbd>P</kbd><kbd>R</kbd></span></div>
+          <div class="rw"><span>Air strike · Hold</span><span class="keys"><kbd>X</kbd><kbd>H</kbd></span></div>
+          <div class="rw"><span>Supply · Line of control</span><span class="keys"><kbd>S</kbd><kbd>L</kbd></span></div>
+          <div class="rw"><span>Select all · Clear</span><span class="keys"><kbd>Q</kbd><kbd>Esc</kbd></span></div>
+          <div class="rw"><span>Undo</span><span class="keys"><kbd id="undoKbd">⌘Z</kbd></span></div>
+          <div class="rw"><span>Arrows · Fog · Map view</span><span class="keys"><kbd>O</kbd><kbd>V</kbd><kbd>T</kbd></span></div>
+          <div class="rw"><span>Pan · zoom</span><span class="keys"><kbd>←↑→↓</kbd><kbd>+</kbd><kbd>−</kbd></span></div>
+          <div class="rw"><span>Hide interface</span><span class="keys"><kbd>U</kbd></span></div></div></div>
+      </div>
+      <div class="lb" style="margin-top:14px">Legend</div><div class="grp legend" id="legend"></div>
+      <p class="note">Units on a trench that aren't moving are dug in (brown arc): they take well under half damage and are harder to spot. Click next to a trench to man it.</p>
+    </section>
+
+    <div class="menu" id="moreMenu" role="menu" hidden>
+      <button class="bt" data-more="settings"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8.56 1.83L11.44 1.83L11.66 3.82L13.20 4.46L14.76 3.20L16.80 5.24L15.54 6.80L16.18 8.34L18.17 8.56L18.17 11.44L16.18 11.66L15.54 13.20L16.80 14.76L14.76 16.80L13.20 15.54L11.66 16.18L11.44 18.17L8.56 18.17L8.34 16.18L6.80 15.54L5.24 16.80L3.20 14.76L4.46 13.20L3.82 11.66L1.83 11.44L1.83 8.56L3.82 8.34L4.46 6.80L3.20 5.24L5.24 3.20L6.80 4.46L8.34 3.82z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.6"/></svg>Settings</button>
+      <button class="bt" data-more="help"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.8"/><path d="M7.8 7.7a2.3 2.3 0 1 1 3.3 2.1c-.7.4-1.1.9-1.1 1.6"/><circle cx="10" cy="14.2" r=".4" fill="currentColor"/></svg>Controls<span class="k">?</span></button>
+      <button class="bt" data-more="hide"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.4"/><path d="M3.5 16.5l13-13"/></svg>Hide interface<span class="k">U</span></button>
+      <button class="bt" data-more="expand"><svg width="17" height="17" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>Expand top bar</button>
+      <button class="bt" data-more="new"><svg width="17" height="17" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg>New game</button>
+    </div>
+  </div>
+  <button class="bt gl" id="btnShowUI" hidden aria-label="Show interface (U)"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.4"/></svg>Show interface <span class="s2">U</span></button>
+
+  <div class="sheetwrap" id="startModal">
+    <div class="mapctl">
+      <div class="gl hintc">Drag to pan · Scroll to zoom</div>
+      <div class="gl zoom"><button class="bt" id="zoomIn" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button><button class="bt" id="zoomOut" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 10h12"/></svg></button><button class="bt" id="zoomFit" aria-label="Fit the map"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4.5A1.5 1.5 0 0 1 4.5 3H7M13 3h2.5A1.5 1.5 0 0 1 17 4.5V7M17 13v2.5a1.5 1.5 0 0 1-1.5 1.5H13M7 17H4.5A1.5 1.5 0 0 1 3 15.5V13"/></svg></button></div>
+      <div class="gl views"><div class="seg wide" id="ngView"><button data-view="satellite">Satellite</button><button data-view="paper">Strategic</button></div></div>
+    </div>
+    <section class="sheet ng gl" role="dialog" aria-label="New game">
+      <header><div><svg class="logo" role="img" aria-label="COMPANY"><use href="#logo"/></svg><h1>New Game</h1></div>
+        <button class="bt fill ngx" id="ngClose" aria-label="Close and go back to the game (Esc)" hidden><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button></header>
+      <div class="ng-body">
+        <div><div class="lb">Scenario</div><div class="grp" id="optScen" role="radiogroup" aria-label="Scenario"></div></div>
+        <div class="ng-right">
+          <div><div class="lb">Battlefield</div><div class="tiles" id="optMode" role="radiogroup" aria-label="Battlefield"></div></div>
+          <div><div class="lb">Climate</div><div class="seg wide" id="optClimate" role="radiogroup" aria-label="Climate"></div></div>
+          <div class="two">
+            <div><div class="lb">Side</div><div class="seg wide" id="optSide" role="radiogroup" aria-label="Side"><button data-v="A" class="on">Attack</button><button data-v="D">Defend</button></div></div>
+            <div><div class="lb">Difficulty</div><div class="seg wide" id="optDiff" role="radiogroup" aria-label="Difficulty"><button data-v="easy">Easy</button><button data-v="normal" class="on">Normal</button><button data-v="hard">Hard</button></div></div>
+          </div>
+          <div><div class="lb">Defense strength</div><div class="seg wide" id="optStr" role="radiogroup" aria-label="Defense strength"><button data-v="light">Light</button><button data-v="standard" class="on">Standard</button><button data-v="heavy">Heavy</button></div></div>
+          <div class="two">
+            <div><label class="lb" for="optSeed" style="display:block">Map seed</label><div class="row8"><input id="optSeed" class="fld tn" inputmode="numeric" aria-label="Map seed"><button class="bt fill" id="optReroll">New Map</button></div></div>
+            <div><div class="lb">Game code</div><div class="row8"><input id="optCode" class="fld tn" spellcheck="false" autocomplete="off" aria-label="Game code, paste a friend's code here"><button class="bt fill" id="optCopy" aria-label="Copy shareable link"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>Copy Link</button></div></div>
+          </div>
+          <p class="ng-msg" id="codeMsg">Share the code, or paste a friend's code to set up the same game.</p>
+        </div>
+      </div>
+      <footer><span class="s2" id="scenRule"></span>
+        <div><button class="bt lg" id="ngShowMap"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg><span id="ngShowMapT">Show Map</span></button><button class="bt lg" id="optResume" hidden>Back to Game</button><button class="cta" id="optStart">Start</button></div></footer>
+    </section>
   </div>
 
-  <nav class="toolbar">
-    <div class="box tg"><span class="tl">Select</span>
-      <button data-sel="all">All</button><button data-sel="inf">● Inf</button><button data-sel="tank">■ Armor</button><button data-sel="art">▲ Arty</button><button data-sel="eng"><svg class="hex" viewBox="0 0 10 10"><polygon points="5,0 9.3,2.5 9.3,7.5 5,10 .7,7.5 .7,2.5"/></svg> Eng</button><button data-sel="none">Clear</button>
-    </div>
-    <div class="box tg" id="modes"><span class="tl">Order</span>
-      <button data-mode="move" class="on">Move<kbd>M</kbd></button><button data-mode="amove">Attack<kbd>A</kbd></button><button data-mode="fire">Fire mission<kbd>F</kbd></button><button data-mode="bridge">Pontoon<kbd>P</kbd></button><button data-mode="repair">Repair road<kbd>R</kbd></button><button data-mode="air">Air strike <span id="airLeft"></span><kbd>X</kbd></button><button id="btnHold">Hold<kbd>H</kbd></button>
-    </div>
-    <div class="box tg"><button id="btnSup">Supply lines<kbd>S</kbd></button><button id="btnFront">Line of control<kbd>L</kbd></button></div>
-    <div class="box tg" id="deployTools" hidden>
-      <button id="btnTrench">Dig trench</button><span class="budget" id="budget"></span><button id="btnUndo">Undo<kbd>⌘Z</kbd></button><button id="btnBegin" class="primary">Begin battle</button>
-    </div>
-  </nav>
-
-  <div class="modal" id="startModal">
-    <div class="box card">
-      <svg class="logo" role="img" aria-label="COMPANY"><use href="#logo"/></svg>
-      <p class="lede">Three objectives on a front line. Take them from the south, or hold them.</p>
-      <div class="field"><div class="lbl">Scenario</div>
-        <div class="modes scens" id="optScen"></div><p class="mdesc" id="scenDesc"></p></div>
-      <div class="field"><div class="lbl">Battlefield</div>
-        <div class="modes" id="optMode"></div><p class="mdesc" id="modeDesc"></p></div>
-      <div class="field"><div class="lbl">Climate</div>
-        <div class="modes climates" id="optClimate"></div><p class="mdesc" id="climateDesc"></p></div>
-      <div class="field"><div class="lbl">Your side</div>
-        <div class="seg" id="optSide"><button data-v="A" class="on">Attack</button><button data-v="D">Defend</button></div></div>
-      <div class="field"><div class="lbl">Defense strength</div>
-        <div class="seg" id="optStr"><button data-v="light">Light</button><button data-v="standard" class="on">Standard</button><button data-v="heavy">Heavy</button></div></div>
-      <div class="field"><div class="lbl">Difficulty (the computer's side)</div>
-        <div class="seg" id="optDiff"><button data-v="easy">Easy</button><button data-v="normal" class="on">Normal</button><button data-v="hard">Hard</button></div></div>
-      <div class="field"><div class="lbl">Map seed</div>
-        <div class="row"><input id="optSeed" inputmode="numeric" aria-label="Map seed"><button id="optReroll">New map</button></div></div>
-      <div class="field"><div class="lbl">Game code</div>
-        <div class="row"><input id="optCode" spellcheck="false" autocomplete="off" aria-label="Game code"><button id="optCopy">Copy link</button></div>
-        <p class="mdesc" id="codeMsg" style="min-height:0">Share it, or paste a friend's code here to set up the same game.</p></div>
-      <ul class="rules">
-        <li id="scenRule"></li>
-        <li>Trenches, towns and forest give cover and hide units until the enemy is close.</li>
-        <li>Units far from a road linked to their supply depot fight and recover worse.</li>
-      </ul>
-      <button class="primary wide" id="optStart">Start</button>
-      <button class="wide" id="optResume" hidden>Back to game</button>
-    </div>
+  <div class="sheetwrap" id="endModal" hidden>
+    <section class="sheet end gl" role="dialog" aria-label="Battle result">
+      <header><svg class="logo" role="img" aria-label="COMPANY"><use href="#logo"/></svg><span class="resIc" id="endIcon"></span><h1 id="endTitle">Victory</h1><p id="endReason"></p><div class="endRings" id="endRings"></div></header>
+      <div id="endStats"></div>
+      <footer><button class="bt lg" id="endWatch"><svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.8v10.4c0 .5.6.9 1 .6l8-5.2c.4-.3.4-.9 0-1.2l-8-5.2c-.4-.3-1 0-1 .6z"/></svg>Watch Replay</button><div><button class="bt lg" id="endNew">New Map</button><button class="cta" id="endReplay">Play Again</button></div></footer>
+    </section>
   </div>
-
-  <div class="modal center" id="endModal" hidden>
-    <div class="box card">
-      <div class="result" id="endTitle">Victory</div>
-      <p class="lede" id="endReason"></p>
-      <div class="stats" id="endStats"></div>
-      <div class="field"><div class="row"><button class="primary" id="endWatch">Watch replay</button><button id="endReplay">Play again</button><button id="endNew">New map</button></div></div>
-    </div>
-  </div>
-
-  <div class="modal center" id="settingsModal" hidden>
-    <div class="box card">
-      <div class="mark" style="font-size:32px">SETTINGS</div>
-      <div class="setrow"><div><div class="nm">Order arrows<kbd>O</kbd></div><div class="hint">Arrows show where your units are going. Solid while paused, faint while the clock runs.</div></div><button data-set="arrows">On</button></div>
-      <div class="setrow"><div><div class="nm">Fog of war<kbd>V</kbd></div><div class="hint">Enemies are hidden until your units can see them. Off shows every unit, for both sides.</div></div><button data-set="fog">On</button></div>
-      <div class="setrow"><div><div class="nm">Map view<kbd>T</kbd></div><div class="hint">Satellite imagery, or the strategic map (the original printed-map look). Only the drawing changes; the battle is the same.</div></div>
-        <div class="seg" id="setView"><button data-view="satellite">Satellite</button><button data-view="paper">Strategic</button></div></div>
-      <div class="setrow"><div><div class="nm">Line of control style<kbd>L</kbd></div><div class="hint">One shared front line, or a line for each side with no-man's land between them. L shows or hides it.</div></div>
-        <div class="seg" id="setFrontStyle"><button data-fs="one">Single line</button><button data-fs="two">Two lines</button></div></div>
-      <button class="wide" id="settingsClose">Close</button>
-    </div>
-  </div>
-
-  <div class="modal center" id="helpModal" hidden>
-    <div class="box card">
-      <div class="mark" style="font-size:32px">CONTROLS</div>
-      <h3>Mouse</h3>
-      <dl class="keys">
-        <dt>Left drag</dt><dd>Box-select your units</dd>
-        <dt>Left click unit</dt><dd>Select it (Shift adds)</dd>
-        <dt>Left click map</dt><dd>Send the selected units there</dd>
-        <dt>Shift-click map</dt><dd>Queue another move after the current one</dd>
-        <dt>Right click</dt><dd>Also sends them</dd>
-        <dt>Ctrl / ⌘-click map</dt><dd>Go straight there, ignoring roads (still around rivers and rock). Add Shift to queue it</dd>
-        <dt>Right drag</dt><dd>Pan the map</dd>
-        <dt>Wheel</dt><dd>Zoom</dd>
-      </dl>
-      <h3>Touch</h3>
-      <dl class="keys">
-        <dt>Tap unit</dt><dd>Add or remove from selection</dd>
-        <dt>Tap map</dt><dd>Give the current order</dd>
-        <dt>Drag / pinch</dt><dd>Pan / zoom</dd>
-      </dl>
-      <h3>Keys</h3>
-      <dl class="keys">
-        <dt>Space</dt><dd>Pause or resume (orders work while paused)</dd>
-        <dt>M A F</dt><dd>Move, attack-move, fire mission</dd>
-        <dt>P</dt><dd>Pontoon bridge: select engineers, click the river</dd>
-        <dt>R</dt><dd>Repair road: select engineers, click cratered road</dd>
-        <dt>X</dt><dd>Air strike: click a target; a bridge to destroy it, or a road to crater it</dd>
-        <dt>H</dt><dd>Hold position</dd>
-        <dt>Trenches</dt><dd>Click next to a trench to man it. Units on a trench that aren't moving are dug in (brown arc): they take well under half damage and are harder to spot</dd>
-        <dt>1 2 3</dt><dd>Game speed</dd>
-        <dt>, / .</dt><dd>Slower / faster</dd>
-        <dt>L</dt><dd>Line of control</dd>
-        <dt>Q / Esc</dt><dd>Select all / clear selection</dd>
-        <dt>⌘A / Ctrl+A</dt><dd>Select all</dd>
-        <dt>⌘Z / Ctrl+Z</dt><dd>Undo the last order or trench</dd>
-        <dt>O / V</dt><dd>Order arrows / fog of war</dd>
-        <dt>T</dt><dd>Satellite or strategic map view</dd>
-        <dt>Arrows</dt><dd>Pan</dd>
-      </dl>
-      <button class="wide" id="helpClose">Close</button>
-    </div>
-  </div>
+  <div class="tip" id="tip" hidden></div>
 </div>
 
 <script>
@@ -316,6 +729,10 @@ const SUPPLY={major:160,minor:96,depot:240,link:96,zoc:56,claim:140};
 const FRONT_GAP=110;
 const TRENCH={fire:.42,shell:.45,air:.5,hide:.6,snap:40,gap:18};
 const STREAM_FIRE=.5,STREAM_EXPOSED=1.15;
+// Frozen rivers and lakes (climates with frozen:true). Infantry and engineers can cross on foot at ICE.move; the ice won't
+// take armour or guns. Out on the ice there is nothing to hide behind: a unit there fires at ICE.fire, takes ICE.exposed
+// times the damage from fire, shells and bombs, and is seen from ICE.seen times as far.
+const ICE={move:.45,fire:.7,exposed:1.25,seen:1.25};
 const AIR={count:2,delay:8,radius:38,dmg:85,bridgeHit:24,aiCooldown:60};
 const BUDGET={light:1000,standard:800,heavy:600};
 // Battlefields. Generation: `wet` (a river on the front line or not), river width (`rw` base and variation, `townBump`
@@ -383,7 +800,7 @@ function decodeGame(code){const p=String(code||'').trim().toUpperCase().split('-
   if(!scen||!mode||!climate||(side!=='A'&&side!=='D')||!strength||!diff||!(seed>0&&seed<1e9))return null;
   return{scen,mode,climate,side,strength,diff,seed};}
 const SC=()=>SCENARIOS[(G&&G.scen)||'standard'];
-const COL={A:'#17181c',D:'#7a2cbf',N:'#5f635d',sel:'#ffc400',road:'#e3120b',water:'#0b57f0',forest:'#0d7a2e',field:'#f8c9a0',ink:'#1b1d1a',trench:'#4a3523'};
+const COL={A:'#17181c',D:'#7a2cbf',N:'#5f635d',sel:'#ffc400',road:'#e3120b',water:'#0b57f0',ice:'#a9c5f2',forest:'#0d7a2e',field:'#f8c9a0',ink:'#1b1d1a',trench:'#4a3523'};
 const SIDE_NAME={A:'Attacker',D:'Defender'};
 
 /* ------------------------------------------------------------ utils */
@@ -735,10 +1152,10 @@ function paperRender(dm,cvs,TS){
   const strokeLine=p=>{g.beginPath();p.forEach((q,i)=>i?g.lineTo(q.x,q.y):g.moveTo(q.x,q.y));g.stroke();};
   for(const s of dm.contours){g.strokeStyle=s[4]===.7||s[4]===.9?'rgba(140,98,56,.6)':'rgba(150,108,64,.38)';g.lineWidth=s[4]===.7||s[4]===.9?1.1:.8;
     g.beginPath();g.moveTo(s[0],s[1]);g.lineTo(s[2],s[3]);g.stroke();}
-  // streams widen from source to mouth
-  g.strokeStyle=COL.water;
+  // streams widen from source to mouth; frozen water is pale blue
+  const wcol=M.frozen?COL.ice:COL.water;g.strokeStyle=wcol;
   for(const s of dm.streams)for(let k=0;k<s.length-1;k++){g.lineWidth=1.1+1.5*k/s.length;g.beginPath();g.moveTo(s[k].x,s[k].y);g.lineTo(s[k+1].x,s[k+1].y);g.stroke();}
-  g.fillStyle=COL.water;g.beginPath();
+  g.fillStyle=wcol;g.beginPath();
   const xa=dm.x0-10,xb=dm.x0+GWd*C+10;
   for(let x=xa;x<=xb;x+=5){const y=dm.ry(x)-dm.rw(x)/2;x===xa?g.moveTo(x,y):g.lineTo(x,y);}
   for(let x=xb;x>=xa;x-=5)g.lineTo(x,dm.ry(x)+dm.rw(x)/2);g.closePath();g.fill();
@@ -762,8 +1179,8 @@ const CLIMATES={
   temperate:{name:'Temperate',desc:'Green farmland, hedgerows and broadleaf woods.',rules:'No climate effects.',offroad:1,vision:1},
   arid:{name:'Arid',desc:'Dusty plots, irrigated fields, olive orchards, greenhouses and flat-roofed villages.',rules:'Sightlines 5% longer.',offroad:1,vision:1.05},
   desert:{name:'Desert',desc:'Dune seas and gravel plains, crop circles, palm groves and a green irrigated river valley.',rules:'Soft sand: off-road movement 10% slower. Sightlines 15% longer.',offroad:.9,vision:1.15},
-  snow:{name:'Winter',desc:'Deep snow on fields and roofs, dark snowy forest, cleared roads and an icy river.',rules:'Deep snow: off-road movement 20% slower, vision 10% shorter.',offroad:.8,vision:.9},
-  tundra:{name:'Tundra',desc:'Moss, lichen and bog, sparse taiga, gravel roads and bright metal roofs.',rules:'Boggy ground: off-road movement 15% slower.',offroad:.85,vision:1.05},
+  snow:{name:'Winter',desc:'Deep snow on fields and roofs, dark snowy forest, cleared roads and a frozen river.',rules:'Deep snow: off-road movement 20% slower, vision 10% shorter. Infantry and engineers can cross the frozen river and lakes on foot, slowly and in the open.',offroad:.8,vision:.9,frozen:true},
+  tundra:{name:'Tundra',desc:'Moss, lichen and bog, sparse taiga, gravel roads, bright metal roofs and frozen water.',rules:'Boggy ground: off-road movement 15% slower. Infantry and engineers can cross the frozen river and lakes on foot, slowly and in the open.',offroad:.85,vision:1.05,frozen:true},
 };
 // Per-climate palette and drawing choices. parcels: whether open ground is cut into farm parcels; forest: how forest
 // is drawn (canopy, snowpine, grove of tree dots, sparse taiga); riparian: the band along the river; stream: wet or dry.
@@ -796,18 +1213,18 @@ const SATK={
   snow:{parcels:true,forest:'snowpine',snow:true,
     crop:[[238,240,244],[230,233,238],[224,228,234],[234,236,240]],grass:[[232,235,240],[226,230,236],[220,225,232]],
     hedge:[64,66,64],track:[214,218,226],furrow:.035,conifer:[30,40,36],rock:[86,88,92],town:[214,218,224],garden:[226,230,236],
-    water:[[[42,54,64],[78,90,100]]],ice:[214,222,230],gravel:[222,226,232],riparian:{col:[66,68,70],w:18,style:'bare'},
+    water:[[[42,54,64],[78,90,100]]],ice:[214,222,230],iceDark:[150,166,182],gravel:[222,226,232],riparian:{col:[66,68,70],w:18,style:'bare'},
     roofs:{core:[[240,242,246],[232,234,240],[226,228,236]],apart:[[236,238,242],[226,228,234]],industrial:[[240,242,246],[230,232,238]],village:[[240,242,246],[232,236,242]]},
     pitched:{core:true,apart:false,industrial:false,village:true},asphalt:[74,76,82],road:[104,106,112],roadCase:[236,238,242],street:[118,120,126],dirt:false,
     stream:{style:'frozen',col:[200,212,224],fringe:[62,64,64]},grade:{sat:.7,mul:.98,add:[3,5,9]}},
   tundra:{parcels:false,forest:'taiga',
     crop:[[156,150,98],[166,156,104],[146,142,94]],grass:[[124,120,86],[136,128,92],[110,106,78],[150,140,106],[118,116,82]],bog:[78,82,58],lichen:[176,170,128],
     hedge:null,track:[160,152,128],furrow:0,tree:[30,46,34],ground:[126,120,88],rock:[132,130,122],town:[140,138,130],garden:[120,118,86],
-    water:[[[30,48,66],[58,78,92]]],gravel:[170,168,158],riparian:{col:[92,100,64],w:24,style:'scrub'},
+    water:[[[30,48,66],[58,78,92]]],ice:[178,188,194],iceDark:[118,134,148],gravel:[170,168,158],riparian:{col:[92,100,64],w:24,style:'scrub'},
     roofs:{core:[[128,64,56],[66,90,76],[74,92,118],[132,132,130],[56,56,58],[150,136,90]],apart:[[146,146,144],[118,118,120],[80,96,118]],
       industrial:[[176,178,178],[140,144,146]],village:[[128,64,56],[66,90,76],[74,92,118],[56,56,58],[150,136,90],[132,132,130]]},
     pitched:{core:true,apart:false,industrial:false,village:true},asphalt:[100,100,98],road:[156,148,128],roadCase:null,street:[146,140,124],dirt:true,
-    stream:{style:'wet',col:[34,50,62],fringe:[84,92,60]},grade:{sat:.8,mul:.93,add:[6,7,8]}},
+    stream:{style:'frozen',col:[172,184,192],fringe:[84,92,60]},grade:{sat:.8,mul:.93,add:[6,7,8]}},
 };
 const satClimate=()=>CLIMATES[M.climate]?M.climate:'temperate';
 // tileable smooth value noise, `cells` lattice cells across an n×n tile
@@ -944,7 +1361,8 @@ function satRender(dm,cvs,TS){
       if(K.snow&&sh<1){col[0]*=sh;col[1]*=sh;col[2]*=sh;const k=(1-sh)*1.4;col[0]+=(150-col[0])*k*.4;col[1]+=(164-col[1])*k*.4;col[2]+=(196-col[2])*k*.4;}
       else{col[0]*=sh;col[1]*=sh;col[2]*=sh;}
       // the river: its bank band (trees, reeds, an irrigated valley, bare winter trees or scrub), water deeper in the middle,
-      // gravel bars on wide stretches, ice along the banks in winter, darker open water in a lake (frozen in winter)
+      // gravel bars on wide stretches, darker open water in a lake; in a frozen climate ice over all of it, snow-white at
+      // the banks and greyer, clearer ice down the middle of the channel so the river still reads, with thin pressure cracks
       if(dm.wet){const dc=Math.abs(wy-ryc[x]),hw=rwc[x],dv=dc-hw,rb=K.riparian,bw2=SAT_M(rb.w);
         if(dv>0&&dv<bw2&&au<.5){const f=1-dv/bw2;
           if(rb.style==='irrigated'){const k=Math.min(1,f*2.2)*.9,c=t2>.5?rb.col:[rb.col[0]*1.25,rb.col[1]*1.12,rb.col[2]];mixc(col,k*(1-af*.5),[c[0]*(.9+.2*t1),c[1]*(.9+.2*t1),c[2]*(.9+.2*t1)]);}
@@ -952,7 +1370,8 @@ function satRender(dm,cvs,TS){
         if(dv<.8){const t=Math.min(1,dc/Math.max(hw,1)),k=t*t*.85,tk=.94+.12*t2,lake=clamp((hw-SAT_M(90))/SAT_M(120),0,1)*(1-t*t);
           const wc=[(deep[0]+(shal[0]-deep[0])*k)*tk,(deep[1]+(shal[1]-deep[1])*k)*tk,(deep[2]+(shal[2]-deep[2])*k)*tk];
           mixc(wc,lake*.7,[34,56,70]);
-          if(K.ice){if(t>.72-(t2-.5)*.2||lake>.25){mixc(wc,.88,[K.ice[0]*(.95+.08*t1),K.ice[1]*(.95+.08*t1),K.ice[2]*(.95+.08*t1)]);if(Math.abs(t2-.5)<.012)mixc(wc,.4,[120,134,148]);}}
+          if(K.ice){const ch=(1-t)*(1-t)*(1-lake)*.55,ic=K.ice,dk=K.iceDark||ic,fk=.95+.08*t1;
+            mixc(wc,.9,[(ic[0]+(dk[0]-ic[0])*ch)*fk,(ic[1]+(dk[1]-ic[1])*ch)*fk,(ic[2]+(dk[2]-ic[2])*ch)*fk]);if(Math.abs(t2-.5)<.012)mixc(wc,.4,[120,134,148]);}
           else if(hw>SAT_M(35)&&hw<SAT_M(90)&&t>.62&&t2>.62&&lw>.45){const gk=.92+.1*t1;wc[0]=K.gravel[0]*gk;wc[1]=K.gravel[1]*gk;wc[2]=K.gravel[2]*gk;}
           mixc(col,clamp(.5-dv*TS,0,1),wc);}}
       // colour grade toward real imagery
@@ -998,7 +1417,7 @@ function satRender(dm,cvs,TS){
   for(const b of dm.bridges){const w=SAT_M(b.kind===2?24:10),l=b.len+SAT_M(24);g.save();g.translate(b.x,b.y);g.rotate(b.ang);
     g.fillStyle='rgba(10,14,12,.45)';g.fillRect(-l/2+2,-w/2+2.5,l,w);g.fillStyle=K.snow?'rgb(214,218,224)':'rgb(162,160,154)';g.fillRect(-l/2,-w/2,l,w);
     g.strokeStyle='rgba(40,40,38,.6)';g.lineWidth=.8;g.strokeRect(-l/2,-w/2,l,w);g.restore();}
-  M.satWater=rgb([(deep[0]+shal[0])/2,(deep[1]+shal[1])/2,(deep[2]+shal[2])/2]);M.satRubble=K.snow?'#5a5f66':K.dirt?'#8a7254':'#4f4538';}
+  M.satWater=K.ice?rgb(K.ice):rgb([(deep[0]+shal[0])/2,(deep[1]+shal[1])/2,(deep[2]+shal[2])/2]);M.satRubble=K.snow?'#5a5f66':K.dirt?'#8a7254':'#4f4538';}
 const R2=(r,a,b)=>a+(b-a)*r(),bilw=(s,q,a,b,c,d,w)=>s[q]*a+s[q+1]*b+s[q+w]*c+s[q+w+1]*d;
 
 /* ------------------------------------------------------------ scenery ring */
@@ -1116,10 +1535,13 @@ function renderOuter(){const dm=genOuter();if(settings.style==='paper')paperRend
 /* ------------------------------------------------------------ pathing */
 // bridges (3) run at highway speed, pontoons (4) at road speed, so crossing water never slows a column down
 // off-road movement is scaled by the climate (M.offroad: sand, snow, bog)
-function mult(type,i){const rd=M.road[i],k=M.offroad||1;if(M.dmg&&M.dmg[i])return MOVE[type][M.cls[i]]*ROAD_DMG.move*k;if(rd)return ROADMOVE[type]*(rd===2||rd===3?HIGHWAY:1);return MOVE[type][M.cls[i]]*k;}
-function nearestPassable(type,x,y){const ci=cellOf(x,y);if(mult(type,ci)>0)return ci;const cx=ci%GW,cy=Math.floor(ci/GW);
+function mult(type,i){const rd=M.road[i],k=M.offroad||1;if(M.dmg&&M.dmg[i])return MOVE[type][M.cls[i]]*ROAD_DMG.move*k;if(rd)return ROADMOVE[type]*(rd===2||rd===3?HIGHWAY:1);
+  if(M.cls[i]===WATER)return M.frozen&&(type==='inf'||type==='eng')?ICE.move:0;return MOVE[type][M.cls[i]]*k;}
+// frozen water a unit can stand on (not a bridge or pontoon)
+const iceAt=i=>M.frozen&&M.cls[i]===WATER&&!M.road[i],onIce=u=>iceAt(cellOf(u.x,u.y));
+function nearestPassable(type,x,y,dry){const ok=j=>mult(type,j)>0&&!(dry&&iceAt(j)),ci=cellOf(x,y);if(ok(ci))return ci;const cx=ci%GW,cy=Math.floor(ci/GW);
   for(let r=1;r<45;r++){let best=-1,bd=1e9;for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){if(Math.max(Math.abs(dx),Math.abs(dy))!==r)continue;
-    const nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;const j=ny*GW+nx;if(mult(type,j)>0){const d=dx*dx+dy*dy;if(d<bd){bd=d;best=j;}}}if(best>=0)return best;}return ci;}
+    const nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;const j=ny*GW+nx;if(ok(j)){const d=dx*dx+dy*dy;if(d<bd){bd=d;best=j;}}}if(best>=0)return best;}return ci;}
 class Heap{constructor(){this.i=[];this.p=[];}
   push(i,p){const I=this.i,P=this.p;let k=I.length;I.push(i);P.push(p);while(k>0){const q=(k-1)>>1;if(P[q]<=p)break;I[k]=I[q];P[k]=P[q];k=q;}I[k]=i;P[k]=p;}
   pop(){const I=this.i,P=this.p,top=I[0];this.tp=P[0];const li=I.pop(),lp=P.pop();if(I.length){let k=0;const n=I.length;
@@ -1261,9 +1683,9 @@ function newGame(opts){
     pontoons:[],pid:0,dmg:new Uint8Array(N),dmgList:[],dmgSpots:[],dmgLines:[],air:{A:0,D:0},airT:{A:-99,D:-99},strikes:[],
     seen:{A:new Map(),D:new Map()},dai:null,shells:[],tracers:[],booms:[],craters:[],ghosts:new Map(),marks:[],log:[],stats:{lost:{A:0,D:0}},showSup:false,over:null};
   M.dmg=G.dmg;G.air={A:airFor('A'),D:airFor('D')};applyCrossings();G.trenches=sc.trenches===false?[]:autoTrenches(opts.strength);rebuildTrenchMask();spawn();scenarioSetup();G.plan=G.player==='D'?planAttack():null;computeVis();computeSupply('A');computeSupply('D');
-  $('startModal').hidden=true;$('endModal').hidden=true;
+  $('startModal').hidden=true;$('endModal').hidden=true;$('startModal').classList.remove('showmap');$('ngShowMapT').textContent='Show Map';closePops();ui.panel='auto';
   $('deployTools').hidden=G.phase!=='deploy';updateBudget();setMode('move');setTool(null);
-  $('sector').textContent=`${sc.name} · ${MAP_MODES[M.mode].name} · ${CLIMATES[G.climate].name} · ${encodeGame(opts)}`;
+  G.code=encodeGame(opts);G.budget0=G.budget;
   recInit();addLog(sc.goal[G.player],G.player);
   updateFront();if(settings.front)frontShape(true);
   fit();updateHUD(true);
@@ -1278,6 +1700,7 @@ function computeVis(){const prev=G.vis[G.player];
   for(const s of ['A','D']){const set=new Set(),mine=G.units.filter(u=>u.side===s).map(u=>({x:u.x,y:u.y,vr:TYPES[u.type].vision*MAP_MODES[M.mode].vision*CLIMATES[G.climate||'temperate'].vision*(SC().vision||1)*(1+HILL.vision*hillK(u.x,u.y))}));
     for(const e of G.units){if(e.side===s)continue;const ci=cellOf(e.x,e.y);let k=1;
       if(e.rev<=0){if(dugIn(e))k=TRENCH.hide;else if(M.cls[ci]===URBAN)k=.6;else if(M.cls[ci]===FOREST)k=.5;}
+      if(iceAt(ci))k=ICE.seen;
       for(const u of mine){const vr=u.vr*k,dx=u.x-e.x,dy=u.y-e.y;if(dx*dx+dy*dy<=vr*vr){set.add(e.id);break;}}}
     G.vis[s]=set;}
   const now=G.vis[G.player];
@@ -1315,7 +1738,7 @@ function enemyHeld(s){const r=Math.round(SUPPLY.zoc/C),own=new Uint8Array(N),foe
 const claimMark=new Int32Array(N);let claimStamp=0;
 // (with all set, cells on both halves are updated: used for the line of control)
 function updateClaim(s,home,cl=G.claim[s],all=false,ex=null){const R=SUPPLY.claim,dO=new Float32Array(N).fill(1e9),dE=new Float32Array(N).fill(1e9),touched=[],q=new Int32Array(N);
-  const pass=i=>M.cls[i]!==WATER||M.road[i]>0;
+  const pass=i=>M.cls[i]!==WATER||M.road[i]>0||M.frozen;
   const flood=(u,arr)=>{const id=++claimStamp,c0=cellOf(u.x,u.y);let h=0,t=0;q[t++]=c0;claimMark[c0]=id;
     while(h<t){const i=q[h++],c=cc(i),d=Math.hypot(c.x-u.x,c.y-u.y);if(d>R)continue;
       if(all||M.side(c.x,c.y)!==home){if(dO[i]===1e9&&dE[i]===1e9)touched.push(i);if(d<arr[i])arr[i]=d;}
@@ -1335,8 +1758,8 @@ function updateFront(){const p=G.player,home=p==='A'?1:-1;
       G.ctrl[i]=G.ctrlS[i]=mine?1:0;G.ctrlP[i]=G.ctrlPS[i]=mine&&deep?1:0;G.ctrlE[i]=G.ctrlES[i]=!mine&&deep?1:0;}}
   updateClaim(p,home,G.ctrl,true,[G.ctrlP,G.ctrlE]);
   // open water takes the owner of the bank on its own side, so a river between two banks you hold draws no line; in the
-  // two-line style it is held only when the same side holds both banks
-  const ct=G.ctrl,P=G.ctrlP,E=G.ctrlE;if(M.wet)for(let i=0;i<N;i++){if(M.cls[i]!==WATER||M.road[i])continue;
+  // two-line style it is held only when the same side holds both banks. Frozen water is taken and held like land.
+  const ct=G.ctrl,P=G.ctrlP,E=G.ctrlE;if(M.wet&&!M.frozen)for(let i=0;i<N;i++){if(M.cls[i]!==WATER||M.road[i])continue;
     const bankFrom=st=>{let j=i;while(j>=0&&j<N&&M.cls[j]===WATER&&!M.road[j])j+=st;return j>=0&&j<N?j:-1;},c=cc(i),own=c.y<M.ry(c.x)?-GW:GW,n=bankFrom(-GW),so=bankFrom(GW),j=own<0?n:so;
     if(j>=0)ct[i]=ct[j];P[i]=n>=0&&so>=0&&P[n]&&P[so]?1:0;E[i]=n>=0&&so>=0&&E[n]&&E[so]?1:0;}
   if(settings.front)frontShape();}
@@ -1375,7 +1798,7 @@ function computeSupply(s){const dep=G.depot[s],blk=enemyHeld(s);
   seed(nearestRoad(dep));flood();
   // the supplied area spreads out from supplied roads over land: never through enemy-held ground, never across water
   // (except on a bridge or pontoon, which are road cells), so a pocket ringed by the enemy goes dry
-  const land=i=>!blk[i]&&reach[i]&&(M.cls[i]!==WATER||M.road[i]>0);
+  const land=i=>!blk[i]&&reach[i]&&(M.cls[i]!==WATER||M.road[i]>0||M.frozen);
   const rMaj=Math.round(SUPPLY.major/C),rMin=Math.round(SUPPLY.minor/C),rDep=Math.round(SUPPLY.depot/C),dc=cellOf(dep.x,dep.y),dcx=dc%GW,dcy=Math.floor(dc/GW);
   const dDep=cover8(i=>i===dc&&!blk[i],rDep,land);
   const coverage=()=>{const a=cover8(i=>sup[i]&&isMajor(i),rMaj,land),b=cover8(i=>sup[i]&&M.road[i]===1,rMin,land),c=new Uint8Array(N);
@@ -1394,7 +1817,7 @@ function computeSupply(s){const dep=G.depot[s],blk=enemyHeld(s);
     if(u.sup&&!ok&&u.side===G.player&&G.phase==='play')addLog(`${TYPES[u.type].name} near ${placeName(u)} is cut off from supply`,'a');
     u.sup=ok;}}
 const dugIn=u=>!u.moving&&M.trench[cellOf(u.x,u.y)]===1;
-function cover(e){const i=cellOf(e.x,e.y);let m=1;if(dugIn(e))m=TRENCH.fire;else if(M.cls[i]===URBAN)m=.55;else if(M.cls[i]===FOREST)m=.7;else if(M.cls[i]===STREAM&&!M.road[i])m=STREAM_EXPOSED;
+function cover(e){const i=cellOf(e.x,e.y);let m=1;if(dugIn(e))m=TRENCH.fire;else if(M.cls[i]===URBAN)m=.55;else if(M.cls[i]===FOREST)m=.7;else if(M.cls[i]===STREAM&&!M.road[i])m=STREAM_EXPOSED;else if(iceAt(i))m=ICE.exposed;
   if(e.moving)m*=1.15;m*=1-HILL.cover*hillK(e.x,e.y);return m;}
 function hit(e,amt){e.hp-=amt;e.lastHit=G.time;}
 function moveUnit(u,dt){const p=u.path[0],dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,dy);let m=mult(u.type,cellOf(u.x,u.y));if(m<=0)m=.3;
@@ -1409,7 +1832,7 @@ function moveUnit(u,dt){const p=u.path[0],dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,
     if(mult(u.type,cellOf(nx,u.y)))ny=u.y;else if(mult(u.type,cellOf(u.x,ny)))nx=u.x;else{u.path=[];if(u.mode!=='hold')u.mode='idle';return;}}
   u.x=nx;u.y=ny;}
 const inStream=u=>{const i=cellOf(u.x,u.y);return M.cls[i]===STREAM&&!M.road[i];};
-function directFire(u,dt){const e=u.tgt;let amt=DPS[u.type][e.type]*cover(e)*(u.sup?1:.6)*(.5+.5*u.hp/u.max)*dt;if(u.moving)amt*=.6;if(inStream(u))amt*=STREAM_FIRE;
+function directFire(u,dt){const e=u.tgt;let amt=DPS[u.type][e.type]*cover(e)*(u.sup?1:.6)*(.5+.5*u.hp/u.max)*dt;if(u.moving)amt*=.6;if(inStream(u))amt*=STREAM_FIRE;else if(onIce(u))amt*=ICE.fire;
   hit(e,amt);u.rev=Math.max(u.rev,2.5);u.fx-=dt;
   if(u.fx<=0){u.fx=.3+Math.random()*.6;G.tracers.push({x1:u.x,y1:u.y,x2:e.x+(Math.random()-.5)*8,y2:e.y+(Math.random()-.5)*8,t:.2,side:u.side,heavy:u.type==='tank'});u.flash=.12;}}
 function artStep(u,dt){const T=TYPES.art;if(u.moving||inStream(u)){u.deployT=0;return;}
@@ -1456,7 +1879,7 @@ function step(dt){
   separate();
   for(const s of G.shells){s.t+=dt;if(s.t>=s.T){s.done=true;G.booms.push({x:s.x1,y:s.y1,t:0,r:30});G.craters.push({x:s.x1,y:s.y1});
     for(const e of G.units){if(e.side===s.side)continue;const d=Math.hypot(e.x-s.x1,e.y-s.y1);if(d>=44)continue;const ci=cellOf(e.x,e.y);
-      let k=1;if(dugIn(e))k=TRENCH.shell;else if(M.cls[ci]===URBAN)k=.6;else if(M.cls[ci]===FOREST)k=.75;if(e.type==='tank')k*=.45;hit(e,62*(1-d/44)*k);}
+      let k=1;if(dugIn(e))k=TRENCH.shell;else if(M.cls[ci]===URBAN)k=.6;else if(M.cls[ci]===FOREST)k=.75;else if(iceAt(ci))k=ICE.exposed;if(e.type==='tank')k*=.45;hit(e,62*(1-d/44)*k);}
     if(s.mission)shellOnInfrastructure(s);}}
   G.shells=G.shells.filter(s=>!s.done);
   for(const s of G.strikes)if(!s.done&&G.time>=s.t)resolveStrike(s);G.strikes=G.strikes.filter(s=>G.time<s.t+1.5);if(G.craters.length>400)G.craters.splice(0,G.craters.length-400);
@@ -1502,10 +1925,7 @@ function checkEnd(){const sc=SC(),ownA=G.objs.filter(o=>o.owner==='A').length,ow
   if(G.time>=G.limit){if(sc.neutral)return ownA>ownD?end('A',`The attacker held ${ownA} objectives to ${ownD} when time ran out.`):ownD>ownA?end('D',`The defender held ${ownD} objectives to ${ownA} when time ran out.`):end(null,`Both sides held ${ownA} objectives when time ran out.`);
     return ownA>=sc.need?end('A',`The attacker held ${ownA} of 3 objectives when time ran out.`):end('D',sc.need>=3?'The defenders held out until time ran out.':'The line held until time ran out.');}}
 function end(winner,reason){if(G.phase==='over')return;if(G.rec)recFrame();G.phase='over';G.over={winner,reason};
-  setTimeout(()=>{if(RP)return;const win=winner===G.player;$('endTitle').textContent=winner===null?'DRAW':win?'VICTORY':'DEFEAT';$('endTitle').style.color=win||winner===null?COL.ink:COL.road;
-    $('endReason').textContent=reason;const me=G.player,them=me==='A'?'D':'A';
-    $('endStats').innerHTML=`<span>Battle time</span><b>${fmt(G.time)}</b><span>Your losses</span><b>${G.stats.lost[me]}</b><span>Enemy losses</span><b>${G.stats.lost[them]}</b><span>Objectives held by attacker</span><b>${G.objs.filter(o=>o.owner==='A').length} / 3</b><span>Scenario</span><b>${SC().name}</b><span>Battlefield</span><b>${MAP_MODES[G.mode].name}</b><span>Climate</span><b>${CLIMATES[G.climate].name}</b><span>Difficulty</span><b>${DIFFICULTY[G.diff].name}</b>${G.plan?`<span>Enemy plan</span><b>${G.plan.name}</b>`:''}`;
-    $('endModal').hidden=false;},900);}
+  const g=G;setTimeout(()=>{if(RP||G!==g)return;showEnd(winner,reason);},900);}
 
 /* ------------------------------------------------------------ AI */
 // rough fighting weight of each unit type, for weighing up forces
@@ -1521,12 +1941,12 @@ function aiSee(side){const m=G.seen[side],alive=new Set(G.units.map(u=>u.id));
 function coverNear(p,r,type,side){let best=null,bs=-1e9;const rc=Math.ceil(r/C),c0=cellOf(p.x,p.y),cx=c0%GW,cy=Math.floor(c0/GW);
   for(let dy=-rc;dy<=rc;dy++)for(let dx=-rc;dx<=rc;dx++){const nx=cx+dx,ny=cy+dy;if(nx<1||ny<1||nx>=GW-1||ny>=GH-1)continue;
     const i=ny*GW+nx,d=Math.hypot(dx,dy)*C;if(d>r||!mult(type,i))continue;const q=cc(i);if(side&&M.wet&&M.side(q.x,q.y)!==side)continue;
-    const cv=M.trench[i]?3:M.cls[i]===URBAN?2:M.cls[i]===FOREST?1.6:0,sc=cv*40-d*.25;if(sc>bs){bs=sc;best=q;}}
+    const cv=M.trench[i]?3:M.cls[i]===URBAN?2:M.cls[i]===FOREST?1.6:iceAt(i)?-2:0,sc=cv*40-d*.25;if(sc>bs){bs=sc;best=q;}}
   return best||{x:p.x,y:p.y};}
 // Waiting units stand in a loose line across the direction of the enemy (fx, fy), 44 px apart, with any second rank
 // 64 px behind, so no four are ever within an air strike's reach of each other. Slot k of n, around point c.
 function slotPos(c,k,n,fx,fy,type){const per=Math.min(n,7),rank=Math.floor(k/per),col=k%per,cols=Math.min(per,n-rank*per),L=Math.hypot(fx,fy)||1,ux=fx/L,uy=fy/L;
-  const off=(col-(cols-1)/2)*44,back=rank*64,x=c.x-uy*off-ux*back,y=c.y+ux*off-uy*back;return cc(nearestPassable(type,clamp(x,8,W-8),clamp(y,8,H-8)));}
+  const off=(col-(cols-1)/2)*44,back=rank*64,x=c.x-uy*off-ux*back,y=c.y+ux*off-uy*back;return cc(nearestPassable(type,clamp(x,8,W-8),clamp(y,8,H-8),true));}
 // where the defender holds an objective from: a bridge from the north bank, anything else on the spot
 const defendSpot=ob=>ob.kind==='bridge'?{x:ob.x,y:M.ry(ob.x)-M.rw(ob.x)/2-30}:{x:ob.x,y:ob.y};
 // Artillery fire missions on remembered enemies: the aim point with the most enemy weight within 55 px, favouring fresh
@@ -1795,7 +2215,7 @@ function resolveStrike(s){s.done=true;const dx=Math.cos(s.ang),dy=Math.sin(s.ang
   const bombs=[-36,-12,12,36].map(o=>({x:s.x+dx*o+(Math.random()-.5)*12,y:s.y+dy*o+(Math.random()-.5)*12}));
   for(const b of bombs){G.booms.push({x:b.x,y:b.y,t:0,r:42});G.craters.push(b);
     for(const e of G.units){const d=dist(e,b);if(d>=AIR.radius)continue;const ci=cellOf(e.x,e.y);
-      let k=1;if(dugIn(e))k=TRENCH.air;else if(M.cls[ci]===URBAN)k=.65;else if(M.cls[ci]===FOREST)k=.75;if(e.type==='tank')k*=.6;hit(e,AIR.dmg*(1-d/AIR.radius)*k);}}
+      let k=1;if(dugIn(e))k=TRENCH.air;else if(M.cls[ci]===URBAN)k=.65;else if(M.cls[ci]===FOREST)k=.75;else if(iceAt(ci))k=ICE.exposed;if(e.type==='tank')k*=.6;hit(e,AIR.dmg*(1-d/AIR.radius)*k);}}
   // bombs crater ordinary roads and highways (bridges are handled below): still a supply route, but slow going
   let cratered=0;for(const b of bombs){const cx=Math.floor(b.x/C),cy=Math.floor(b.y/C),r=Math.ceil(ROAD_DMG.radius/C);
     for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;const i=ny*GW+nx,c=cc(i);
@@ -1954,8 +2374,18 @@ function pointerEnd(e){const p=ptrs.get(e.pointerId);ptrs.delete(e.pointerId);if
   if(!ptrs.size)drag=null;}
 cv.addEventListener('pointerup',pointerEnd);cv.addEventListener('pointercancel',pointerEnd);
 cv.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.offsetX,e.offsetY,Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015)));},{passive:false});
+// double-click a unit to select every unit of its type; any click on the map closes an open popover
+cv.addEventListener('dblclick',e=>{if(!G||G.phase==='over'||G.replay||!$('startModal').hidden)return;const u=pick(e.offsetX,e.offsetY);if(!u)return;if(!e.shiftKey)clearSel();mine().forEach(v=>{if(v.type===u.type)v.sel=true;});selectionChanged();updateHUD();});
+cv.addEventListener('pointerdown',()=>closePops());
+addEventListener('resize',()=>{scaleAnchor();if(G)updateHUD(true);});
 const keys=new Set();
-addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys.add(e.key);if(!G||!$('startModal').hidden)return;const k=e.key.toLowerCase();
+addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys.add(e.key);const k=e.key.toLowerCase();
+  if(!$('startModal').hidden){if(k==='escape'&&G&&G.phase!=='over')$('optResume').onclick();return;}
+  if(!G)return;
+  // Esc closes an open popover first; ? opens Controls; U hides or shows the whole interface
+  if(k==='escape'&&closePops())return;
+  if(e.key==='?'){e.preventDefault();togglePop('helpModal',$('btnHelp'));return;}
+  if(k==='u'&&!e.metaKey&&!e.ctrlKey){toggleUI();return;}
   if(RP){if(e.code==='Space'){e.preventDefault();rpToggle();}else if(e.key==='.'||e.key==='>')rpSpeedStep(1);else if(e.key===','||e.key==='<')rpSpeedStep(-1);
     else if(e.key==='[')rpSeek(RP.t-15);else if(e.key===']')rpSeek(RP.t+15);else if(e.key==='Home')rpSeek(0);else if(e.key==='Escape')exitReplay();return;}
   if(e.metaKey||e.ctrlKey){if(k==='a'){e.preventDefault();mine().forEach(u=>u.sel=true);selectionChanged();}
@@ -1964,7 +2394,7 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys.add(e.k
   else if(k==='m')setMode('move');else if(k==='a')setMode('amove');else if(k==='f')setMode('fire');else if(k==='p')setMode('bridge');else if(k==='x')setMode('air');else if(k==='r')setMode('repair');else if(k==='h')hold();
   else if(k==='s')toggleSup();else if(k==='q'){mine().forEach(u=>u.sel=true);selectionChanged();}
   else if(k==='o')toggleSetting('arrows');else if(k==='v')toggleSetting('fog');else if(k==='t')setView(settings.style==='paper'?'satellite':'paper');
-  else if(k==='escape'){clearSel();setMode('move');setTool(null);$('helpModal').hidden=true;$('settingsModal').hidden=true;}
+  else if(k==='escape'){clearSel();setMode('move');setTool(null);updateHUD();}
   else if(k==='1'||k==='2'||k==='3')setSpeed([1,2,4][+k-1]);
   // . and , step the speed up and down
   else if(e.key==='.'||e.key==='>'||e.key===','||e.key==='<'){const sp=[1,2,4],i=Math.max(0,sp.indexOf(G.speed)),up=e.key==='.'||e.key==='>';setSpeed(sp[clamp(i+(up?1:-1),0,2)]);}
@@ -2038,7 +2468,7 @@ function draw(){
     const downs=G.bridges.filter(b=>b.down);
     if(downs.length){ctx.save();ctx.beginPath();for(let x=-10;x<=W+10;x+=5){const y=M.ry(x)-M.rw(x)/2;x===-10?ctx.moveTo(x,y):ctx.lineTo(x,y);}
       for(let x=W+10;x>=-10;x-=5)ctx.lineTo(x,M.ry(x)+M.rw(x)/2);ctx.closePath();ctx.clip();
-      for(const b of downs){const hw=b.kind===2?11:8;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.ang);ctx.fillStyle=settings.style==='paper'?COL.water:(M.satWater||COL.water);ctx.fillRect(-b.len/2-14,-hw,b.len+28,hw*2);
+      for(const b of downs){const hw=b.kind===2?11:8;ctx.save();ctx.translate(b.x,b.y);ctx.rotate(b.ang);ctx.fillStyle=settings.style==='paper'?(M.frozen?COL.ice:COL.water):(M.satWater||COL.water);ctx.fillRect(-b.len/2-14,-hw,b.len+28,hw*2);
         ctx.fillStyle=COL.ink;ctx.rotate(.35);ctx.fillRect(-b.len*.22,-1.5,b.len*.16,3);ctx.rotate(-.7);ctx.fillRect(b.len*.08,-1.5,b.len*.14,3);ctx.restore();}
       ctx.restore();}
     if(settings.front&&(G.frontSeg.length||G.frontSegP.length||G.frontSegE.length)){ctx.drawImage(frontCv,0,0,W,H);const o=1.3/z,foe=COL[G.player==='A'?'D':'A'],pass=(sg,col,w,off)=>{ctx.strokeStyle=col;ctx.lineWidth=w/z;ctx.beginPath();
@@ -2060,7 +2490,7 @@ function draw(){
   for(const d of M.D){if(!d.name)continue;const [x,y]=ws(d.cx,d.cy);if(d.village)label(d.name,x,y-(d.bb.h/2+10)*z,`italic 500 ${clamp(10*z+3,9,14)}px ${css('--body')}`,'#3b3f38');
     else label(d.name.toUpperCase(),x,y-(d.bb.h*.5+14)*z,`600 ${clamp(14*z+4,11,22)}px ${css('--body')}`,COL.ink,'3px');}
   if(M.waterLabel){const rx=M.waterAt,lake=M.mode==='lake',[x,y]=ws(rx,lake?M.ry(rx):M.ry(rx)+M.rw(rx)/2+12);ctx.save();ctx.translate(x,y);ctx.rotate(Math.atan2(M.ry(rx+40)-M.ry(rx-40),80));
-    label(M.waterLabel,0,0,`italic 500 ${clamp((lake?16:11)*z+3,10,lake?22:15)}px ${css('--body')}`,lake?'#fff':COL.water,lake?'3px':'1px');ctx.restore();}
+    label(M.waterLabel,0,0,`italic 500 ${clamp((lake?16:11)*z+3,10,lake?22:15)}px ${css('--body')}`,lake?(M.frozen?'#4f6070':'#fff'):COL.water,lake?'3px':'1px');ctx.restore();}
   if(!live){drawScale();return;}
   // deploy zone
   if(G.phase==='deploy'){ctx.strokeStyle=COL.D;ctx.lineWidth=1.5;ctx.setLineDash([8,6]);ctx.beginPath();for(let x=0;x<=W;x+=20){const [sx,sy]=ws(x,M.ry(x)+ZONE);x?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);}ctx.stroke();ctx.setLineDash([]);
@@ -2094,9 +2524,17 @@ function draw(){
     ctx.fillStyle=o.owner==='A'?'rgba(23,24,28,.06)':o.owner==='N'?'rgba(95,99,93,.06)':'rgba(122,44,191,.07)';ctx.beginPath();ctx.arc(x,y,rr,0,Math.PI*2);ctx.fill();
     ctx.strokeStyle=col;ctx.lineWidth=1.6;ctx.setLineDash([7,5]);ctx.stroke();ctx.setLineDash([]);
     if(Math.abs(o.p)<1){ctx.strokeStyle=COL.D;ctx.lineWidth=4;ctx.beginPath();ctx.arc(x,y,rr+4,-Math.PI/2,-Math.PI/2+Math.PI*2*(o.p+1)/2);ctx.stroke();}
-    const s=clamp(9*Math.sqrt(z)+3,8,14);ctx.fillStyle='#fff';ctx.strokeStyle=o.contested?COL.road:col;ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(x,y-s);ctx.lineTo(x+s,y);ctx.lineTo(x,y+s);ctx.lineTo(x-s,y);ctx.closePath();ctx.fill();ctx.stroke();
-    ctx.fillStyle=col;ctx.font=`800 ${s*1.2}px ${css('--display')}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(o.key,x,y+1);
-    label(o.name,x,y+rr+12,`600 ${clamp(9*z+4,10,13)}px ${css('--body')}`,col);}
+    // the objective's ring, as in the HUD: the owner's colour filled as far as its hold, orange while it's being taken,
+    // dotted grey while neutral. No background: a light track, a soft shadow and a white halo on the letter keep it
+    // readable on any ground
+    const R=clamp(8*Math.sqrt(z)+5,10,15),lw=R*.24,fr=o.contested?takeFrac(o):o.owner==='A'?(1-o.p)/2:(1+o.p)/2;ctx.save();
+    ctx.shadowColor='rgba(0,0,0,.45)';ctx.shadowBlur=3;ctx.lineWidth=lw;
+    if(o.owner==='N'&&!o.contested){ctx.strokeStyle='#8e8e93';ctx.setLineDash([lw*.8,lw*1.2]);ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}
+    else{ctx.strokeStyle='rgba(255,255,255,.6)';ctx.beginPath();ctx.arc(x,y,R,0,Math.PI*2);ctx.stroke();ctx.shadowColor='transparent';
+      ctx.strokeStyle=o.contested?'#ff9500':col;ctx.lineCap=fr<1?'round':'butt';ctx.beginPath();ctx.arc(x,y,R,-Math.PI/2,-Math.PI/2+Math.PI*2*clamp(fr,.04,1));ctx.stroke();}
+    ctx.shadowColor='transparent';ctx.font=`700 ${Math.round(R*.95)}px ${css('--font')}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.lineJoin='round';
+    ctx.lineWidth=3.5;ctx.strokeStyle='rgba(255,255,255,.92)';ctx.strokeText(o.key,x,y+R*.06);ctx.fillStyle='#1d1d1f';ctx.fillText(o.key,x,y+R*.06);ctx.restore();
+    label(o.name,x,y+rr+12,`600 ${clamp(9*z+4,10,13)}px ${css('--font')}`,col);}
   // depots
   for(const s of ['A','D']){const d=G.depot[s],[x,y]=ws(d.x,d.y);ctx.fillStyle='#fff';ctx.strokeStyle=COL[s];ctx.lineWidth=2;ctx.fillRect(x-18,y-8,36,16);ctx.strokeRect(x-18,y-8,36,16);
     ctx.fillStyle=COL[s];ctx.font=`500 9px ${css('--mono')}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('DEPOT',x,y+.5);}
@@ -2139,10 +2577,11 @@ function draw(){
   if(drag&&drag.kind==='box'&&(Math.abs(drag.x1-drag.x0)>4||Math.abs(drag.y1-drag.y0)>4)){ctx.strokeStyle=COL.ink;ctx.fillStyle='rgba(255,196,0,.12)';ctx.lineWidth=1;
     const x=Math.min(drag.x0,drag.x1),y=Math.min(drag.y0,drag.y1),w=Math.abs(drag.x1-drag.x0),h=Math.abs(drag.y1-drag.y0);ctx.fillRect(x,y,w,h);ctx.strokeRect(x+.5,y+.5,w,h);}
   drawScale();}
-function drawScale(){const target=110/cam.z*M_PER_PX,nice=[100,200,250,500,1000,2000].reduce((b,v)=>Math.abs(v-target)<Math.abs(b-target)?v:b),px=nice/M_PER_PX*cam.z;
-  const x1=vw-16,x0=x1-px,y=vh-(RP?150:vw<760?72:76);ctx.fillStyle='rgba(255,255,255,.85)';ctx.fillRect(x0-8,y-16,px+16,24);
-  ctx.strokeStyle=COL.ink;ctx.lineWidth=1.5;ctx.beginPath();ctx.moveTo(x0,y-4);ctx.lineTo(x0,y);ctx.lineTo(x1,y);ctx.lineTo(x1,y-4);ctx.moveTo(x0+px/2,y);ctx.lineTo(x0+px/2,y-3);ctx.stroke();
-  ctx.fillStyle=COL.ink;ctx.font=`500 10px ${css('--mono')}`;ctx.textAlign='center';ctx.textBaseline='alphabetic';ctx.fillText(nice>=1000?nice/1000+' km':nice+' m',x0+px/2,y-6);}
+// the scale bar: white on the map, just above the command dock (scaleAnchor)
+function drawScale(){if(!scaleAt)scaleAnchor();const target=110/cam.z*M_PER_PX,nice=[100,200,250,500,1000,2000].reduce((b,v)=>Math.abs(v-target)<Math.abs(b-target)?v:b),px=nice/M_PER_PX*cam.z;
+  const x1=scaleAt.x,x0=x1-px,y=scaleAt.y;ctx.save();ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=3;ctx.shadowOffsetY=1;ctx.fillStyle='#fff';
+  ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y-4,px,4,2);else ctx.rect(x0,y-4,px,4);ctx.fill();
+  ctx.font=`600 11px ${css('--font')}`;ctx.textAlign='right';ctx.textBaseline='alphabetic';ctx.fillText(nice>=1000?nice/1000+' km':nice+' m',x1,y-9);ctx.restore();}
 const cssCache={};function css(v){return cssCache[v]||(cssCache[v]=getComputedStyle(document.documentElement).getPropertyValue(v).trim());}
 
 /* ------------------------------------------------------------ replay */
@@ -2156,10 +2595,11 @@ function startReplay(){const real=G;if(!real||!real.rec||real.rec.frames.length<
     units:[],vis:{A:new Set(),D:new Set()},objs:real.objs.map(o=>({...o})),bridges:real.bridges.map(b=>({...b,down:false})),pontoons:[],
     dmg:new Uint8Array(N),dmgList:[],dmgSpots:[],dmgLines:[],craters:[],booms:[],shells:[],tracers:[],strikes:[],marks:[],ghosts:new Map(),
     frontSeg:[],frontSegP:[],frontSegE:[],ctrl:null,log:[],logDirty:true,stats:{lost:{A:0,D:0}},air:{...real.air},holdA:0,reinfDone:real.reinfDone,
-    acc:{},time:0,speed:1,over:real.over,undo:[],replay:true};
+    acc:{},time:0,speed:1,over:real.over,undo:[],replay:true,code:real.code};
   RP={real,R,RV,t:0,end:R.frames[R.frames.length-1].t,playing:true,speed:4,uc:new Map(),dmgIdx:-2,logN:-1,drag:false};G=RV;
-  document.body.classList.add('replaying');$('replayBar').hidden=false;$('endModal').hidden=true;
-  rpSpeedUI();buildTimeline();fit();replayView(0);updateHUD(true);}
+  closePops();document.body.classList.add('replaying');$('replayBar').hidden=false;$('endModal').hidden=true;
+  // the HUD is hidden behind the end sheet; show it before the timeline measures its width
+  document.body.classList.remove('endopen');rpSpeedUI();buildTimeline();fit();replayView(0);updateHUD(true);}
 function exitReplay(){if(!RP)return;G=RP.real;RP=null;document.body.classList.remove('replaying');$('replayBar').hidden=true;G.logDirty=true;updateHUD(true);$('endModal').hidden=false;}
 const frameIndex=f=>f._ix||(f._ix=new Map(Array.from(f.id,(id,k)=>[id,k])));
 function replayView(t){const {R,RV}=RP,F=R.frames;let lo=0,hi=F.length-1;while(lo<hi){const m=(lo+hi+1)>>1;if(F[m].t<=t)lo=m;else hi=m-1;}
@@ -2188,26 +2628,28 @@ function replayView(t){const {R,RV}=RP,F=R.frames;let lo=0,hi=F.length-1;while(l
   for(const sd of ['A','D'])RV.vis[sd]=new Set(us.filter(u=>u.side!==sd).map(u=>u.id));}
 // The timeline: each side's fighting strength over the battle, who held each objective (three thin bands), and markers
 // for captures, air strikes, bridges falling, pontoons finished and reinforcements. The playhead is drawn on top each frame.
-function buildTimeline(){const cvs=$('rpLine'),w=Math.max(200,cvs.clientWidth||0),h=56,k=Math.min(2,window.devicePixelRatio||1);
+function buildTimeline(){const cvs=$('rpLine'),w=Math.max(200,cvs.clientWidth||0),h=92,k=Math.min(2,window.devicePixelRatio||1);
   cvs.width=w*k;cvs.height=h*k;const img=document.createElement('canvas');img.width=w*k;img.height=h*k;const c=img.getContext('2d');c.scale(k,k);
-  const {R}=RP,F=R.frames,T=RP.end||1,X=t=>t/T*w,top=8,gh=28;
+  const cs=getComputedStyle(document.documentElement),v=n=>cs.getPropertyValue(n).trim();
+  const {R}=RP,F=R.frames,T=RP.end||1,L=22,X=t=>L+t/T*(w-L),gy=14,gh=44,by=64;
+  const col={A:v('--atk-ring'),D:v('--defender-ring'),N:v('--neutral')};
   const str=F.map(f=>{const sum={A:0,D:0};for(let i=0;i<f.id.length;i++){const m=R.meta.get(f.id[i]);sum[m.side]+=W8[m.type]*f.hp[i]/255;}return sum;});
   const mx=Math.max(1,...str.map(q=>Math.max(q.A,q.D)));
-  c.fillStyle='#f3f3ef';c.fillRect(0,top,w,gh);
-  for(const sd of ['D','A']){c.strokeStyle=COL[sd];c.lineWidth=1.6;c.beginPath();F.forEach((f,i)=>{const x=X(f.t),y=top+gh-str[i][sd]/mx*(gh-2);i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();}
-  // objective bands A, B, C
-  for(let o=0;o<3;o++)F.forEach((f,i)=>{const nx=F[i+1]?X(F[i+1].t):w;c.fillStyle=COL[f.obj[o][0]];c.fillRect(X(f.t),top+gh+3+o*5,Math.max(1,nx-X(f.t)+.5),4);});
-  c.fillStyle='#1b1d1a';c.font=`500 8px ${css('--mono')}`;c.textBaseline='middle';
-  for(const e of R.events){const x=X(e.t);c.beginPath();
-    if(e.k==='cap'){c.fillStyle=COL[e.side];c.moveTo(x,0);c.lineTo(x+4,top-1);c.lineTo(x-4,top-1);c.closePath();c.fill();}
-    else if(e.k==='air'){c.strokeStyle=COL.road;c.lineWidth=1.5;c.moveTo(x,1);c.lineTo(x,top-1);c.stroke();}
-    else if(e.k==='bridge'){c.fillStyle=COL.water;c.fillRect(x-2.5,1,5,5);}
-    else if(e.k==='pont'){c.strokeStyle=COL.water;c.lineWidth=1.2;c.strokeRect(x-2.5,1,5,5);}
-    else if(e.k==='reinf'){c.fillStyle='#2e8b3a';c.arc(x,4,2.6,0,Math.PI*2);c.fill();}}
-  RP.tl={img,w,h,k};}
-function drawTimelineHead(){const tl=RP.tl,c=$('rpLine').getContext('2d');c.setTransform(1,0,0,1,0,0);c.drawImage(tl.img,0,0);c.setTransform(tl.k,0,0,tl.k,0,0);
-  const x=RP.t/(RP.end||1)*tl.w;c.strokeStyle=COL.ink;c.lineWidth=2;c.beginPath();c.moveTo(x,0);c.lineTo(x,tl.h);c.stroke();
-  $('rpTime').textContent=`${fmt(RP.t)} / ${fmt(RP.end)}`;$('rpPlay').textContent=RP.playing?'Pause':RP.t>=RP.end?'Replay':'Play';}
+  c.strokeStyle=v('--hairline');c.lineWidth=1;c.beginPath();c.moveTo(L,gy+gh/2);c.lineTo(w,gy+gh/2);c.stroke();
+  c.lineJoin='round';for(const sd of ['A','D']){c.strokeStyle=col[sd];c.lineWidth=2;c.beginPath();F.forEach((f,i)=>{const x=X(f.t),y=gy+gh-2-str[i][sd]/mx*(gh-4);i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();}
+  // who held A, B and C: one rounded band each, orange while contested
+  c.font=`700 10px ${v('--font')}`;c.textAlign='center';c.textBaseline='middle';
+  for(let o=0;o<3;o++){const y=by+o*10;c.fillStyle=v('--ink-2');c.fillText('ABC'[o],7,y+4);
+    c.save();c.beginPath();if(c.roundRect)c.roundRect(L,y,w-L,7,3.5);else c.rect(L,y,w-L,7);c.clip();
+    F.forEach((f,i)=>{const x0=X(f.t),x1=F[i+1]?X(F[i+1].t):w;c.fillStyle=f.obj[o][2]?v('--contested'):col[f.obj[o][0]]||col.N;c.fillRect(x0,y,Math.max(1,x1-x0+.5),7);});c.restore();}
+  // event markers along the top: captures in the taker's colour, air strikes, bridges down, pontoons, reinforcements
+  const mk={air:v('--accent'),bridge:v('--danger'),pont:v('--ok'),reinf:v('--neutral')},ring=v('--badge-ring');
+  for(const e of R.events){const x=X(e.t);c.beginPath();c.arc(x,7,5,0,Math.PI*2);c.fillStyle=e.k==='cap'?col[e.side]||col.N:mk[e.k]||col.N;c.fill();c.lineWidth=2;c.strokeStyle=ring;c.stroke();}
+  RP.tl={img,w,h,k,L,acc:v('--accent'),ring};}
+// (the timeline is redrawn whenever its on-screen width no longer matches the width it was drawn at)
+function drawTimelineHead(){const cw=$('rpLine').clientWidth;if(cw&&Math.abs(Math.max(200,cw)-RP.tl.w)>1)buildTimeline();const tl=RP.tl,c=$('rpLine').getContext('2d');c.setTransform(1,0,0,1,0,0);c.clearRect(0,0,tl.w*tl.k,tl.h*tl.k);c.drawImage(tl.img,0,0);c.setTransform(tl.k,0,0,tl.k,0,0);
+  const x=tl.L+RP.t/(RP.end||1)*(tl.w-tl.L);c.fillStyle=tl.acc;c.fillRect(x-1,0,2,tl.h);c.beginPath();c.arc(x,7,6,0,Math.PI*2);c.fill();c.lineWidth=2;c.strokeStyle=tl.ring;c.stroke();
+  setH($('rpTime'),`${fmt(RP.t)} <span>/ ${fmt(RP.end)}</span>`);setH($('rpPlay'),RP.playing?ICON.pause:ICON.play);$('rpPlay').setAttribute('aria-label',(RP.playing?'Pause':RP.t>=RP.end?'Replay':'Play')+' (Space)');}
 function rpSeek(t){RP.t=clamp(t,0,RP.end);replayView(RP.t);}
 function rpToggle(){if(RP.t>=RP.end){RP.t=0;RP.playing=true;}else RP.playing=!RP.playing;}
 const RP_SPEEDS=[1,2,4,8,16];
@@ -2219,111 +2661,311 @@ $('rpPlay').onclick=()=>RP&&rpToggle();$('rpRestart').onclick=()=>RP&&rpSeek(0);
 $('rpExit').onclick=exitReplay;$('endWatch').onclick=startReplay;
 document.querySelectorAll('#rpSpeed button').forEach(b=>b.onclick=()=>{if(!RP)return;RP.speed=+b.dataset.sp;rpSpeedUI();});
 // clicking or dragging on the timeline seeks; a click right on a marker jumps to 3 s before that moment
-{const cvs=$('rpLine'),at=e=>{const r=cvs.getBoundingClientRect();return clamp((e.clientX-r.left)/r.width,0,1)*RP.end;};
+{const cvs=$('rpLine'),at=e=>{const r=cvs.getBoundingClientRect(),L=RP.tl.L;return clamp((e.clientX-r.left-L)/(r.width-L),0,1)*RP.end;};
   cvs.addEventListener('pointerdown',e=>{if(!RP)return;cvs.setPointerCapture(e.pointerId);RP.drag=true;let t=at(e);
-    const px=RP.end/RP.tl.w*5,ev=RP.R.events.reduce((b,q)=>Math.abs(q.t-t)<(b?Math.abs(b.t-t):px)?q:b,null);if(ev)t=Math.max(0,ev.t-3);rpSeek(t);});
+    const px=RP.end/(RP.tl.w-RP.tl.L)*6,ev=RP.R.events.reduce((b,q)=>Math.abs(q.t-t)<(b?Math.abs(b.t-t):px)?q:b,null);if(ev)t=Math.max(0,ev.t-3);rpSeek(t);});
   cvs.addEventListener('pointermove',e=>{if(RP&&RP.drag)rpSeek(at(e));});
   const up=()=>{if(RP)RP.drag=false;};cvs.addEventListener('pointerup',up);cvs.addEventListener('pointercancel',up);}
 addEventListener('resize',()=>{if(RP)buildTimeline();});}
 
 /* ------------------------------------------------------------ HUD */
+// The HUD is a DOM overlay on the canvas, built from the company-hud handoff: frosted-glass capsules over the map
+// (Floating, the default) or bars docked to the screen edges (Docked), in Light or Dark. Every panel collapses to a pill,
+// an icon or an edge tab. It only reads game state and calls the order functions.
 const $=id=>document.getElementById(id);
 function addLog(msg,cls){if(!G||G.replay)return;const c=cls==='a'?'a':cls==='d'?'d':'';if(G.rec)G.rec.log.push({t:G.time,msg,cls:c});G.log.unshift({t:G.time,msg,cls:c});if(G.log.length>40)G.log.length=40;G.logDirty=true;}
-let lastHud=0;
-function updateHUD(force){if(!G)return;
-  $('clock').textContent=fmt(G.limit-G.time);
-  $('objs').innerHTML=G.objs.map(o=>`<div class="obj"><span class="k" style="color:${COL[o.owner]}">${o.key}</span><div><div class="nm">${o.name}</div><div class="bar"><i style="width:${(o.p+1)*50}%"></i></div><div class="st${o.contested?' hot':''}">${o.contested?'Contested':o.owner==='A'?'Attacker':o.owner==='D'?'Defender':'Neutral'}</div></div></div>`).join('');
-  $('btnPause').textContent=G.phase==='deploy'?'Deploying':G.paused?'Resume':'Pause';$('btnPause').classList.toggle('on',G.paused&&G.phase==='play');
-  const b=$('banner');let bt='';
-  const ns=selected().length,units=`${ns} selected unit${ns>1?'s':''}`;
-  if(G.phase==='deploy')bt=G.tool==='trench'?'Drag on the map to dig a trench':ns?`Click the map to place ${units}`:'Deployment: select units, click the map to place them north of the dashed line, then Begin battle';
-  else if(G.phase==='play'){const om=G.orderMode,ne=selected().filter(u=>u.type==='eng').length,na=G.air[G.player];let hint;
-    if(om==='air')hint=na?`Click a target for the air strike, or a bridge to destroy it · ${na} left`:'No air strikes left';
-    else if(om==='repair')hint=ne?`Click cratered road to repair it with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click cratered road to repair it';
-    else if(om==='bridge')hint=ne?`Click the river to build a pontoon bridge with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click the river to bridge it';
-    else{const verb={move:'move',amove:'attack-move',fire:'call a fire mission with'}[om];hint=ns?`Click the map to ${verb} ${units}${om==='move'||om==='amove'?' · Ctrl-click to go straight · Shift to queue':''}`:'Select units: click one, or drag a box around several';}
+let lastHud=0,lastLogC=null,lastLogNew=null;
+// set innerHTML only when it changed, so hover states and focus survive the 5-per-second refresh
+const setH=(el,h)=>{if(el._h!==h){el._h=h;el.innerHTML=h;}};
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const MAC=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent||'');
+const phone=()=>vw<600;
+const TNAME={inf:'Infantry',tank:'Armor',art:'Artillery',eng:'Engineers'};
+const UPATH={inf:'<circle cx="8" cy="8" r="6.3"/>',tank:'<rect x="2" y="2" width="12" height="12"/>',art:'<path d="M8 1.5L15 14H1z"/>',eng:'<path d="M8 1l6.2 3.5v7L8 15l-6.2-3.5v-7z"/>'};
+const uIco=(t,s,px=12)=>`<svg class="ui ${s}" width="${px}" height="${px}" viewBox="0 0 16 16" aria-hidden="true">${UPATH[t]}</svg>`;
+const ICON={pause:'<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/></svg>',
+  play:'<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.8v10.4c0 .5.6.9 1 .6l8-5.2c.4-.3.4-.9 0-1.2l-8-5.2c-.4-.3-1 0-1 .6z"/></svg>',
+  down:'<svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>',
+  up:'<svg class="chev more" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg>',
+  left:'<svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 3.5L5.5 8l4.5 4.5"/></svg>',
+  check:'<svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4.5 10.5l3.6 3.6 7.4-8"/></svg>',
+  cross:'<svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5.5 5.5l9 9M14.5 5.5l-9 9"/></svg>',
+  equal:'<svg width="26" height="26" viewBox="0 0 20 20" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M5 8h10M5 12.5h10"/></svg>',
+  tick:'<svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--accent)" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg>'};
+// what the enemy's plan was, for the end of battle (the doctrines planAttack draws from)
+const DOCTRINE_DESC={broad:'All three crossings attacked at once.',feint:'A diversion at one crossing, then the main body at another.',
+  hook:'A pinning group at the main bridge while the main body went round a flank.',bombard:'Artillery first, then two late waves.',
+  crossing:'Engineers bridged the river far from the bridges while the main body waited.',probe:'Three small probes, with the reserve sent in behind the one that got furthest.'};
+
+// Interface preferences: layout and appearance, which panels are collapsed, which sections are open. Kept between
+// battles, and between visits where the browser allows it.
+const ui={layout:'floating',appearance:'light',panel:'auto',left:false,tab:'sel',sec:{objs:true,forces:true},
+  compact:{scen:false,status:false,bottom:false,log:false},hidden:false,dots:new Set()};
+try{const s=JSON.parse(localStorage.getItem('company.ui')||'null');if(s){for(const k of ['layout','appearance','left'])if(k in s)ui[k]=s[k];Object.assign(ui.sec,s.sec||{});Object.assign(ui.compact,s.compact||{});}}catch(e){}
+function saveUI(){try{localStorage.setItem('company.ui',JSON.stringify({layout:ui.layout,appearance:ui.appearance,left:ui.left,sec:ui.sec,compact:ui.compact}));}catch(e){}}
+const darkMQ=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):{matches:false};
+function applyAppearance(){document.documentElement.dataset.appearance=ui.appearance==='auto'?(darkMQ.matches?'dark':'light'):ui.appearance;if(RP)buildTimeline();}
+try{darkMQ.addEventListener('change',()=>{if(ui.appearance==='auto')applyAppearance();});}catch(e){}
+// Floating keeps each piece in its own capsule; Docked moves the same pieces into the top bar and the two side bars.
+function applyLayout(){const d=ui.layout==='docked',hud=$('hud');document.documentElement.dataset.layout=ui.layout;
+  if(d){$('barL').appendChild($('scenCard'));$('barC').appendChild($('status'));$('barR').appendChild($('ctrls'));
+    $('sideL').append($('secObjs'),$('secForces'));$('sideR').appendChild($('secSel'));}
+  else{const lc=$('leftcol');lc.insertBefore($('scenCard'),lc.firstChild);hud.insertBefore($('status'),$('banner'));hud.insertBefore($('ctrls'),$('banner'));
+    $('inspector').append($('secSel'),$('secObjs'),$('secForces'));}
+  updateHUD(true);}
+
+// an objective's ring: the owner's colour, filled as far as the owner's hold on it; orange while it's being taken
+const takeFrac=o=>o.owner==='D'?(1-o.p)/2:o.owner==='A'?(1+o.p)/2:Math.abs(o.p);
+function ring(o,px=30){const r=12.5,C=2*Math.PI*r,arc=(col,f)=>`<circle cx="15" cy="15" r="${r}" fill="none" stroke="${col}" stroke-width="3" stroke-linecap="${f<1?'round':'butt'}" stroke-dasharray="${(clamp(f,.04,1)*C).toFixed(1)} ${C.toFixed(1)}" transform="rotate(-90 15 15)"/>`;
+  let body,txt='var(--ink)';
+  if(o.contested)body=`<circle cx="15" cy="15" r="${r}" fill="none" stroke="var(--track)" stroke-width="3"/>`+arc('var(--contested)',takeFrac(o));
+  else if(o.owner==='N')body=`<circle cx="15" cy="15" r="${r}" fill="none" stroke="var(--neutral)" stroke-width="2.5" stroke-dasharray="2 3"/>`;
+  else{const A=o.owner==='A',f=A?(1-o.p)/2:(1+o.p)/2;body=`<circle cx="15" cy="15" r="${r}" fill="${A?'var(--atk-disc)':'none'}" stroke="var(--track)" stroke-width="3"/>`+arc(A?'var(--atk-ring)':'var(--defender-ring)',f);if(A)txt='var(--atk-letter)';}
+  return `<svg width="${px}" height="${px}" viewBox="0 0 30 30" aria-hidden="true">${body}<text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="${txt}">${o.key}</text></svg>`;}
+function ownerLabel(o){const pc=Math.round(takeFrac(o)*100);if(o.contested)return [pc?`Contested · ${pc}%`:'Contested','C'];if(o.owner==='N')return ['Neutral','N'];
+  if(!G.replay&&o.owner===G.player)return ['Yours',o.owner];return [o.owner==='A'?'Attacker':'Defender',o.owner];}
+const nextReinf=()=>(SC().reinf||[]).map((r,k)=>({r,k})).find(({r,k})=>r.side===G.player&&!G.reinfDone.has(k));
+function panToObj(i){const o=G.objs[i];if(!o)return;cam.x=o.x-vw/2/cam.z;cam.y=o.y-vh/2/cam.z;clampCam();}
+
+function updateHUD(force){
+  document.body.classList.toggle('nogame',!G);document.body.classList.toggle('ngopen',!$('startModal').hidden);document.body.classList.toggle('endopen',!$('endModal').hidden);
+  if(!G){scaleAnchor();return;}
+  const me=G.player,them=me==='A'?'D':'A',sc=SC(),rp=!!G.replay,dep=G.phase==='deploy',play=G.phase==='play',docked=ui.layout==='docked';
+  const sel=rp?[]:selected(),ns=sel.length,compactTop=ui.compact.status||phone();
+  // scenario card: who you are, the goal, and the game code
+  const word=G.over?(G.over.winner===null?'Draw':G.over.winner===me?'Victory':'Defeat'):'';
+  const badge=rp?['Replay','R']:[me==='A'?'Attacking':'Defending',me];
+  for(const id of ['sideBadge','sideBadge2']){const b=$(id);b.textContent=badge[0];b.className='side-badge '+badge[1];}
+  $('scenName').textContent=sc.name;
+  $('goalCard').textContent=rp?`${word} · ${G.over.reason}`:sc.goal[me];
+  const meta=`${MAP_MODES[G.mode].name} · ${CLIMATES[G.climate].name} · ${G.code||''}`;$('sector').textContent=`${sc.name} · ${meta}`;$('sector2').textContent=meta;
+  $('scenCard').hidden=!docked&&ui.compact.scen;if(docked)delete $('scenCard').dataset.tip;else $('scenCard').dataset.tip='Collapse';$('scenPill').hidden=docked||!ui.compact.scen;
+  // status capsule: the clock, the three objectives, and the next reinforcements or the A hold timer
+  const st=$('status'),cmp=compactTop&&!docked;st.classList.toggle('compact',cmp);
+  let extra='',plus='';
+  const nx=nextReinf();
+  if(sc.holdA&&G.holdA>0){extra=`<b class="tn">${fmt(G.holdA)} / ${fmt(sc.holdA)}</b><span>attacker holding A</span>`;plus=`A ${fmt(G.holdA)}`;}
+  else if(nx&&!rp){extra=`<b class="tn">${fmt(nx.r.t-G.time)}</b><span>reinforcements</span>`;plus='+'+fmt(nx.r.t-G.time);}
+  const clock=dep?'':fmt(G.limit-G.time);
+  if(cmp)setH(st,`<b class="tn" style="font-size:17px;font-weight:600;letter-spacing:-.02em">${dep?'Deployment':clock}</b><span class="rings">${G.objs.map(o=>ring(o,24)).join('')}</span>${plus?`<span class="plus tn">${plus}</span>`:''}${ICON.down}`);
+  else setH(st,(dep?`<button class="clk dep" data-act="collapse" data-tip="Collapse"><b>Deployment</b><span class="tn">Clock starts at ${fmt(G.limit)}</span></button>`
+      :`<button class="clk" data-act="collapse" data-tip="Collapse"><b class="tn">${clock}</b><span>remaining</span></button>`)+'<span class="dv"></span>'+
+    G.objs.map((o,i)=>{const [l,c]=ownerLabel(o);return `<button class="bt obj" data-obj="${i}" aria-label="Objective ${o.key}, ${esc(o.name)}, ${l}" data-tip="${esc(o.name)} · ${l}">${ring(o)}<span class="on2"><span>${esc(o.name)}</span><span class="st ${c}">${l}</span></span></button>`;}).join('')+
+    (extra?`<span class="dv"></span><div class="xtra">${extra}</div>`:''));
+  st.setAttribute('aria-label',`${dep?'Deployment':clock+' remaining'}. ${G.objs.map(o=>o.key+' '+ownerLabel(o)[0]).join(', ')}`);
+  // top-right controls
+  $('ctrls').classList.toggle('compact',compactTop&&!docked);
+  const pb=$('btnPause');setH(pb,G.paused?ICON.play:ICON.pause);pb.disabled=!play;pb.dataset.tip=G.paused?(G.time<1?'Start':'Resume'):'Pause';pb.setAttribute('aria-label',pb.dataset.tip+' (Space)');
+  document.querySelectorAll('#speed button').forEach(b=>b.disabled=!play);$('btnSpeedC').disabled=!play;$('btnSpeedC').textContent=G.speed+'×';
+  // the inspector (Floating: the left panel; Docked: the right bar) opens with a selection unless you closed it
+  if(ui.panel==='closed'&&!ns)ui.panel='auto';
+  const showInsp=!rp&&(ui.panel==='open'||(ui.panel==='auto'&&ns>0));
+  $('inspector').hidden=docked||!showInsp;$('rail').hidden=rp||(showInsp&&!phone());
+  $('sideR').classList.toggle('off',!showInsp);$('sideL').classList.toggle('off',rp||!ui.left);
+  $('btnSideL').classList.toggle('on',ui.left);$('btnSideR').classList.toggle('on',showInsp);
+  document.documentElement.style.setProperty('--logL',docked&&ui.left&&!rp?'272px':'0px');
+  for(const s of ['objs','forces'])$(s==='objs'?'secObjs':'secForces').classList.toggle('shut',!ui.sec[s]);
+  document.querySelectorAll('#inspTabs button').forEach(b=>b.classList.toggle('on',b.dataset.tab===ui.tab));
+  for(const [id,t] of [['secSel','sel'],['secForces','forces']])$(id).classList.toggle('tabOn',ui.tab===t);
+  if(showInsp)setH($('panel'),selHTML(sel,me));
+  // forces, the objectives list and the legend (in the Controls popover)
+  const cnt=(side,f)=>{const o={inf:0,tank:0,art:0,eng:0};G.units.forEach(u=>{if(u.side===side&&f(u))o[u.type]++;});return o;};
+  const own=cnt(me,()=>true),seen=rp?cnt(them,()=>true):cnt(them,u=>G.vis[me].has(u.id));
+  const row=(o,s,all)=>{const ts=UNIT_TYPES.filter(t=>all||o[t]);return ts.length?`<span class="cnts tn ${s}">${ts.map(t=>`<span class="cnt">${uIco(t,s,10)}${o[t]}</span>`).join('')}</span>`:'<span class="s2">None</span>';};
+  setH($('forces'),`<div class="rw"><span>${rp?(me==='A'?'Attacker':'Defender'):'Yours'}</span>${row(own,me,true)}</div><div class="rw"><span>${rp?(them==='A'?'Attacker':'Defender'):'Enemy in sight'}</span>${row(seen,them,false)}</div>
+    <div class="rw"><span>Air strikes left</span><span class="tn" style="font-weight:600;color:var(--accent-text)">${G.air[me]}</span></div><div class="rw"><span>Losses</span><span class="tn s2">${rp?'Attacker':'You'} ${G.stats.lost[me]} · ${rp?'Defender':'Them'} ${G.stats.lost[them]}</span></div>`);
+  if(docked){setH($('objList'),G.objs.map((o,i)=>{const [l,c]=ownerLabel(o);return `<button class="rw objRow" data-obj="${i}"><span>${ring(o,24)}${esc(o.name)}</span><span class="st ${c}" style="font-size:11.5px">${l}</span></button>`;}).join(''));$('goalLine').textContent=sc.goal[me];}
+  setH($('legend'),`${UNIT_TYPES.map(t=>`<span>${uIco(t,me,12)}${TNAME[t]}</span>`).join('')}<span><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><path d="M1 6l2.5-3 2.5 3 2.5-3 2.5 3 2.5-3" fill="none" stroke="#7a4a2a" stroke-width="1.6" stroke-linejoin="round"/></svg>Trench</span>
+    <span><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><path d="M1 5h14" stroke="#8e8e93" stroke-width="2"/><path d="M6 2.5l4 5M10 2.5l-4 5" stroke="var(--ink)" stroke-width="1.2"/></svg>Cratered road</span>${M.frozen?`
+    <span style="grid-column:span 2"><svg width="16" height="10" viewBox="0 0 16 10" aria-hidden="true"><rect x=".5" y="1.5" width="15" height="7" rx="2" fill="#cfdae4" stroke="#8fa3b5"/><path d="M4 3.5l3 3M9 2.5l2 4" stroke="#8fa3b5" stroke-width=".8"/></svg>Ice: infantry and engineers only, exposed</span>`:''}
+    <span style="grid-column:span 2"><svg width="14" height="14" viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="6" fill="none" stroke="#ff3b30" stroke-width="1.6" stroke-dasharray="2.5 2"/></svg>Out of supply</span>`);
+  // the command dock: select by type, the order tools (or the deployment tools), and the map overlays
+  const mineAll=mine(),byType=cnt(me,()=>true),selType=t=>sel.some(u=>u.type===t);
+  $('selAllN').textContent=mineAll.length;$('selPillN').textContent=mineAll.length;
+  document.querySelectorAll('#selGrp [data-sel]').forEach(b=>{const t=b.dataset.sel;if(!TNAME[t])return;
+    setH(b,`${uIco(t,me,14)}<span class="tn">${byType[t]}</span>`);b.disabled=!byType[t];b.classList.toggle('part',selType(t));b.setAttribute('aria-label',`Select ${TNAME[t].toLowerCase()}, ${byType[t]}${selType(t)?', '+sel.filter(u=>u.type===t).length+' selected':''}`);});
+  $('selClear').hidden=!ns;
+  const cb=ui.compact.bottom&&!docked&&!phone();$('selBar').hidden=cb;$('selPill').hidden=!cb;
+  const md=$('modes');md.hidden=!play;md.classList.toggle('compact',cb);$('deployTools').hidden=!dep;
+  const hasT=t=>sel.some(u=>u.type===t),air=G.air[me]||0;
+  const can={move:ns>0,amove:ns>0,fire:hasT('art'),bridge:hasT('eng'),repair:hasT('eng'),air:air>0};
+  document.querySelectorAll('#modes [data-mode]').forEach(b=>{const m=b.dataset.mode;b.disabled=!can[m];b.classList.toggle('on',can[m]&&G.orderMode===m);b.setAttribute('aria-pressed',b.classList.contains('on'));});
+  $('btnHold').disabled=!ns;$('airLeft').textContent=air;$('airLeft').hidden=!air;
+  const lt=$('btnOrdersCompact');lt.dataset.tip=cb?'Show labels':'Hide labels';lt.setAttribute('aria-label',lt.dataset.tip);lt.firstElementChild.style.transform=cb?'rotate(180deg)':'';
+  $('btnSup').classList.toggle('on',!!G.showSup);$('btnFront').classList.toggle('on',!!settings.front);
+  if(dep)updateBudget();
+  // the hint: what a click on the map will do now
+  const b=$('banner'),units=`${ns} selected unit${ns>1?'s':''}`;let lead='',bt='';
+  if(dep){lead='Deployment';bt=G.tool==='trench'?'Drag on the map to dig a trench':ns?`Click the map to place ${units}`:'Select units, click the map to place them north of the dashed line, then Begin Battle';}
+  else if(play){const om=G.orderMode,ne=sel.filter(u=>u.type==='eng').length,na=G.air[me];let hint;
+    const name={move:'Move',amove:'Attack-move',fire:'Fire mission',bridge:'Pontoon',repair:'Repair road',air:'Air strike'}[om];
+    if(om==='air')hint=na?`Click a target, or a bridge to destroy it · ${na} left`:'No air strikes left';
+    else if(om==='repair')hint=ne?`Click cratered road to repair it with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click cratered road';
+    else if(om==='bridge')hint=ne?`Click the river to build a pontoon bridge with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click the river';
+    else hint=ns?`Click the map to ${{move:'move',amove:'attack-move',fire:'call a fire mission with'}[om]} ${units}${om==='move'||om==='amove'?' · Ctrl-click to go straight · Shift to queue':''}`:'Click a unit or drag a box to select';
     const special=om==='air'||om==='bridge'||om==='repair';
-    bt=G.paused?`Paused · ${hint} · Space to ${G.time<1?'start':'resume'}`:ns||special?hint+(special?' · Esc to cancel':' · Esc to deselect'):'';}
-  b.hidden=!bt;b.textContent=bt;$('airLeft').textContent=`(${G.air[G.player]})`;
-  const me=G.player,cnt=(side,f)=>{const o={inf:0,tank:0,art:0,eng:0};G.units.forEach(u=>{if(u.side===side&&f(u))o[u.type]++;});return o;};
-  const own=cnt(me,()=>true),seen=cnt(me==='A'?'D':'A',u=>G.vis[me].has(u.id)),sel=selected();
-  // the scenario's goal, the crossing hold timer and the next reinforcements for your side
-  const sc=SC(),nx=(sc.reinf||[]).map((r,k)=>({r,k})).find(({r,k})=>r.side===me&&!G.reinfDone.has(k));
-  let h=`<div><div class="lbl">${sc.name} · you are ${me==='A'?'attacking':'defending'}</div><div style="margin-top:3px;font-size:12px;color:var(--muted)">${sc.goal[me]}</div>`+
-    (sc.holdA&&G.holdA>0?`<div class="row" style="margin-top:3px"><span>Attacker holding A</span><span class="num">${fmt(G.holdA)} / ${fmt(sc.holdA)}</span></div>`:'')+
-    (nx?`<div class="row" style="margin-top:3px"><span>Reinforcements</span><span class="num">in ${fmt(nx.r.t-G.time)}</span></div>`:'');
-  if(sel.length){const c={inf:0,tank:0,art:0,eng:0};sel.forEach(u=>c[u.type]++);const hp=sel.reduce((s,u)=>s+u.hp/u.max,0)/sel.length,cut=sel.filter(u=>!u.sup).length,dug=sel.filter(dugIn).length;
-    // best high-ground range bonus among the selection
-    const hg=Math.max(...sel.map(u=>(u.type==='art'?HILL.artRange:HILL.range)*hillK(u.x,u.y)));
-    const md=sel.some(u=>u.build)&&sel.every(u=>u.build||u.type!=='eng')?'bridging':sel.some(u=>u.repair)&&sel.every(u=>u.repair||u.type!=='eng')?'repairing':sel.every(u=>u.mode===sel[0].mode)?sel[0].mode:'mixed';
-    h+=`<div class="row" style="margin-top:6px"><span>${UNIT_TYPES.filter(t=>c[t]).map(t=>`${c[t]} ${SYM[t]}`).join(' &nbsp;')}</span><span class="num">${Math.round(hp*100)}%</span></div>
-      <div class="hp"><i style="width:${hp*100}%"></i></div>
-      <div class="row" style="margin-top:4px"><span class="${cut?'warn':''}">${cut?cut+' out of supply':'In supply'}${dug?` · ${dug} dug in`:''}</span><span class="num">${{idle:'ready',move:'moving',amove:'attacking',hold:'holding',mixed:'mixed',bridging:'bridging',repairing:'repairing'}[md]}</span></div>${hg>.05?`<div class="row"><span>High ground</span><span class="num">+${Math.round(hg*100)}% range</span></div>`:''}`;}
-  else h+=`<div style="margin-top:4px;color:var(--muted);font-size:13px">No units selected</div>`;
-  h+=`</div><hr><div><div class="lbl">Forces</div><div class="row" style="margin-top:4px"><span>Yours</span><span class="num">● ${own.inf} ■ ${own.tank} ▲ ${own.art} ${HEX} ${own.eng}</span></div>
-    <div class="row"><span>Enemy in sight</span><span class="num">● ${seen.inf} ■ ${seen.tank} ▲ ${seen.art} ${HEX} ${seen.eng}</span></div>
-    <div class="row"><span>Air strikes left</span><span class="num">${G.air[me]}</span></div>
-    <div class="row hide-sm"><span>Losses you / them</span><span class="num">${G.stats.lost[me]} / ${G.stats.lost[me==='A'?'D':'A']}</span></div></div>
-    <hr class="hide-sm"><div class="legend"><span>●</span><span>Infantry</span><span>■</span><span>Armor</span><span>▲</span><span>Artillery</span><span>${HEX}</span><span>Engineers</span><span style="color:${COL.trench}">⌇</span><span>Trench: units on it dig in</span><span style="color:#8c8c86">×</span><span>Cratered road (slow)</span><span style="color:${COL.road}">┅</span><span>Out of supply outline</span></div>`;
-  $('panel').innerHTML=h;
-  if(G.logDirty||force){G.logDirty=false;$('log').innerHTML=G.log.slice(0,4).map(l=>`<div class="${l.cls}">${fmt(l.t)} &nbsp;${l.msg}</div>`).join('');}}
+    if(G.paused){lead='Paused';bt=`${ns||special?name+': '+hint:hint} · Space to ${G.time<1?'start':'resume'}`;}
+    else if(ns||special){lead=name;bt=hint+(special?' · Esc to cancel':'');}}
+  b.hidden=!bt||rp;setH(b,bt?`<b>${lead}</b><span class="s2"> · ${esc(bt)}</span>`:'');
+  // the event log: white text on the map, newest at the bottom. Four lines show; it scrolls back through the last 40
+  // events, and jumps back to the newest whenever a new one comes in (or it's collapsed or expanded)
+  if(G.logDirty||force||lastLogC!==ui.compact.log){const jump=G.log[0]!==lastLogNew||lastLogC!==ui.compact.log;G.logDirty=false;lastLogC=ui.compact.log;lastLogNew=G.log[0];
+    // the same message repeated within 2 s (several units cut off at once) shows once, with a count
+    const L=[],lg=$('log');for(const l of G.log.slice().reverse()){const p=L[L.length-1];if(p&&p.msg===l.msg&&l.t-p.t<2)p.n++;else L.push({t:l.t,msg:l.msg,n:1});}
+    lg.classList.toggle('compact',ui.compact.log);
+    setH(lg,L.map((l,i)=>{const last=i===L.length-1;return `<li${last?` class="n" data-tip="${ui.compact.log?'Show events':'Collapse'}"`:''}><span class="t tn">${dep?'Setup':fmt(l.t)}</span><span>${esc(l.msg)}${l.n>1?` <span style="opacity:.75">×${l.n}</span>`:''}</span>${last?ICON.up:''}</li>`;}).join(''));
+    if(jump)lg.scrollTop=lg.scrollHeight;}
+  /* updateCallouts(); */scaleAnchor();}
+
+// the selection inspector
+function selHTML(sel,me){const close=`<button class="bt ic" data-act="closePanel" aria-label="Collapse inspector" data-tip="Collapse">${ICON.left}</button>`;
+  if(!sel.length)return `<div class="selHd"><b>Nothing selected</b>${close}</div><div class="selNone">Click a unit or drag a box around several. Double-click a unit to select every unit of its type.</div>`;
+  const c={inf:0,tank:0,art:0,eng:0};sel.forEach(u=>c[u.type]++);const hp=sel.reduce((s,u)=>s+u.hp/u.max,0)/sel.length,cut=sel.filter(u=>!u.sup).length,dug=sel.filter(dugIn).length;
+  // best high-ground range bonus among the selection
+  const hg=Math.max(...sel.map(u=>(u.type==='art'?HILL.artRange:HILL.range)*hillK(u.x,u.y)));
+  const md=sel.some(u=>u.build)&&sel.every(u=>u.build||u.type!=='eng')?'bridging':sel.some(u=>u.repair)&&sel.every(u=>u.repair||u.type!=='eng')?'repairing':sel.every(u=>u.mode===sel[0].mode)?sel[0].mode:'mixed';
+  const pct=Math.round(hp*100),hc=hp>.5?'var(--ok)':hp>.25?'var(--contested)':'var(--danger)',ice=sel.filter(onIce).length;
+  return `<div class="selHd"><b class="tn">${sel.length} Selected</b>${close}</div>
+    <div class="selTypes">${UNIT_TYPES.filter(t=>c[t]).map(t=>`<span>${uIco(t,me,13)}<b class="tn">${c[t]}</b><span class="s2">${TNAME[t]}</span></span>`).join('')}</div>
+    <div class="selHp"><div><span class="s2">Average health</span><b class="tn">${pct}%</b></div><div class="bar6"><i style="width:${pct}%;background:${hc}"></i></div></div>
+    <div class="secBody"><div class="grp">
+      <div class="rw"><span>State</span><span class="s2">${{idle:'Ready',move:'Moving',amove:'Attacking',hold:'Holding',mixed:'Mixed',bridging:'Bridging',repairing:'Repairing'}[md]}</span></div>
+      <div class="rw"><span>Supply</span>${cut?`<span class="warn" style="display:flex;align-items:center;gap:6px;font-weight:500"><span class="dot"></span>${cut} out of supply</span>`:`<span class="okt" style="display:flex;align-items:center;gap:6px;font-weight:500"><span class="dot" style="background:var(--ok)"></span>In supply</span>`}</div>
+      <div class="rw"><span>Dug in</span><span class="s2 tn">${dug} of ${sel.length}</span></div>
+      <div class="rw"><span>High ground</span><span class="s2">${hg>.05?`+${Math.round(hg*100)}% range`:'None'}</span></div>${ice?`
+      <div class="rw"><span>On the ice</span><span class="tn" style="color:var(--contested-text);font-weight:500">${ice} of ${sel.length} · exposed</span></div>`:''}</div></div>`;}
+
+// Callouts point at an objective that is being taken. Clicking one shrinks it to its dot.
+// Turned off for now (the calls in updateHUD, frame and the #callouts click handler are commented out too).
+/*
+function updateCallouts(){const box=$('callouts'),sc=SC();let h='';
+  if(G&&!G.replay)G.objs.forEach((o,i)=>{let t='',s='';
+    if(sc.holdA&&i===0&&G.holdA>0){t=`Attacker holding ${o.name}`;s=`${fmt(G.holdA)} of ${fmt(sc.holdA)} to win`;}
+    else if(o.contested){const taker=o.owner==='D'?'A':o.owner==='A'?'D':o.p<0?'A':'D';t=`${o.name} contested`;s=`${taker===G.player?'You are':'The enemy is'} taking it · ${Math.round(takeFrac(o)*100)}%`;}
+    if(!t){ui.dots.delete(o.key);return;}
+    h+=`<div class="callout${ui.dots.has(o.key)?' dot':''}" data-i="${i}"><div class="nub"></div><button class="gl" data-call="${o.key}" aria-label="${esc(t)}. ${esc(s)}"><span class="bang">!</span><span class="tx"><b>${esc(t)}</b><span>${esc(s)}</span></span></button></div>`;});
+  setH(box,h);placeCallouts();}
+function placeCallouts(){if(!G)return;for(const el of $('callouts').children){const o=G.objs[+el.dataset.i],[x,y]=ws(o.x,o.y),off=x<-40||y<-40||x>vw||y>vh;
+  el.style.visibility=off?'hidden':'';el.style.transform=`translate(${Math.round(x+20)}px,${Math.round(y-17)}px)`;}}
+*/
+
+// where the canvas draws the scale bar: just above the command dock (or the replay bar)
+let scaleAt=null;
+function scaleAnchor(){const ar=$('app').getBoundingClientRect();
+  if(!$('startModal').hidden||!$('endModal').hidden||!G||ui.hidden){scaleAt={x:vw-20,y:vh-(phone()?24:80)};return;}
+  const el=RP?$('replayBar'):$('dock'),r=el.getBoundingClientRect();
+  if(ui.layout==='docked'){scaleAt={x:vw-20-(RP||$('sideR').classList.contains('off')?0:272),y:r.top-ar.top-14};return;}
+  scaleAt={x:(RP?vw-20:r.right-ar.left-4),y:r.top-ar.top-14};}
+
+// popovers (Settings, Controls) and the More menu hang from the button that opened them
+function closePops(){let any=false;for(const id of ['settingsModal','helpModal','moreMenu'])if(!$(id).hidden){$(id).hidden=true;any=true;}
+  if($('scenCard').classList.contains('phoneOpen')){$('scenCard').classList.remove('phoneOpen');any=true;}
+  for(const id of ['btnSettings','btnHelp','btnMore'])$(id).classList.remove('on');return any;}
+function togglePop(id,btn){const open=$(id).hidden;closePops();if(!open)return;const p=$(id);p.hidden=false;
+  const ar=$('app').getBoundingClientRect(),br=(btn&&btn.offsetParent?btn:$('btnMore')).getBoundingClientRect();
+  p.style.setProperty('--nub',Math.max(16,Math.round(ar.right-16-(br.left+br.width/2)-6))+'px');
+  if(btn&&btn.offsetParent)btn.classList.add('on');if(id==='settingsModal')renderSettings();
+  if(id==='moreMenu')p.querySelector('[data-more="expand"]').hidden=!ui.compact.status||phone();}
+function toggleUI(){ui.hidden=!ui.hidden;closePops();document.body.classList.toggle('hud-off',ui.hidden);$('btnShowUI').hidden=!ui.hidden;scaleAnchor();}
+
+// tooltips: a label and its key, under the control (mouse only)
+{let tipEl=null;const tip=$('tip');
+  addEventListener('pointerover',e=>{if(e.pointerType!=='mouse')return;const el=e.target.closest&&e.target.closest('[data-tip]');if(el===tipEl)return;tipEl=el;
+    if(!el||el.disabled||!el.dataset.tip){tip.hidden=true;return;}tip.innerHTML=esc(el.dataset.tip)+(el.dataset.key?`<span class="k">${esc(el.dataset.key)}</span>`:'');tip.hidden=false;
+    const ar=$('app').getBoundingClientRect(),r=el.getBoundingClientRect(),tw=tip.offsetWidth,th=tip.offsetHeight;
+    let x=r.left+r.width/2-tw/2-ar.left,y=r.bottom-ar.top+8;if(y+th>ar.height-8)y=r.top-ar.top-th-8;
+    tip.style.left=clamp(x,8,ar.width-tw-8)+'px';tip.style.top=y+'px';});
+  addEventListener('pointerdown',()=>{tip.hidden=true;tipEl=null;},true);}
+
 const settings={arrows:true,fog:true,style:'satellite',front:false,frontStyle:'two'};
-const modalOpen=()=>!$('startModal').hidden||!$('helpModal').hidden||!$('settingsModal').hidden;
+const modalOpen=()=>!$('startModal').hidden;
 function toggleSetting(k){settings[k]=!settings[k];if(k==='fog'&&G){G.fog=settings.fog;computeVis();}renderSettings();}
-function renderSettings(){document.querySelectorAll('#settingsModal [data-set]').forEach(b=>{const on=settings[b.dataset.set];b.classList.toggle('on',on);b.textContent=on?'On':'Off';});
-  document.querySelectorAll('#setView [data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===settings.style));
-  document.querySelectorAll('#setFrontStyle [data-fs]').forEach(b=>b.classList.toggle('on',b.dataset.fs===settings.frontStyle));}
+function renderSettings(){document.querySelectorAll('#settingsModal [data-set]').forEach(b=>{const on=settings[b.dataset.set];b.classList.toggle('on',on);b.setAttribute('aria-checked',on);});
+  document.querySelectorAll('#setView [data-view],#ngView [data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===settings.style));
+  document.querySelectorAll('#setFrontStyle [data-fs]').forEach(b=>b.classList.toggle('on',b.dataset.fs===settings.frontStyle));
+  document.querySelectorAll('#settingsModal [data-layout]').forEach(b=>{b.classList.toggle('on',b.dataset.layout===ui.layout);b.setAttribute('aria-checked',b.dataset.layout===ui.layout);});
+  document.querySelectorAll('#setAppear [data-ap]').forEach(b=>b.classList.toggle('on',b.dataset.ap===ui.appearance));}
 document.querySelectorAll('#setFrontStyle [data-fs]').forEach(b=>b.onclick=()=>{settings.frontStyle=b.dataset.fs;renderSettings();if(G&&G.ctrl&&settings.front)frontShape(true);});
 // map view: 'satellite' or 'paper' (shown as Strategic, the original printed map); only the terrain drawing changes
 function setView(v){if(settings.style===v)return;settings.style=v;renderSettings();if(M)renderTerrain();}
-document.querySelectorAll('#setView [data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
+document.querySelectorAll('#setView [data-view],#ngView [data-view]').forEach(b=>b.onclick=()=>setView(b.dataset.view));
 document.querySelectorAll('#settingsModal [data-set]').forEach(b=>b.onclick=()=>toggleSetting(b.dataset.set));
-$('btnSettings').onclick=()=>{renderSettings();$('settingsModal').hidden=false;};$('settingsClose').onclick=()=>{$('settingsModal').hidden=true;};
-function setMode(m){if(G)G.orderMode=m;document.querySelectorAll('#modes [data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===m));}
-function setTool(t){if(G)G.tool=t;$('btnTrench').classList.toggle('on',t==='trench');}
-function setSpeed(s){if(G)G.speed=s;document.querySelectorAll('#speed button').forEach(b=>b.classList.toggle('on',+b.dataset.s===s));}
+// the popover is reopened after a layout change so it hangs from the gear button in its new place
+document.querySelectorAll('#settingsModal [data-layout]').forEach(b=>b.onclick=()=>{ui.layout=b.dataset.layout;saveUI();applyLayout();closePops();togglePop('settingsModal',$('btnSettings'));});
+document.querySelectorAll('#setAppear [data-ap]').forEach(b=>b.onclick=()=>{ui.appearance=b.dataset.ap;saveUI();renderSettings();applyAppearance();});
+$('btnSettings').onclick=()=>togglePop('settingsModal',$('btnSettings'));
+$('btnHelp').onclick=()=>togglePop('helpModal',$('btnHelp'));
+$('btnMore').onclick=()=>togglePop('moreMenu',$('btnMore'));
+$('btnHide').onclick=toggleUI;$('btnShowUI').onclick=toggleUI;
+document.querySelectorAll('#moreMenu [data-more]').forEach(b=>b.onclick=()=>{const a=b.dataset.more;closePops();
+  if(a==='settings')togglePop('settingsModal',$('btnMore'));else if(a==='help')togglePop('helpModal',$('btnMore'));else if(a==='hide')toggleUI();
+  else if(a==='expand'){ui.compact.status=false;saveUI();updateHUD(true);}else if(a==='new')$('btnMenu').onclick();});
+// collapsing and expanding the panels
+$('scenCard').onclick=()=>{if(ui.layout==='docked')return;if($('scenCard').classList.contains('phoneOpen')){closePops();return;}ui.compact.scen=true;saveUI();updateHUD(true);};
+$('scenPill').onclick=()=>{ui.compact.scen=false;saveUI();updateHUD(true);};
+$('railInfo').onclick=()=>{const open=!$('scenCard').classList.contains('phoneOpen');closePops();$('scenCard').classList.toggle('phoneOpen',open);};
+$('status').onclick=e=>{const o=e.target.closest('[data-obj]');if(o){panToObj(+o.dataset.obj);return;}
+  if($('status').classList.contains('compact')){if(phone())return;ui.compact.status=false;saveUI();updateHUD(true);}
+  else if(e.target.closest('[data-act="collapse"]')&&ui.layout!=='docked'){ui.compact.status=true;saveUI();updateHUD(true);}};
+$('objList').onclick=e=>{const o=e.target.closest('[data-obj]');if(o)panToObj(+o.dataset.obj);};
+$('panel').onclick=e=>{if(e.target.closest('[data-act="closePanel"]')){ui.panel='closed';updateHUD(true);}};
+document.querySelectorAll('#rail [data-open]').forEach(b=>b.onclick=()=>{const t=b.dataset.open;ui.panel='open';ui.tab=t;if(t!=='sel')ui.sec[t]=true;updateHUD(true);
+  const el=$(t==='sel'?'secSel':'secForces');if(el&&!phone())el.scrollIntoView({block:'nearest'});});
+document.querySelectorAll('#inspTabs [data-tab]').forEach(b=>b.onclick=()=>{ui.tab=b.dataset.tab;updateHUD(true);});
+document.querySelectorAll('.secHd[data-sec]').forEach(b=>b.onclick=()=>{const s=b.dataset.sec;ui.sec[s]=!ui.sec[s];saveUI();updateHUD(true);});
+$('btnSideL').onclick=()=>{ui.left=!ui.left;saveUI();updateHUD(true);};
+$('btnSideR').onclick=()=>{const vis=!$('sideR').classList.contains('off');ui.panel=vis?'closed':'open';updateHUD(true);};
+$('selPill').onclick=$('btnOrdersCompact').onclick=()=>{ui.compact.bottom=!ui.compact.bottom;saveUI();updateHUD(true);};
+$('log').onclick=()=>{ui.compact.log=!ui.compact.log;saveUI();updateHUD(true);};
+// $('callouts').onclick=e=>{const c=e.target.closest('[data-call]');if(!c)return;const k=c.dataset.call;ui.dots.has(k)?ui.dots.delete(k):ui.dots.add(k);updateCallouts();};
+$('undoKey').textContent=$('undoKbd').textContent=MAC?'⌘Z':'Ctrl Z';$('ctlStraight').textContent=MAC?'⌘- or Ctrl-click':'Ctrl-click';
+$('btnUndo').dataset.tip='Undo';$('btnUndo').dataset.key=MAC?'⌘Z':'Ctrl Z';
+
+function setMode(m){if(G)G.orderMode=m;document.querySelectorAll('#modes [data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===m&&!b.disabled));}
+function setTool(t){if(G)G.tool=t;$('btnTrench').classList.toggle('on',t==='trench');if(G&&G.phase==='deploy')updateBudget();}
+function setSpeed(s){if(G)G.speed=s;document.querySelectorAll('#speed button').forEach(b=>b.classList.toggle('on',+b.dataset.s===s));$('btnSpeedC').textContent=s+'×';}
 function togglePause(){if(!G||G.phase!=='play')return;G.paused=!G.paused;updateHUD();}
 function toggleSup(){if(!G)return;G.showSup=!G.showSup;$('btnSup').classList.toggle('on',G.showSup);}
 function toggleFront(){settings.front=!settings.front;$('btnFront').classList.toggle('on',settings.front);if(G&&settings.front){if(!G.ctrl)updateFront();frontShape(true);}}
 $('btnFront').onclick=toggleFront;
-function updateBudget(){if(G)$('budget').textContent=`Trench left ${(G.budget*M_PER_PX/1000).toFixed(2)} km`;}
-$('btnPause').onclick=togglePause;$('btnSup').onclick=toggleSup;$('btnHold').onclick=hold;
+function updateBudget(){if(!G)return;const km=v=>(v*M_PER_PX/1000).toFixed(1),tot=G.budget0||G.budget;
+  setH($('budget'),`<b>${km(G.budget)}</b><span class="s2"> of ${km(tot)} km</span>`);$('budgetBar').style.width=(tot?G.budget/tot*100:0)+'%';
+  $('budgetSub').textContent=G.tool==='trench'?'Drag to draw trench':'Select units, click to place';}
+$('btnPause').onclick=togglePause;$('btnSup').onclick=toggleSup;$('btnHold').onclick=()=>{hold();updateHUD();};
+$('btnSpeedC').onclick=()=>{if(!G)return;const sp=[1,2,4];setSpeed(sp[(sp.indexOf(G.speed)+1)%3]);};
 document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.s));
-document.querySelectorAll('#modes [data-mode]').forEach(b=>b.onclick=()=>setMode(b.dataset.mode));
-document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{if(!G)return;const t=b.dataset.sel;clearSel();if(t==='none')return;mine().forEach(u=>{if(t==='all'||u.type===t)u.sel=true;});selectionChanged();});
+document.querySelectorAll('#modes [data-mode]').forEach(b=>b.onclick=()=>{setMode(b.dataset.mode);updateHUD();});
+document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{if(!G)return;const t=b.dataset.sel;clearSel();if(t!=='none'){mine().forEach(u=>{if(t==='all'||u.type===t)u.sel=true;});selectionChanged();}updateHUD();});
 $('btnTrench').onclick=()=>setTool(G.tool==='trench'?null:'trench');
 $('btnUndo').onclick=undo;
-$('btnBegin').onclick=()=>{G.phase='play';recInit();G.ctrl=null;updateFront();if(settings.front)frontShape(true);G.undo=[];G.paused=false;setTool(null);$('deployTools').hidden=true;addLog('The attack has begun','a');updateHUD();};
-$('btnHelp').onclick=()=>{$('helpModal').hidden=false;};$('helpClose').onclick=()=>{$('helpModal').hidden=true;};
+$('btnBegin').onclick=()=>{G.phase='play';recInit();G.ctrl=null;updateFront();if(settings.front)frontShape(true);G.undo=[];G.paused=false;setTool(null);$('deployTools').hidden=true;addLog('The attack has begun','a');updateHUD(true);};
+
+/* the New game sheet */
 const opts={side:'A',strength:'standard',seed:1+Math.floor(Math.random()*99999),mode:'river',diff:'normal',climate:'temperate',scen:'standard'};
-const segInit=(id,key)=>document.querySelectorAll(`#${id} button`).forEach(b=>b.onclick=()=>{opts[key]=b.dataset.v;document.querySelectorAll(`#${id} button`).forEach(x=>x.classList.toggle('on',x===b));syncCode();});
+const segInit=(id,key)=>document.querySelectorAll(`#${id} button`).forEach(b=>b.onclick=()=>{opts[key]=b.dataset.v;document.querySelectorAll(`#${id} button`).forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-checked',x===b);});syncCode();});
 segInit('optSide','side');segInit('optStr','strength');segInit('optDiff','diff');
-// battlefield picker: one button per map type; choosing one redraws the preview behind the menu
-function renderModes(){$('optMode').innerHTML=Object.entries(MAP_MODES).map(([k,m])=>`<button data-v="${k}" class="${k===opts.mode?'on':''}">${m.name}</button>`).join('');
-  const m=MAP_MODES[opts.mode];$('modeDesc').innerHTML=`${m.desc} <b>${m.rules}</b>`;
+function syncSegs(){for(const [id,key] of [['optSide','side'],['optStr','strength'],['optDiff','diff']])document.querySelectorAll(`#${id} button`).forEach(b=>{b.classList.toggle('on',b.dataset.v===opts[key]);b.setAttribute('aria-checked',b.dataset.v===opts[key]);});}
+// battlefield picker: one tile per map type; choosing one redraws the preview behind the sheet
+function renderModes(){$('optMode').innerHTML=Object.entries(MAP_MODES).map(([k,m])=>`<button class="tile${k===opts.mode?' on':''}" role="radio" aria-checked="${k===opts.mode}" data-v="${k}" title="${esc(m.desc+' '+m.rules)}">${m.name}</button>`).join('');
   document.querySelectorAll('#optMode button').forEach(b=>b.onclick=()=>{if(opts.mode===b.dataset.v)return;opts.mode=b.dataset.v;renderModes();preview();});}
 renderModes();
-// climate picker: changing it redraws the satellite preview behind the menu without changing the map
-function renderClimates(){$('optClimate').innerHTML=Object.entries(CLIMATES).map(([k,c])=>`<button data-v="${k}" class="${k===opts.climate?'on':''}">${c.name}</button>`).join('');
-  const c=CLIMATES[opts.climate];$('climateDesc').innerHTML=`${c.desc} <b>${c.rules}</b>`;
+// climate picker: changing it redraws the preview's look without changing the map
+function renderClimates(){$('optClimate').innerHTML=Object.entries(CLIMATES).map(([k,c])=>`<button class="${k===opts.climate?'on':''}" role="radio" aria-checked="${k===opts.climate}" data-v="${k}" title="${esc(c.desc+' '+c.rules)}">${c.name}</button>`).join('');
   document.querySelectorAll('#optClimate button').forEach(b=>b.onclick=()=>{if(opts.climate===b.dataset.v)return;opts.climate=b.dataset.v;renderClimates();if(M){setClimate(opts.climate);renderTerrain();}syncCode();});}
 renderClimates();
 // the map's climate sets its look and its off-road movement
-function setClimate(c){M.climate=c;M.offroad=CLIMATES[c].offroad;fieldCache.clear();}
+function setClimate(c){M.climate=c;M.offroad=CLIMATES[c].offroad;M.frozen=!!CLIMATES[c].frozen;fieldCache.clear();}
 function preview(){M=genMap(opts.seed,opts.mode);setClimate(opts.climate);renderTerrain();fieldCache.clear();$('optSeed').value=opts.seed;syncCode();}
-// scenario picker
-function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).map(([k,c])=>`<button data-v="${k}" class="${k===opts.scen?'on':''}">${c.name}</button>`).join('');
-  const c=SCENARIOS[opts.scen];$('scenDesc').innerHTML=`${c.desc} <b>Attacker: ${c.goal.A}${c.goal.D!==c.goal.A?' Defender: '+c.goal.D:''}</b>`;
-  $('scenRule').textContent=opts.side==='A'?c.goal.A:c.goal.D;
+// scenario picker: one row each, with its description
+function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).map(([k,c])=>`<button class="sr${k===opts.scen?' on':''}" role="radio" aria-checked="${k===opts.scen}" data-v="${k}"><span><b>${c.name}</b><span class="s2">${esc(c.desc)}</span></span>${ICON.tick}</button>`).join('');
+  renderScensRule();
   document.querySelectorAll('#optScen button').forEach(b=>b.onclick=()=>{if(opts.scen===b.dataset.v)return;opts.scen=b.dataset.v;renderScens();syncCode();});}
 // the game code for the current options, shown on the setup screen and kept in the page address (?game=CODE; for
 // pages where the address can't be rewritten, such as some local files, #game=CODE instead)
 function syncCode(){const code=encodeGame(opts);$('optCode').value=code;renderScensRule();
   try{history.replaceState(null,'',location.pathname+'?game='+code);}catch(e){try{location.replace('#game='+code);}catch(e2){}}}
-function renderScensRule(){const c=SCENARIOS[opts.scen];$('scenRule').textContent=opts.side==='A'?c.goal.A:c.goal.D;}
-function applyOptions(o){Object.assign(opts,o);
-  for(const [id,key] of [['optSide','side'],['optStr','strength'],['optDiff','diff']])document.querySelectorAll(`#${id} button`).forEach(b=>b.classList.toggle('on',b.dataset.v===opts[key]));
-  renderModes();renderClimates();renderScens();preview();}
+function renderScensRule(){const c=SCENARIOS[opts.scen];$('scenRule').textContent=`You ${opts.side==='A'?'attack':'defend'}: ${c.goal[opts.side]}`;}
+function applyOptions(o){Object.assign(opts,o);syncSegs();renderModes();renderClimates();renderScens();preview();}
 $('optCode').onchange=()=>{const o=decodeGame($('optCode').value);if(o){applyOptions(o);$('codeMsg').textContent='Game code loaded.';}else{$('codeMsg').textContent='That isn’t a valid game code.';$('optCode').value=encodeGame(opts);}};
 $('optCode').onkeydown=e=>{if(e.key==='Enter')$('optCode').onchange();};
 $('optCopy').onclick=()=>{const url=location.href.split('#')[0].split('?')[0]+'?game='+encodeGame(opts),done=m=>{$('codeMsg').textContent=m;};
@@ -2333,11 +2975,26 @@ renderScens();
 $('optSeed').onchange=()=>{const v=parseInt($('optSeed').value,10);if(v>0){opts.seed=v;preview();}};
 $('optReroll').onclick=()=>{opts.seed=1+Math.floor(Math.random()*99999);preview();};
 $('optStart').onclick=()=>newGame({...opts});
-$('btnMenu').onclick=()=>{if(G&&G.phase==='play')G.paused=true;$('endModal').hidden=true;$('optResume').hidden=!G||G.phase==='over';$('startModal').hidden=false;updateHUD();};
+function showStart(){if(G&&G.phase==='play')G.paused=true;closePops();$('endModal').hidden=true;const back=!G||G.phase==='over';$('optResume').hidden=back;$('ngClose').hidden=back;
+  $('startModal').hidden=false;updateHUD(true);}
+$('btnMenu').onclick=showStart;
 // a map previewed from the menu replaces M, so restore the game's own map before resuming
-$('optResume').onclick=()=>{if(M.seed!==G.seed||M.mode!==G.mode||M.climate!==G.climate){if(M.seed!==G.seed||M.mode!==G.mode)M=genMap(G.seed,G.mode);setClimate(G.climate);renderTerrain();rebuildTrenchMask();M.dmg=G.dmg;applyCrossings();}$('startModal').hidden=true;updateHUD();};
+$('optResume').onclick=$('ngClose').onclick=()=>{if(!G||G.phase==='over')return;if(M.seed!==G.seed||M.mode!==G.mode||M.climate!==G.climate){if(M.seed!==G.seed||M.mode!==G.mode)M=genMap(G.seed,G.mode);setClimate(G.climate);renderTerrain();rebuildTrenchMask();M.dmg=G.dmg;applyCrossings();}
+  $('startModal').hidden=true;$('startModal').classList.remove('showmap');updateHUD(true);};
+$('ngShowMap').onclick=()=>{const on=$('startModal').classList.toggle('showmap');$('ngShowMapT').textContent=on?'Hide Map':'Show Map';renderSettings();scaleAnchor();};
+$('zoomIn').onclick=()=>zoomAt(vw/2,vh/2,1.25);$('zoomOut').onclick=()=>zoomAt(vw/2,vh/2,1/1.25);$('zoomFit').onclick=fit;
 $('endReplay').onclick=()=>newGame({side:G.player,strength:G.strength,seed:G.seed,mode:G.mode,diff:G.diff,climate:G.climate,scen:G.scen});
-$('endNew').onclick=()=>{opts.seed=1+Math.floor(Math.random()*99999);preview();$('endModal').hidden=true;$('optResume').hidden=true;$('startModal').hidden=false;};
+$('endNew').onclick=()=>{opts.seed=1+Math.floor(Math.random()*99999);preview();$('endModal').hidden=true;$('optResume').hidden=true;$('ngClose').hidden=true;$('startModal').hidden=false;updateHUD(true);};
+// the end-of-battle sheet
+function showEnd(winner,reason){const me=G.player,them=me==='A'?'D':'A',win=winner===me,draw=winner===null;
+  $('endIcon').className='resIc'+(draw?' draw':win?'':' loss');$('endIcon').innerHTML=draw?ICON.equal:win?ICON.check:ICON.cross;
+  $('endTitle').textContent=draw?'Draw':win?'Victory':'Defeat';$('endReason').textContent=reason;
+  $('endRings').innerHTML=G.objs.map(o=>ring(o,30)).join('');$('endRings').setAttribute('aria-label',G.objs.map(o=>`${o.key} ${ownerLabel(o)[0]}`).join(', '));
+  const n=G.objs.filter(o=>o.owner==='A').length;
+  $('endStats').innerHTML=`<div class="tiles3"><div class="grp"><div class="s2">Battle time</div><b class="tn">${fmt(G.time)}</b></div><div class="grp"><div class="s2">Your losses</div><b class="tn">${G.stats.lost[me]}</b></div><div class="grp"><div class="s2">Enemy losses</div><b class="tn" style="color:${them==='D'?'var(--defender-text)':'var(--ink)'}">${G.stats.lost[them]}</b></div></div>
+    <div class="grp" style="margin-bottom:16px"><div class="rw"><span>Objectives held by attacker</span><span class="s2 tn">${n} of 3</span></div><div class="rw"><span>Scenario</span><span class="s2">${SC().name}</span></div><div class="rw"><span>Battlefield</span><span class="s2">${MAP_MODES[G.mode].name}</span></div><div class="rw"><span>Climate</span><span class="s2">${CLIMATES[G.climate].name}</span></div><div class="rw"><span>Difficulty</span><span class="s2">${DIFFICULTY[G.diff].name}</span></div></div>
+    ${G.plan?`<div class="lb">The enemy’s plan</div><div class="grp planTx"><b>${G.plan.name}.</b> ${DOCTRINE_DESC[G.plan.key]||''}</div>`:''}`;
+  $('endWatch').disabled=!(G.rec&&G.rec.frames.length>1);closePops();$('endModal').hidden=false;updateHUD(true);}
 
 /* ------------------------------------------------------------ loop */
 let last=performance.now(),acc=0,lastErr='';
@@ -2349,15 +3006,15 @@ function frame(ts){requestAnimationFrame(frame);const dt=Math.min(.1,(ts-last)/1
     if(G){if(G.phase==='play'&&!G.paused&&!modalOpen()){acc+=dt*G.speed;let n=0;while(acc>=STEP&&n<16){step(STEP);acc-=STEP;n++;}if(n>=16)acc=0;}else acc=0;
       for(const m of G.marks)m.t-=dt;G.marks=G.marks.filter(m=>m.t>0);
       if(ts-lastHud>200){lastHud=ts;updateHUD();}}
-    draw();
+    draw();/* if(G&&$('callouts').firstChild)placeCallouts(); */
   }catch(err){reportError(err);}}
 function reportError(err){console.error(err);const msg=String(err&&err.message||err);if(G&&G.phase==='play')G.paused=true;
   if(msg!==lastErr){lastErr=msg;addLog('Error: '+msg,'a');}}
 addEventListener('resize',resize);
 try{const m=(location.search.match(/[?&]game=([\w-]+)/)||location.hash.match(/game=([\w-]+)/)||[])[1],o=m&&decodeGame(decodeURIComponent(m));
-  if(o){Object.assign(opts,o);for(const [id,key] of [['optSide','side'],['optStr','strength'],['optDiff','diff']])document.querySelectorAll(`#${id} button`).forEach(b=>b.classList.toggle('on',b.dataset.v===opts[key]));
+  if(o){Object.assign(opts,o);syncSegs();
     renderModes();renderClimates();renderScens();$('codeMsg').textContent='Game options loaded from the link. Press Start to play.';}}catch(e){}
-initReplayUI();
-resize();preview();fit();requestAnimationFrame(frame);
+initReplayUI();applyAppearance();applyLayout();renderSettings();
+resize();preview();fit();scaleAnchor();requestAnimationFrame(frame);
 })();
 </script>

@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A5.2m · New game, map shown</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ap{font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#1d1d1f;font-size:13px;line-height:1.3;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.gl{background:rgba(248,248,250,.74);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border-radius:22px;box-shadow:0 0 0 .5px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.85),0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.08)}
+.tn{font-variant-numeric:tabular-nums}
+.s2{color:#6e6e73}
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:50px;padding:0 16px;border-radius:25px;border:0;background:rgba(118,118,128,.14);color:#1d1d1f;font:500 14px Inter,-apple-system,sans-serif;letter-spacing:-.005em;cursor:pointer;white-space:nowrap;text-decoration:none}
+.bt:hover{background:rgba(118,118,128,.22)}
+.ib{display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:22px;background:transparent;color:#1d1d1f;cursor:pointer}
+.ib:hover{background:rgba(0,0,0,.055)}
+.cta{display:inline-flex;align-items:center;justify-content:center;height:50px;padding:0 24px;border:0;border-radius:25px;background:#007aff;color:#fff;font:600 15px Inter,-apple-system,sans-serif;letter-spacing:-.01em;cursor:pointer}
+.seg{display:flex;padding:2px;border-radius:12px;background:rgba(118,118,128,.14)}
+.sg{flex:1;height:36px;border:0;border-radius:10px;background:transparent;font:500 13px Inter,sans-serif;color:#1d1d1f;cursor:pointer}
+.sg.on{background:#fff;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.14),0 0 0 .5px rgba(0,0,0,.05)}
+</style>
+</helmet>
+<div class="ap" style="position: relative; width: 400px; height: 860px; overflow: hidden; background: #3d4430">
+<img src="../assets/map-real.jpg" alt="Battlefield preview, free to pan and zoom" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+
+<div style="position: absolute; left: 16px; right: 16px; top: 16px; display: flex; gap: 8px; align-items: center">
+<div class="gl" style="flex: 1; padding: 4px; border-radius: 16px">
+<div class="seg" role="radiogroup" aria-label="Map view"><button class="sg on" role="radio" aria-checked="true">Satellite</button><button class="sg" role="radio" aria-checked="false">Strategic</button></div>
+</div>
+</div>
+<div class="gl" style="position: absolute; left: 50%; top: 76px; transform: translateX(-50%); padding: 8px 14px; border-radius: 16px; font-size: 12.5px; white-space: nowrap"><span class="s2">Drag to pan · Pinch to zoom</span></div>
+
+<div class="gl" style="position: absolute; right: 16px; top: 300px; display: flex; flex-direction: column; padding: 3px; border-radius: 25px" role="toolbar" aria-label="Map controls">
+<button class="ib" aria-label="Zoom in"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button>
+<div style="height: .5px; margin: 0 10px; background: rgba(0,0,0,.14)"></div>
+<button class="ib" aria-label="Zoom out"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 10h12"/></svg></button>
+<div style="height: .5px; margin: 0 10px; background: rgba(0,0,0,.14)"></div>
+<button class="ib" aria-label="Fit whole battlefield"><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg></button>
+</div>
+
+<section class="gl" role="dialog" aria-label="New game, collapsed" style="position: absolute; left: 8px; right: 8px; bottom: 8px; border-radius: 32px; background: rgba(246,246,248,.9); padding: 7px 16px 16px">
+<div style="width: 36px; height: 5px; border-radius: 3px; background: rgba(60,60,67,.3); margin: 0 auto 12px" aria-hidden="true"></div>
+<div style="display: flex; align-items: center; gap: 12px; margin-bottom: 14px; padding: 0 4px">
+<img src="../assets/logo-ink.svg" alt="COMPANY" style="height: 20px; width: auto">
+<div style="flex: 1; min-width: 0">
+<div style="font-size: 15px; font-weight: 600; letter-spacing: -.015em">Standard Battle</div>
+<div class="s2" style="font-size: 12.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis">River Town · Temperate · Attack · Normal</div>
+</div>
+</div>
+<div style="display: flex; gap: 10px">
+<a class="bt" href="A5m-NewGame.dc.html" style="flex: 1"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M3 6h9M15 6h2M3 14h2M8 14h9"/><circle cx="13.5" cy="6" r="1.8"/><circle cx="6.5" cy="14" r="1.8"/></svg>Settings</a>
+<button class="cta" style="flex: 1">Start</button>
+</div>
+</section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"map":{"editor":"enum","options":["satellite","paper (stand-in)"],"default":"satellite"},"$preview":{"width":400,"height":860}}'>
+class Component extends DCLogic {
+renderVals() {
+const paper = (this.props.map ?? 'satellite') !== 'satellite';
+return { paper, mapSrc: paper ? '../assets/map-paper-standin.svg' : '../assets/map-real.jpg' };
+}
+}
+</script>
+</body>
+</html>

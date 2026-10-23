@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Open questions</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ap{font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#1d1d1f;font-size:13.5px;line-height:1.45;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.s2{color:#6e6e73}
+.card{background:#fff;border-radius:22px;padding:22px 24px;box-shadow:0 0 0 .5px rgba(0,0,0,.08)}
+.h2{display:flex;align-items:center;gap:10px;margin:0 0 12px;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.dot{width:26px;height:26px;border-radius:13px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:13px;font-weight:700;flex:none}
+.q{display:flex;gap:12px;padding:10px 0;box-shadow:inset 0 -.5px 0 rgba(0,0,0,.1)}
+.q:last-child{box-shadow:none}
+.tag{flex:none;align-self:flex-start;font-size:11px;font-weight:600;padding:2px 8px;border-radius:9px;white-space:nowrap}
+.pro{background:rgba(0,122,255,.12);color:#0057b8}
+.ph{background:rgba(255,149,0,.16);color:#a14b00}
+.unk{background:rgba(118,118,128,.16);color:#3a3a3c}
+kbd{display:inline-block;min-width:16px;padding:0 5px;border-radius:6px;background:rgba(118,118,128,.14);font:600 12px Inter,sans-serif;text-align:center}
+</style>
+</helmet>
+<div class="ap" style="width: 1440px; min-height: 1400px; box-sizing: border-box; background: #f2f2f4; padding: 56px">
+<header style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 28px">
+<div>
+<img src="../assets/logo-ink.svg" alt="COMPANY" style="height: 28px; width: auto; margin-bottom: 14px">
+<h1 style="margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -.03em">Open questions</h1>
+<p class="s2" style="margin: 6px 0 0; font-size: 15px">Things in these mockups I'm not sure match the game. Please confirm or correct each one before it's built.</p>
+</div>
+<div style="display: flex; gap: 8px; font-size: 12px"><span class="tag pro">Proposal: I invented it</span><span class="tag ph">Placeholder copy</span><span class="tag unk">Unknown: need your answer</span></div>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: start">
+
+<section class="card">
+<h2 class="h2"><span class="dot" style="background: #007aff">1</span>Key bindings</h2>
+<div class="q"><span class="tag pro">Proposal</span><span><kbd>Space</kbd> pauses and resumes. The brief lists no key for Pause.</span></div>
+<div class="q"><span class="tag pro">Proposal</span><span><kbd>U</kbd> hides the whole interface. The brief asks for one key but doesn't name it.</span></div>
+<div class="q"><span class="tag pro">Proposal</span><span><kbd>?</kbd> opens Controls and <kbd>Esc</kbd> closes any popover or sheet.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Is there a key for Dig trench, Begin battle (<kbd>Enter</kbd>?), New game, Settings or Show map? I left them unmarked.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Undo shows <kbd>⌘Z</kbd>. Should Windows and Linux show <kbd>Ctrl Z</kbd>? I assume yes.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Are there keys for selecting by type (All, Infantry…), zoom or panning? None are shown.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Do <kbd>,</kbd> <kbd>.</kbd> step speed in replay too, and is 8× a real replay speed? I showed 1, 2, 4, 8, 16×.</span></div>
+</section>
+
+<section class="card">
+<h2 class="h2"><span class="dot" style="background: #34c759">2</span>Settings</h2>
+<div class="q"><span class="tag pro">Proposal</span><span><b>Interface layout: Floating / Docked</b>, Floating by default. You asked for it, but where it lives and how it's saved are my guesses: per player, remembered, and it applies at once, even mid-battle.</span></div>
+<div class="q"><span class="tag pro">Proposal</span><span><b>Appearance: Light / Dark / Auto.</b> I added it so players can reach the dark versions. Should it be tied to Layout instead?</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Possibly missing settings: sound and volume, UI scale or text size, colour-blind side colours, reduce transparency (no glass blur), reduce motion, remapping keys, hiding shortcut hints, edge-pan speed. Does the game have any of these?</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Does the Settings popover need a "Reset to defaults" action or a version / credits line?</span></div>
+</section>
+
+<section class="card">
+<h2 class="h2"><span class="dot" style="background: #af52de">3</span>Touch and phone</h2>
+<div class="q"><span class="tag pro">Proposal</span><span>Long-press and drag to box-select; two-finger tap to queue an order; pinch to zoom; swipe sheets up or down.</span></div>
+<div class="q"><span class="tag pro">Proposal</span><span>On touch, pick an order first, then tap the map. Shortcut letters are hidden on touch-only devices.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>What happens to Ctrl-click (go straight) and Shift (queue) on touch? I mapped queue to a two-finger tap and left "go straight" out.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Your starting units sit at the bottom of the map, under the phone's command bars. Should the camera open higher on phones?</span></div>
+</section>
+
+<section class="card" style="grid-column: span 2">
+<h2 class="h2"><span class="dot" style="background: #ff9500">4</span>Copy and numbers I wrote</h2>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); column-gap: 28px">
+<div class="q"><span class="tag ph">Placeholder</span><span>The seven one-line scenario descriptions in New game.</span></div>
+<div class="q"><span class="tag ph">Placeholder</span><span>Victory, Defeat and Draw reasons, their stats, and the enemy's plan text.</span></div>
+<div class="q"><span class="tag ph">Placeholder</span><span>Event log wording: "Air strike on Selitz east · 1 enemy lost", "Enemy seen in Selitz", "Battle started".</span></div>
+<div class="q"><span class="tag ph">Placeholder</span><span>Callout "Polow Bridge is defended · Hold A for 2:00 to take it". Is a 2:00 hold really how capture works?</span></div>
+<div class="q"><span class="tag ph">Placeholder</span><span>Defender counts in deployment (12 / 3 / 4 / 2), the trench budget (4.0 km), and "Setup" as the event time stamp before the clock starts.</span></div>
+<div class="q"><span class="tag ph">Placeholder</span><span>The defender's game code ST-RT-TE-<b>DSN</b>-PGW and the defender goal line.</span></div>
+<div class="q"><span class="tag ph">Placeholder</span><span>Replay timeline data: strength lines, ownership bands and event markers.</span></div>
+<div class="q"><span class="tag ph">Placeholder</span><span>Hint "Click a unit or drag to select…" (removed from A1) and "Drag to draw trench".</span></div>
+</div>
+</section>
+
+<section class="card">
+<h2 class="h2"><span class="dot" style="background: #ff3b30">5</span>Game rules I assumed</h2>
+<div class="q"><span class="tag unk">Unknown</span><span>Pontoon and Repair are greyed out without engineers; Fire needs artillery; Air strike works with nothing selected.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Pause and speed are disabled during deployment.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>"Enemy in sight" counts only what you can currently see.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Objective ring fill = capture progress; "Contested" shows a percentage.</span></div>
+</section>
+
+<section class="card" style="grid-column: span 3">
+<h2 class="h2"><span class="dot" style="background: #8e8e93">6</span>Visual things I couldn't check</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); column-gap: 28px">
+<div class="q"><span class="tag unk">Unknown</span><span><b>Strategic (paper) map</b> is my stand-in drawing. I need a real screenshot to check the glass and text over it.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span><b>Winter and Tundra</b> (white ground) and <b>Night Assault</b> haven't been checked for contrast, especially the white event text on the map.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span><b>Defender's view</b>: I used your attacker screenshot, so the attacker's units still show in deployment.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span><b>C and D</b> (Dark floating, Light docked) were recoloured in code from A and B and haven't been reviewed by eye.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span><b>Tablet sizes (600–1023 px) and 2560 px</b> are described in the spec but not drawn.</span></div>
+<div class="q"><span class="tag pro">Proposal</span><span><b>White-text logo</b> for dark backgrounds is my recolour of COMPANY.svg. Is that acceptable, or is there an official dark version?</span></div>
+<div class="q"><span class="tag pro">Proposal</span><span><b>Inter</b> stands in for Apple's SF, as the closest Google Fonts match.</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span><b>Glass blur cost</b>: backdrop-filter over a full-screen canvas may be heavy on low-end devices. Is a solid fallback needed?</span></div>
+<div class="q"><span class="tag unk">Unknown</span><span>Are <b>reinforcement arrival</b>, <b>out of supply</b> and <b>high-ground bonus</b> states needed in the live HUD? So far they appear only in the inspector and spec.</span></div>
+</div>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

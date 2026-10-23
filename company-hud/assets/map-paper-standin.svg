@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1440 900" width="1440" height="900">
+<rect width="1440" height="900" fill="#f7f5ef"/>
+<g stroke="#e6e1d5" stroke-width="1">
+<path d="M288 0 V900 M576 0 V900 M864 0 V900 M1152 0 V900 M0 162 H1440 M0 450 H1440 M0 738 H1440"/>
+</g>
+<g fill="#d3e6c4" stroke="#9cc185" stroke-width="1.2">
+<path d="M58 118 L210 92 L336 104 L384 250 L330 330 L298 424 L180 466 L104 452 L40 330 Z"/>
+<path d="M402 36 L540 20 L626 32 L654 150 L578 196 L452 198 L410 120 Z"/>
+<path d="M1182 420 L1300 392 L1420 380 L1440 396 L1440 560 L1330 582 L1236 594 L1196 520 Z"/>
+<path d="M946 706 L1080 690 L1196 694 L1258 760 L1250 864 L1120 892 L984 878 L960 790 Z"/>
+<path d="M0 520 L60 510 L92 560 L40 600 L0 602 Z"/>
+<path d="M1300 640 L1380 636 L1440 650 L1440 760 L1360 752 L1310 700 Z"/>
+<path d="M620 620 L690 612 L716 650 L662 672 L618 660 Z"/>
+</g>
+<g fill="none" stroke="#cfae84" stroke-width="1">
+<ellipse cx="1050" cy="222" rx="190" ry="130"/>
+<ellipse cx="1050" cy="220" rx="148" ry="100"/>
+<ellipse cx="1048" cy="218" rx="106" ry="70"/>
+<ellipse cx="1047" cy="216" rx="66" ry="42"/>
+<ellipse cx="1046" cy="214" rx="28" ry="17"/>
+</g>
+<path d="M0 652 C 70 640 110 626 160 630 C 220 636 250 666 310 662 C 370 658 390 638 440 636 C 480 634 500 620 520 610 C 560 592 600 580 640 574 C 690 566 712 556 750 560 C 800 566 830 588 880 598 C 930 608 960 628 1010 636 C 1060 644 1080 654 1120 650 C 1170 644 1200 616 1250 608 C 1320 598 1380 586 1440 578" fill="none" stroke="#5f93c9" stroke-width="22" stroke-linecap="round"/>
+<path d="M0 652 C 70 640 110 626 160 630 C 220 636 250 666 310 662 C 370 658 390 638 440 636 C 480 634 500 620 520 610 C 560 592 600 580 640 574 C 690 566 712 556 750 560 C 800 566 830 588 880 598 C 930 608 960 628 1010 636 C 1060 644 1080 654 1120 650 C 1170 644 1200 616 1250 608 C 1320 598 1380 586 1440 578" fill="none" stroke="#bcd8f0" stroke-width="18" stroke-linecap="round"/>
+<g fill="#ddd7cc" stroke="#aaa294" stroke-width="0.8">
+<rect x="700" y="392" width="26" height="18"/><rect x="732" y="388" width="22" height="22"/><rect x="762" y="396" width="30" height="16"/><rect x="798" y="392" width="20" height="24"/>
+<rect x="690" y="420" width="20" height="26"/><rect x="716" y="424" width="34" height="18"/><rect x="784" y="440" width="26" height="20"/><rect x="816" y="434" width="24" height="18"/>
+<rect x="846" y="418" width="26" height="22"/><rect x="700" y="456" width="28" height="20"/><rect x="736" y="462" width="22" height="22"/><rect x="770" y="470" width="30" height="18"/>
+<rect x="808" y="466" width="22" height="26"/><rect x="840" y="456" width="26" height="18"/><rect x="668" y="470" width="22" height="18"/><rect x="760" y="350" width="22" height="18"/>
+<rect x="732" y="352" width="18" height="22"/><rect x="874" y="446" width="20" height="18"/>
+<rect x="290" y="764" width="18" height="14"/><rect x="312" y="770" width="20" height="14"/><rect x="276" y="786" width="16" height="16"/><rect x="316" y="790" width="18" height="14"/>
+</g>
+<g fill="none" stroke-linecap="round" stroke-linejoin="round">
+<path d="M470 900 L492 790 L508 690 L520 610 L586 512 L700 450 L770 430 L900 362 L1012 262 L1130 196 L1260 156 L1440 118" stroke="#ffffff" stroke-width="8"/>
+<path d="M470 900 L492 790 L508 690 L520 610 L586 512 L700 450 L770 430 L900 362 L1012 262 L1130 196 L1260 156 L1440 118" stroke="#d23f33" stroke-width="4.5"/>
+<path d="M0 302 L170 330 L320 362 L470 400 L620 424 L770 430 L900 452 L1010 482 L1080 560 L1112 652 L1140 760 L1160 900" stroke="#e2766b" stroke-width="3"/>
+<path d="M0 806 L150 796 L300 782 L492 768 L700 778 L900 792 L1100 780 L1300 768 L1440 762" stroke="#e2766b" stroke-width="3"/>
+<path d="M770 430 L742 300 L720 160 L704 0" stroke="#e2766b" stroke-width="2.5"/>
+<path d="M1012 262 L1046 214 M300 782 L260 900" stroke="#e2766b" stroke-width="2"/>
+</g>
+<g fill="#5b4a3f">
+<circle cx="905" cy="792" r="3.5"/><circle cx="924" cy="789" r="2.5"/><circle cx="944" cy="793" r="4"/><circle cx="966" cy="790" r="3"/><circle cx="988" cy="787" r="3.5"/>
+</g>
+<rect x="510" y="602" width="22" height="14" fill="#ffffff" stroke="#3a3632" stroke-width="1.5" transform="rotate(-30 520 609)"/>
+<g font-family="Helvetica, Arial, sans-serif" fill="#5d5951" font-size="13" font-style="italic">
+<text x="806" y="378">Korstadt</text>
+<text x="420" y="664">Grunitz</text>
+<text x="1076" y="174">Hill 400</text>
+<text x="1080" y="690">Mill Ford</text>
+<text x="160" y="250">Grunitzer Wald</text>
+<text x="286" y="822">Ostdorf</text>
+<text x="1236" y="596" font-size="12" fill="#4f7fb0">Lauter</text>
+</g>
+<g font-family="Helvetica, Arial, sans-serif" fill="#a98a63" font-size="10">
+<text x="1040" y="246">400</text><text x="1010" y="292">380</text><text x="1180" y="300">360</text>
+</g>
+</svg>

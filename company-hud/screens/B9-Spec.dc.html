@@ -1,0 +1,218 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>B9 · Spec sheet</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.bp{font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#f5f5f7;font-size:13px;line-height:1.35;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.mat{background:rgba(28,28,30,.82);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%)}
+.tn{font-variant-numeric:tabular-nums}
+.s2{color:#98989f}
+.card{background:#1c1c1e;border-radius:16px;padding:24px;box-shadow:0 0 0 1px rgba(255,255,255,.06)}
+.h2{margin:0 0 16px;font-size:17px;font-weight:600;letter-spacing:-.015em}
+.cap{font-size:11px;color:#98989f}
+.code{font-size:11.5px;font-variant-numeric:tabular-nums;color:#c7c7cc}
+.sw{height:44px;border-radius:8px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.1)}
+.row{display:flex;align-items:baseline;justify-content:space-between;gap:16px;padding:9px 0;box-shadow:inset 0 -1px 0 rgba(255,255,255,.07)}
+.row:last-child{box-shadow:none}
+.b{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:32px;padding:0 10px;border-radius:999px;border:0;background:transparent;color:#f5f5f7;font:500 13px Inter,-apple-system,sans-serif;white-space:nowrap}
+.k{font-size:11.5px;font-weight:500;color:#8d8d93}
+.seg{display:flex;padding:2px;border-radius:10px;background:rgba(118,118,128,.24)}
+.sg{flex:1;height:26px;min-width:40px;border:0;border-radius:8px;background:transparent;color:#f5f5f7;font:500 12px Inter,sans-serif}
+.sg.on{background:rgba(255,255,255,.24);font-weight:600;box-shadow:0 1px 2px rgba(0,0,0,.3)}
+.sl{font-size:10.5px;color:rgba(255,255,255,.9);text-shadow:0 1px 2px rgba(0,0,0,.7);text-align:center;margin-top:6px}
+.tg{position:relative;width:42px;height:24px;border-radius:12px;border:0;padding:0;flex:none}
+.tg span{position:absolute;top:2px;width:20px;height:20px;border-radius:10px;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.mapbg{background-image:url(../assets/map-real.jpg);background-size:cover;background-position:50% 40%}
+kbd{display:inline-block;min-width:18px;padding:1px 6px;border-radius:5px;background:rgba(255,255,255,.12);font:600 11.5px Inter,sans-serif;text-align:center;color:#f5f5f7}
+</style>
+</helmet>
+<div class="bp" style="width: 1440px; min-height: 1400px; box-sizing: border-box; background: #111113; padding: 56px">
+<header style="display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 32px">
+<div>
+<img src="../assets/logo-light.svg" alt="COMPANY" style="height: 26px; width: auto; margin-bottom: 14px">
+<h1 style="margin: 0; font-size: 34px; font-weight: 700; letter-spacing: -.03em">Direction B · Dark pro app</h1>
+<p class="s2" style="margin: 6px 0 0; font-size: 15px">Handoff spec. Toolbar and command dock flush to the edges; outliner and inspector slide in from the sides.</p>
+</div>
+<div class="s2" style="text-align: right; font-size: 12px; line-height: 1.6">One family: Inter 400 / 500 / 600 / 700<br>All numbers: <span style="font-weight: 600; color: #f5f5f7">tabular-nums</span><br>Hide whole interface: <kbd>U</kbd></div>
+</header>
+
+<div style="display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 20px">
+
+<section class="card" style="grid-column: span 7">
+<h2 class="h2">Colour tokens</h2>
+<div style="display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px 14px">
+<div><div class="sw" style="background: #f5f5f7"></div><div style="font-weight: 600; margin-top: 6px">--ink</div><div class="code">#F5F5F7</div></div>
+<div><div class="sw" style="background: #98989f"></div><div style="font-weight: 600; margin-top: 6px">--ink-2</div><div class="code">#98989F · secondary</div></div>
+<div><div class="sw" style="background: #8d8d93"></div><div style="font-weight: 600; margin-top: 6px">--ink-3</div><div class="code">#8D8D93 · key hints</div></div>
+<div><div class="sw" style="background: rgba(255,255,255,.1)"></div><div style="font-weight: 600; margin-top: 6px">--hairline</div><div class="code">rgba(255,255,255,.08–.1)</div></div>
+<div><div class="sw" style="background: rgba(28,28,30,.82)"></div><div style="font-weight: 600; margin-top: 6px">--bar</div><div class="code">rgba(28,28,30,.82)</div></div>
+<div><div class="sw" style="background: rgba(28,28,30,.88)"></div><div style="font-weight: 600; margin-top: 6px">--sheet</div><div class="code">rgba(28,28,30,.86–.88)</div></div>
+<div><div class="sw" style="background: rgba(255,255,255,.06)"></div><div style="font-weight: 600; margin-top: 6px">--group</div><div class="code">rgba(255,255,255,.06)</div></div>
+<div><div class="sw" style="background: rgba(118,118,128,.24)"></div><div style="font-weight: 600; margin-top: 6px">--fill</div><div class="code">rgba(118,118,128,.24)</div></div>
+<div><div class="sw" style="background: #0a84ff"></div><div style="font-weight: 600; margin-top: 6px">--accent</div><div class="code">#0A84FF · text #409CFF</div></div>
+<div><div class="sw" style="background: #17181c"></div><div style="font-weight: 600; margin-top: 6px">--attacker</div><div class="code">#17181C + white 1.5px edge</div></div>
+<div><div class="sw" style="background: #7a2cbf"></div><div style="font-weight: 600; margin-top: 6px">--defender</div><div class="code">#7A2CBF · ring #9D5CDB · text #C49BF0</div></div>
+<div><div class="sw" style="background: #ff9f0a"></div><div style="font-weight: 600; margin-top: 6px">--contested</div><div class="code">#FF9F0A · text #FFB340</div></div>
+<div><div class="sw" style="background: #30d158"></div><div style="font-weight: 600; margin-top: 6px">--ok</div><div class="code">#30D158</div></div>
+<div><div class="sw" style="background: #ff453a"></div><div style="font-weight: 600; margin-top: 6px">--danger</div><div class="code">#FF453A</div></div>
+<div><div class="sw" style="background: #fff"></div><div style="font-weight: 600; margin-top: 6px">--on-map</div><div class="code">#FFF + shadow</div></div>
+<div><div class="sw" style="background: #111113"></div><div style="font-weight: 600; margin-top: 6px">--canvas-edge</div><div class="code">#111113 · page</div></div>
+</div>
+<p class="cap" style="margin: 16px 0 0">Side colours are unchanged. On the dark bars, the defender ring and text use lighter tints of #7A2CBF so they pass contrast; the attacker swatch keeps a white edge.</p>
+</section>
+
+<section class="card" style="grid-column: span 5">
+<h2 class="h2">Type scale · Inter</h2>
+<div class="row"><span style="font-size: 32px; font-weight: 700; letter-spacing: -.03em; line-height: 1.1">Victory</span><span class="code">Display 32 / 700</span></div>
+<div class="row"><span class="tn" style="font-size: 20px; font-weight: 600; letter-spacing: -.02em">12:40</span><span class="code">Clock 20 / 600 / tnum</span></div>
+<div class="row"><span style="font-size: 18px; font-weight: 600; letter-spacing: -.02em">New Game</span><span class="code">Sheet title 16–18 / 600</span></div>
+<div class="row"><span style="font-size: 15px; font-weight: 600">4 Selected</span><span class="code">Panel heading 15 / 600</span></div>
+<div class="row"><span style="font-weight: 500">Polow Bridge</span><span class="code">Body 13 / 400–500</span></div>
+<div class="row"><span style="font-size: 11.5px; font-weight: 600; color: #98989f">Objectives</span><span class="code">Section 11.5 / 600</span></div>
+<div class="row"><span class="s2" style="font-size: 11px">River Town · Temperate</span><span class="code">Caption 10.5–11</span></div>
+<div class="row"><span>Move <span class="k">M</span></span><span class="code">Key hint 11.5 / 500 · after label</span></div>
+</section>
+
+<section class="card" style="grid-column: span 4">
+<h2 class="h2">Layout and spacing</h2>
+<div class="row"><span>Toolbar</span><span class="code">56 high · 38 collapsed</span></div>
+<div class="row"><span>Command dock</span><span class="code">60 high · 40 collapsed</span></div>
+<div class="row"><span>Replay dock</span><span class="code">176 high</span></div>
+<div class="row"><span>Outliner / inspector</span><span class="code">272 wide · edge tab 26</span></div>
+<div class="row"><span>Bar padding</span><span class="code">12 sides</span></div>
+<div class="row"><span>Button gap</span><span class="code">2 in groups · 17 divider</span></div>
+<div class="row"><span>Panel padding</span><span class="code">10–14</span></div>
+<div class="row"><span>On-map inset</span><span class="code">16–20 from bars</span></div>
+</section>
+
+<section class="card" style="grid-column: span 4">
+<h2 class="h2">Radius, border, shadow</h2>
+<div class="row"><span>Bars</span><span class="code">0 · flush; everything inside matches A</span></div>
+<div class="row"><span>Button, segment</span><span class="code">height ÷ 2 · segment 10 / 8</span></div>
+<div class="row"><span>Group, tile, field</span><span class="code">12 / 10 / 10</span></div>
+<div class="row"><span>Sheet, dialog</span><span class="code">28 · same rounding as A</span></div>
+<div class="row"><span>Callout, pill</span><span class="code">height ÷ 2</span></div>
+<div class="row"><span>Bar edge</span><span class="code">inset 1px rgba(255,255,255,.08)</span></div>
+<div class="row"><span>Bar shadow</span><span class="code">1px rgba(0,0,0,.4) outside</span></div>
+<div class="row"><span>Sheet shadow</span><span class="code">0 24px 60px rgba(0,0,0,.5)</span></div>
+</section>
+
+<section class="card" style="grid-column: span 4">
+<h2 class="h2">Breakpoints</h2>
+<div class="row"><span style="font-weight: 600">≥ 1280 px</span><span class="code">Full toolbar, labelled dock</span></div>
+<div class="row"><span style="font-weight: 600">1024–1279</span><span class="code">Objective names hide; rings stay</span></div>
+<div class="row"><span style="font-weight: 600">600–1023</span><span class="code">Dock icons + keys; panels overlay</span></div>
+<div class="row"><span style="font-weight: 600">&lt; 600 px</span><span class="code">Phone: tab-bar dock, sheets</span></div>
+<div class="row"><span>Touch</span><span class="code">Buttons grow to 44</span></div>
+<div class="row"><span>Key hints</span><span class="code">Hidden on touch-only</span></div>
+</section>
+
+<section class="card" style="grid-column: span 12; padding: 0; overflow: hidden">
+<div style="padding: 24px 24px 0"><h2 class="h2">Component states</h2></div>
+<div class="mapbg" style="margin-top: 4px; padding: 28px 24px 26px">
+<div style="display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 18px; align-items: start">
+
+<div><div class="mat" style="padding: 6px; border-radius: 22px; display: flex; flex-direction: column; gap: 4px; box-shadow: 0 0 0 1px rgba(255,255,255,.08)">
+<span class="b">Move <span class="k">M</span></span>
+<span class="b" style="background: rgba(255,255,255,.08)">Hover <span class="k">M</span></span>
+<span class="b" style="background: #0a84ff">Active <span class="k" style="color: rgba(255,255,255,.75)">M</span></span>
+<span class="b" style="color: rgba(245,245,247,.3)">Disabled <span class="k" style="color: rgba(245,245,247,.2)">M</span></span>
+</div><div class="sl">Dock button · key after label</div></div>
+
+<div><div class="mat" style="padding: 10px; border-radius: 22px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 0 0 1px rgba(255,255,255,.08)">
+<div class="seg"><span class="sg on" style="display: flex; align-items: center; justify-content: center">1×</span><span class="sg" style="display: flex; align-items: center; justify-content: center">2×</span><span class="sg" style="display: flex; align-items: center; justify-content: center">4×</span></div>
+<div class="seg" style="opacity: .4"><span class="sg on" style="display: flex; align-items: center; justify-content: center">1×</span><span class="sg" style="display: flex; align-items: center; justify-content: center">2×</span><span class="sg" style="display: flex; align-items: center; justify-content: center">4×</span></div>
+</div><div class="sl">Segmented · default, disabled</div></div>
+
+<div><div class="mat" style="padding: 10px 12px; border-radius: 22px; display: flex; flex-direction: column; gap: 10px; box-shadow: 0 0 0 1px rgba(255,255,255,.08)">
+<span style="display: flex; align-items: center; gap: 8px"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12.5" fill="none" stroke="#9d5cdb" stroke-width="3"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#f5f5f7">A</text></svg><span style="font-size: 12px; color: #c49bf0">Defender</span></span>
+<span style="display: flex; align-items: center; gap: 8px"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12.5" fill="#17181c" stroke="#f5f5f7" stroke-width="2.5"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#f5f5f7">A</text></svg><span style="font-size: 12px">Attacker · 1:12 / 2:00</span></span>
+<span style="display: flex; align-items: center; gap: 8px"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12.5" fill="none" stroke="rgba(255,255,255,.14)" stroke-width="3"/><circle cx="15" cy="15" r="12.5" fill="none" stroke="#ff9f0a" stroke-width="3" stroke-dasharray="47 78.5" transform="rotate(-90 15 15)" stroke-linecap="round"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#f5f5f7">A</text></svg><span style="font-size: 12px; font-weight: 600; color: #ffb340">Contested · 60%</span></span>
+<span style="display: flex; align-items: center; gap: 8px"><svg width="26" height="26" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12.5" fill="none" stroke="rgba(255,255,255,.3)" stroke-width="3" stroke-dasharray="3 3.5"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="12.5" font-weight="700" fill="#f5f5f7">A</text></svg><span class="s2" style="font-size: 12px">Neutral</span></span>
+</div><div class="sl">Objective ring · fill = progress</div></div>
+
+<div style="display: flex; flex-direction: column; gap: 10px"><div class="mat" style="padding: 10px 12px; border-radius: 22px; box-shadow: 0 0 0 1px rgba(255,255,255,.08)">
+<div style="font-weight: 600">Outliner</div><div class="s2" style="font-size: 11.5px">Expanded, 272 px</div>
+</div>
+<div style="display: flex; gap: 8px; align-items: center"><span class="mat" style="width: 26px; height: 84px; border-radius: 0 13px 13px 0; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 600; box-shadow: 0 0 0 1px rgba(255,255,255,.08)"><span style="writing-mode: vertical-rl; transform: rotate(180deg)">Outliner</span></span><span class="sl" style="margin: 0">Collapsed edge tab</span></div>
+</div>
+
+<div style="display: flex; flex-direction: column; gap: 12px; align-items: flex-start">
+<div style="display: flex; align-items: center"><div style="width: 12px; height: 12px; background: rgba(28,28,30,.9); transform: rotate(45deg); margin-right: -7px"></div><span class="mat" style="display: flex; align-items: center; gap: 8px; padding: 7px 12px 7px 8px; border-radius: 18px; box-shadow: 0 0 0 1px rgba(255,255,255,.08)"><span style="width: 22px; height: 22px; border-radius: 11px; background: #ff9f0a; color: #1c1c1e; font-weight: 700; display: flex; align-items: center; justify-content: center">!</span><span style="font-weight: 600; font-size: 12px">Callout</span></span></div>
+<ol style="list-style: none; margin: 0; padding: 0; font-size: 12px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 0 8px rgba(0,0,0,.55)"><li style="opacity: .6"><span class="tn" style="color: rgba(255,255,255,.75)">01:52</span>  Older event</li><li><span class="tn" style="color: rgba(255,255,255,.75)">02:14</span>  <b>Newest event</b></li></ol>
+</div>
+
+<div><div class="mat" style="padding: 12px; border-radius: 22px; display: flex; flex-direction: column; gap: 8px; box-shadow: 0 0 0 1px rgba(255,255,255,.08)">
+<span style="display: inline-flex; align-items: center; justify-content: center; height: 36px; border-radius: 18px; background: #0a84ff; font-weight: 600">Primary</span>
+<span style="display: inline-flex; align-items: center; justify-content: center; height: 36px; border-radius: 18px; background: rgba(255,255,255,.1); font-weight: 500">Secondary</span>
+<span style="display: inline-flex; align-items: center; justify-content: center; height: 36px; border-radius: 10px; background: rgba(10,132,255,.2); box-shadow: inset 0 0 0 1.5px #0a84ff; font-weight: 600; font-size: 12.5px">Selected tile</span>
+</div><div class="sl">Sheet buttons and tiles</div></div>
+
+</div>
+</div>
+</section>
+
+<section class="card" style="grid-column: span 5">
+<h2 class="h2">Settings</h2>
+<div style="background: rgba(255,255,255,.06); border-radius: 10px; padding: 4px 12px">
+<div class="row" style="align-items: center; padding: 10px 0"><span>Layout <span class="s2" style="font-size: 12px">· Floating is default</span></span><div class="seg" style="width: 190px"><span class="sg" style="display: flex; align-items: center; justify-content: center">Floating</span><span class="sg on" style="display: flex; align-items: center; justify-content: center">Docked</span></div></div>
+<div class="row" style="align-items: center; padding: 10px 0"><span>Appearance</span><div class="seg" style="width: 190px"><span class="sg" style="display: flex; align-items: center; justify-content: center">Light</span><span class="sg on" style="display: flex; align-items: center; justify-content: center">Dark</span><span class="sg" style="display: flex; align-items: center; justify-content: center">Auto</span></div></div>
+<div class="row" style="align-items: center; padding: 10px 0"><span>Order arrows</span><span class="tg" style="background: #30d158" role="switch" aria-checked="true" aria-label="Order arrows"><span style="right: 2px"></span></span></div>
+<div class="row" style="align-items: center; padding: 10px 0"><span>Fog of war</span><span class="tg" style="background: rgba(120,120,128,.36)" role="switch" aria-checked="false" aria-label="Fog of war"><span style="left: 2px"></span></span></div>
+<div class="row" style="align-items: center; padding: 10px 0"><span>Map view</span><div class="seg" style="width: 190px"><span class="sg on" style="display: flex; align-items: center; justify-content: center">Satellite</span><span class="sg" style="display: flex; align-items: center; justify-content: center">Strategic</span></div></div>
+<div class="row" style="align-items: center; padding: 10px 0"><span>Line of control</span><div class="seg" style="width: 190px"><span class="sg on" style="display: flex; align-items: center; justify-content: center">Single line</span><span class="sg" style="display: flex; align-items: center; justify-content: center">Two lines</span></div></div>
+</div>
+<p class="cap" style="margin: 12px 0 0">A popover from the gear on desktop; a sheet on phone.</p>
+</section>
+
+<section class="card" style="grid-column: span 7">
+<h2 class="h2">Controls reference</h2>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; font-size: 12.5px">
+<div>
+<div class="s2" style="font-weight: 600; margin-bottom: 8px">Mouse</div>
+<div class="row"><span>Select</span><span class="s2">Click · drag a box</span></div>
+<div class="row"><span>All of a type</span><span class="s2">Double-click</span></div>
+<div class="row"><span>Order</span><span class="s2">Click map</span></div>
+<div class="row"><span>Straight line</span><span class="s2">Ctrl-click</span></div>
+<div class="row"><span>Queue</span><span class="s2">Shift-click</span></div>
+<div class="row"><span>Pan · zoom</span><span class="s2">Drag · scroll</span></div>
+</div>
+<div>
+<div class="s2" style="font-weight: 600; margin-bottom: 8px">Touch</div>
+<div class="row"><span>Select</span><span class="s2">Tap · long-press drag</span></div>
+<div class="row"><span>Order</span><span class="s2">Pick tool, tap map</span></div>
+<div class="row"><span>Queue</span><span class="s2">Two-finger tap</span></div>
+<div class="row"><span>Pan · zoom</span><span class="s2">Drag · pinch</span></div>
+<div class="row"><span>Panels</span><span class="s2">Swipe sheet</span></div>
+</div>
+<div>
+<div class="s2" style="font-weight: 600; margin-bottom: 8px">Keys</div>
+<div class="row"><span>Pause</span><span><kbd>Space</kbd></span></div>
+<div class="row"><span>Speed</span><span><kbd>1</kbd> <kbd>2</kbd> <kbd>3</kbd> <kbd>,</kbd> <kbd>.</kbd></span></div>
+<div class="row"><span>Orders</span><span><kbd>M</kbd> <kbd>A</kbd> <kbd>F</kbd> <kbd>P</kbd> <kbd>R</kbd> <kbd>X</kbd> <kbd>H</kbd></span></div>
+<div class="row"><span>Overlays</span><span><kbd>S</kbd> <kbd>L</kbd></span></div>
+<div class="row"><span>Undo trench</span><span><kbd>⌘Z</kbd></span></div>
+<div class="row"><span>Hide interface</span><span><kbd>U</kbd></span></div>
+</div>
+</div>
+<p class="cap" style="margin: 12px 0 0">Space, U and the touch gestures are proposals; everything else comes from the current game.</p>
+</section>
+
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1400}}'>
+class Component extends DCLogic {
+renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

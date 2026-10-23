@@ -4,13 +4,13 @@ The game is named **COMPANY** (it was called Bridgehead; the files keep their ol
 
 ## Current state
 
-- Everything lives in `bridgehead.html`: one inline `<script>` with plain JS and Canvas 2D, no build step and no dependencies apart from Google Fonts.
+- The game is `index.html`, where all current work happens (the satellite copy described below). `bridgehead.html` is the older, paper-only version. Each is one file: one inline `<script>` with plain JS and Canvas 2D, no build step and no dependencies apart from Google Fonts.
 - The file has no `<html>`, `<head>` or `<body>` tags, because the claude.ai artifact host wraps it.
 - It has **not been played end to end**, so expect runtime bugs and balance problems. Fix those before adding features.
 
-## Satellite copy (`bridgehead satalite map.html`)
+## Satellite copy (`index.html`, formerly `bridgehead satalite map.html`)
 
-- **Name and logo:** the page title, header and setup screen say COMPANY and show the logo from `COMPANY.svg`. It's embedded once as an inline `<symbol id="logo">` (cropped to `viewBox="90 176 730 220"`, white background dropped) and drawn with `<svg class="logo"><use href="#logo"/></svg>`, 32 px tall in the header and 88 px on the setup card. `bridgehead.html` still says BRIDGEHEAD.
+- **Name and logo:** the page title, the scenario card and the New game and end sheets say COMPANY and show the logo from `COMPANY.svg`. It's embedded once as an inline `<symbol id="logo">` (cropped to `viewBox="90 176 730 220"`, white background dropped; the wordmark's fill is `var(--logo-ink)`, so it turns white in Dark) and drawn with `<svg class="logo"><use href="#logo"/></svg>`. `bridgehead.html` still says BRIDGEHEAD.
 - An experimental copy of `bridgehead.html` (made Oct 12, 2026) that adds a generated satellite style for the terrain. `bridgehead.html` itself is unchanged and still paper-only. Port changes between the two by hand until they're merged.
 - Settings has a **Map view** switch, *Satellite | Strategic*, also on key `T` (`setView`). It sets `settings.style` to `'satellite'` (default) or `'paper'`; Strategic is the original `bridgehead.html` printed map. `renderTerrain()` calls `renderSatellite()` or `renderPaper()`, and only the drawing changes, never the battle.
 - **Supply differs from `bridgehead.html` here:**
@@ -29,10 +29,12 @@ The game is named **COMPANY** (it was called Bridgehead; the files keep their ol
   - About 2 ms per update.
 - **Climates (`CLIMATES`, palettes in `SATK`):** temperate, arid, desert, winter (`snow`) and tundra, picked on the setup screen and combinable with any battlefield. `setClimate(c)` sets `M.climate` and `M.offroad`; the map itself is unchanged, so forest still gives cover however it's drawn.
   - Rules: off-road movement × `offroad` (desert 0.9, winter 0.8, tundra 0.85; applied in `mult`, roads unaffected) and vision × `vision` (arid 1.05, desert 1.15, winter 0.9, tundra 1.05).
+  - **Frozen water** (`frozen: true`: Winter and Tundra; `M.frozen`, set in `setClimate`): the river and lakes are frozen over. Infantry and engineers can walk on the ice at `ICE.move` (0.45; `mult`); armor and artillery can't (still bridges and pontoons only), so flow fields send infantry straight across where that's quicker. On the ice there is no cover: a unit there fires at `ICE.fire` (0.7), takes `ICE.exposed` (1.25) × the damage from fire, shells and bombs (`cover`, shell and bomb hits), and is seen from `ICE.seen` (1.25) × as far even when it isn't firing (`computeVis`). `iceAt(i)` / `onIce(u)` test for it. No trenches on ice. Taken ground (`updateClaim`), supply coverage (`computeSupply`; supply roads still don't cross) and the line of control treat the ice as land, and the line's open-water fill is skipped. AI waiting slots (`slotPos`, via `nearestPassable(..., dry=true)`) and cover spots (`coverNear`) avoid the ice. The inspector shows "On the ice · exposed" and the legend gets an ice entry.
+  - Drawing: in a frozen climate the satellite view lays ice over all the water (`K.ice`, greyer `K.iceDark` down the channel, thin cracks); Tundra's water and streams freeze too. Fallen-bridge patches use the ice colour, the strategic view draws frozen water pale blue (`COL.ice`), and lake names turn dark slate on ice.
   - Arid: dusty parcels, irrigated plots, orchards on a 7 m grid, scrub, greenhouse clusters near settlements, flat pale roofs, dirt minor roads, dry streambeds, a reed fringe on the river.
   - Desert: no field parcels; dune seas along one wind direction and gravel plains, crop circles up to 500 m across in crop parcels, palm groves, a green irrigated valley about 350 m wide along the river.
-  - Winter: snow-white parcels with faint field edges, snowy conifer forest, blue relief shadows, dark rock only on shaded steep faces, ice along the banks and frozen lakes, ploughed roads between snowbanks, white roofs with long blue shadows.
-  - Tundra: no field parcels; mottled moss with bog and lichen, sparse taiga crowns, gravel roads, muted coloured metal roofs.
+  - Winter: snow-white parcels with faint field edges, snowy conifer forest, blue relief shadows, dark rock only on shaded steep faces, the river and lakes frozen over (white ice, greyer down the channel), ploughed roads between snowbanks, white roofs with long blue shadows.
+  - Tundra: no field parcels; mottled moss with bog and lichen, sparse taiga crowns, gravel roads, muted coloured metal roofs, grey ice over the river and lakes, frozen streams.
 
 - **Scenery ring (`genOuter`, `OUT`):** terrain past the border, 896 px east and west and 600 px north and south, so the battlefield sits in a continuous landscape. It's scenery only: `orderAt` ignores clicks past the border (no orders, strikes, pontoons or repairs), and `inZone` keeps trenches inside.
   - The battlefield is untouched. `genMap` only stores read-only inputs in `M.gen` (its noise functions, river and height parameters, hills, ridges, height range, land-use thresholds). The ring uses its own random stream, so the same seed still produces exactly the same battlefield; this was checked against fingerprints of the generated map and of every terrain draw call.
@@ -57,7 +59,21 @@ The game is named **COMPANY** (it was called Bridgehead; the files keep their ol
 - **Replay (satellite copy):** the end screen has **Watch replay**.
   - Recording: `recInit` / `recScan` / `recFrame` keep `G.rec`. A snapshot every `REC_DT` (0.5 s) holds unit ids, positions, health, flags and firing targets, objectives, pontoons, bridge health and air strikes left. Timestamped lists hold shell launches, impacts, air strikes, the full log, road-damage keyframes, bridges falling and timeline events (captures, air, bridges, pontoons, reinforcements). A defender game restarts the recording when the battle begins. About 0.6 MB for a full game.
   - Playback: `startReplay` swaps `G` for a view object (`RP.RV`, `replay: true`, `phase: 'over'`, so no fog and no orders) that `replayView(t)` fills from the recording, so the normal `draw()` and `updateHUD()` show it. Units are interpolated between snapshots, and firing flickers along recorded shooter→target pairs. `exitReplay` restores the real `G` and the end screen; starting a new game also ends a replay.
-  - Controls: a replay bar replaces the toolbar, with restart, ±15 s, play/pause, speed 1–16×, time, and a timeline canvas (`buildTimeline`) showing each side's strength, three bands for who held each objective, and event markers. Click or drag the timeline to seek; clicking a marker jumps to 3 s before it. Keys: Space, `,` / `.`, `[` / `]`, Home, Esc. Pan and zoom work as usual.
+  - Controls: a replay bar replaces the command dock, with restart, ±15 s, play/pause, speed 1–16×, time, and a timeline canvas (`buildTimeline`) showing each side's strength, three rounded bands for who held each objective (orange while contested), and event markers. The timeline redraws itself whenever its on-screen width differs from the width it was drawn at (`drawTimelineHead`); `startReplay` un-hides the HUD before measuring it. Click or drag the timeline to seek; clicking a marker jumps to 3 s before it. Keys: Space, `,` / `.`, `[` / `]`, Home, Esc. Pan and zoom work as usual.
+
+- **HUD (satellite copy):** rebuilt from the design handoff in `company-hud/` (`HANDOFF.md`, `tokens.css`, mockups in `screens/`; direction A, light and floating, is the default). A DOM overlay on the full-screen canvas; the engine never touches it.
+  - Look: Inter for all HUD text, tabular figures for numbers; frosted glass (`.gl`: `backdrop-filter: blur(30px) saturate(180%)`), capsule buttons, segmented controls, inset grouped lists. Colours are tokens on `:root`, swapped by `data-appearance` (`light` | `dark`) on `<html>`. The canvas still draws map labels with `--display`, `--body` and `--mono` (the old fonts), and the side colours are unchanged; on dark glass, attacker icons get a white edge and attacker rings turn light (`--atk-ring`).
+  - Floating layout (`data-layout="floating"`): scenario card top left (logo, Attacking/Defending badge, goal, scenario · battlefield · climate · game code), status capsule top center (clock, objectives A/B/C as rings, next reinforcements or the A hold timer), controls top right (pause, speed, settings, controls, hide interface, new game). Below the card, either the inspector (selection and forces; collapsible sections) or a rail of round buttons that opens it. The map legend is in the Controls popover (`?`), under the controls, laid out in four columns. Bottom right: select by type with the supply and line-of-control toggles, then the order tools (or, while deploying, Dig Trench, the trench budget, Undo and Begin Battle). Event log bottom left as white text on the map, newest at the bottom: a four-line window that scrolls (wheel or touch) back through the last 40 events, fades older lines toward its top (full strength while hovered), and jumps back to the newest whenever a new event comes in (`lastLogNew`). The same message repeated within 2 s (several units cut off at once) shows once with a count (×3).
+  - Docked layout (`data-layout="docked"`): `applyLayout()` moves the same pieces into a flush top bar, a left outliner (`#sideL`: objectives, goal, forces) and a right inspector (`#sideR`: selection), with one command dock along the bottom.
+  - Objective rings (`ring()`): owner colour, filled as far as the owner's hold (`takeFrac`); orange arc while contested, with the taker's progress as a percentage once it is above 0; dotted grey when neutral. The map draws the same ring for each objective in `draw()` (no background: a light track, a soft shadow and a white halo on the Inter letter keep it readable), with its name below in Inter, inside the dashed capture circle. Clicking an objective pans the map to it. Callouts (`updateCallouts`, `placeCallouts`) that pointed at an objective being taken are commented out, along with their calls in `updateHUD`, `frame` and the `#callouts` click handler; the markup and CSS are still there. (Their "% taken" read 0% at the start of a capture.)
+  - Collapsing: clicking the scenario card shrinks it to a logo pill; clicking the clock shrinks the status and the controls together (the controls then show pause, speed and a More menu); the chevron at the end of the order tools hides their labels and shrinks the select bar to a pill; the inspector's chevron closes it to the rail; clicking the event log shows only the newest line. The inspector opens by itself when you select units unless you closed it (`ui.panel`: `auto` | `open` | `closed`).
+  - Preferences (`ui`): layout, appearance (Light, Dark, Auto follows the system), collapsed panels and open sections, saved to `localStorage` key `company.ui` when the browser allows it.
+  - Keys added: `U` hides or shows the whole interface, `?` opens Controls, Esc closes a popover first. Double-clicking a unit selects every unit of its type. Tooltips (`data-tip`, `data-key`) show a label and its key for mouse users; key hints are hidden on touch-only devices.
+  - Order tools are disabled when they can't be used: Move, Attack-move and Hold need a selection, Fire needs artillery, Pontoon and Repair need engineers, Air strike needs strikes left. Pause and speed are disabled while deploying. Settings, Controls and More are popovers and don't pause the game; the New game sheet does.
+  - New game sheet (`#startModal`): scenario list with descriptions, battlefield tiles, climate, side, difficulty, defense strength, seed and game code (still editable, so a friend's code can be pasted). Show Map turns it into a sidebar with the map live behind it (pan, zoom buttons, Satellite / Strategic). End sheet (`showEnd`): result icon and title, reason, final objective rings, battle time and losses, a summary list, the enemy's plan with a one-line description (`DOCTRINE_DESC`, defender games), and Watch Replay, New Map, Play Again.
+  - Responsive: under 1360 px the status shows rings without names; under 1024 px the order tools are icon-only; under 600 px (phones) the top capsules are compact, the scenario card opens from an info button, the inspector is a bottom sheet with Selection / Forces tabs, and the command rows run full width and scroll sideways.
+  - The canvas scale bar is drawn white just above the command dock (`scaleAnchor`, `drawScale`).
+  - Not settled yet (from `company-hud/screens/Open-Questions.dc.html`): the U key, the Appearance setting and the touch gestures are the designer's proposals; the Dark and Docked looks other than the ones mocked up, and the paper map under the glass, haven't been reviewed by eye.
 
 ## Target stack (when splitting the file)
 
@@ -150,7 +166,7 @@ The game is named **COMPANY** (it was called Bridgehead; the files keep their ol
 - **Movement:** speed is `TYPES[t].speed * mult(type, cell)` (cost tables `MOVE` and `ROADMOVE`). A multiplier of 0 means impassable.
   - Units in `amove` stop while they have a target.
   - Units in `move` keep going and fire at 60% effectiveness.
-- **Streams:** slow movement (see `MOVE`). A unit standing in a stream (not on a road) fires at `STREAM_FIRE`, takes `STREAM_EXPOSED` × damage, and artillery can't set up there. The main river is impassable everywhere except bridges and pontoons.
+- **Streams:** slow movement (see `MOVE`). A unit standing in a stream (not on a road) fires at `STREAM_FIRE`, takes `STREAM_EXPOSED` × damage, and artillery can't set up there. The main river is impassable everywhere except bridges and pontoons, unless it is frozen (see Climates in the satellite copy section).
 - **Direct fire:** damage per second from the `DPS[attacker][target]` table, multiplied by the target's cover. Lower is better cover:
   - trench `.42`
   - urban `.55`
@@ -214,7 +230,7 @@ The game is named **COMPANY** (it was called Bridgehead; the files keep their ol
 
 ## AI
 
-The AI below is the version in `bridgehead satalite map.html`; `bridgehead.html` still has the older, simpler AI.
+The AI below is the version in `index.html`; `bridgehead.html` still has the older, simpler AI.
 
 - **Shared:**
   - Each AI side plans from what it has seen. `aiSee(side)` keeps `G.seen[side]`, the last position of every enemy unit it has seen, for up to a minute; unseen units are never used.
@@ -267,7 +283,7 @@ The AI below is the version in `bridgehead satalite map.html`; `bridgehead.html`
   - Your own inbound strikes show a dashed target ring with a countdown. Planes fly through for 1.5 s either side of impact.
 - **Cratered road:** a white gap in the road. Inside a clip of small discs around the damaged cells, the nearby road and street lines (`G.dmgLines`) are stroked again in their white casing width, so the red line breaks without spilling past the road's edges. One small grey × marks each stretch (`G.dmgSpots`, holes within 40 px merged), placed on a damaged cell.
 - **Order arrows:** each of the player's units with a path gets an arrow along it. It's solid while paused and faint while running.
-- **Hint banner:** sits at the top center of the map, below the header, and fades while the mouse is near it.
+- **Hint banner (`#banner`):** what a click on the map will do now (`<b>Move</b> · Click the map to …`), top center below the status capsule (Docked: plain text on the map). It fades while the mouse is near it.
 - **Errors:** `frame()` schedules the next frame first and catches errors. An error pauses the game and posts to the log instead of freezing the loop.
 - **Dynamic layer:** everything else (units, trenches, objectives, labels, effects) is drawn in screen space through `ws(x, y)`, so line widths and symbols stay a constant size at any zoom.
 - **Camera:** `cam = {x, y, z}`, with `s2w` for screen-to-world conversion. Zoom ranges from the fit level to 4×.
@@ -281,7 +297,7 @@ The AI below is the version in `bridgehead satalite map.html`; `bridgehead.html`
 - **Unit symbols:** infantry circle, armor square, artillery triangle, engineer hexagon. The HUD fonts lack a hexagon glyph, so the HUD uses the inline SVG `HEX`.
   - A dashed red outline means out of supply.
   - A white bar means holding.
-- **HUD:** DOM boxes styled as printed map-legend panels. Fonts are Big Shoulders Stencil Display, IBM Plex Sans Condensed, and IBM Plex Mono.
+- **HUD:** see "HUD (satellite copy)" above. `bridgehead.html` still has the printed map-legend boxes.
 
 ## Controls
 
@@ -305,7 +321,7 @@ The AI below is the version in `bridgehead satalite map.html`; `bridgehead.html`
   - `L` toggles the line of control (satellite copy).
   - `O` toggles order arrows and `V` toggles fog of war.
   - `Cmd/Ctrl+A` selects all. `Cmd/Ctrl+Z` undoes the player's last order, hold or trench (`pushUndo` / `undo`, up to 50 entries). In play it restores routes and modes but not positions. AI orders never go on the stack.
-- **Settings modal:** holds the order-arrow and fog-of-war toggles in `settings`, which persist across games. With fog off, both sides see every unit (`G.fog`, checked in `computeVis`).
+- **Settings:** a popover from the gear button (`#settingsModal`, `renderSettings`): Interface layout, Appearance, order arrows, fog of war, map view and line-of-control style. The game settings live in `settings` and last for the session. With fog off, both sides see every unit (`G.fog`, checked in `computeVis`).
 
 ## Conventions
 
@@ -326,7 +342,7 @@ The AI below is the version in `bridgehead satalite map.html`; `bridgehead.html`
 
 1. Play-test and fix runtime bugs, then balance the DPS values, unit speeds and force sizes.
 2. Split the file into the TS modules listed above.
-3. Port the AI and supply changes from `bridgehead satalite map.html` back to `bridgehead.html`, or merge the two files.
+3. Port the AI and supply changes from `index.html` back to `bridgehead.html`, or merge the two files.
 4. Minefields for engineers.
 5. A minimap; more battlefield types (for example twin rivers or a coastal landing).
 6. Balance: in the 18-seed Node bench, a passive defender still loses every game (in about 6 minutes), and the defender AI playing defense wins about 3–5 of 18. That stand-in spreads its infantry thinly and never concentrates, so a person should do better. Re-measure before tuning further.

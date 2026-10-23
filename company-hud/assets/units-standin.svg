@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 1440 900" width="1440" height="900">
+<defs>
+<circle id="ia" r="7" fill="#17181c" stroke="#ffffff" stroke-width="1.6"/>
+<rect id="aa" x="-6.5" y="-6.5" width="13" height="13" fill="#17181c" stroke="#ffffff" stroke-width="1.6"/>
+<path id="ta" d="M0 -8 L7.5 6 L-7.5 6 Z" fill="#17181c" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
+<path id="ea" d="M0 -8 L7 -4 L7 4 L0 8 L-7 4 L-7 -4 Z" fill="#17181c" stroke="#ffffff" stroke-width="1.6"/>
+<circle id="id" r="7" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6"/>
+<rect id="ad" x="-6.5" y="-6.5" width="13" height="13" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6"/>
+<path id="td" d="M0 -8 L7.5 6 L-7.5 6 Z" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6" stroke-linejoin="round"/>
+<path id="ed" d="M0 -8 L7 -4 L7 4 L0 8 L-7 4 L-7 -4 Z" fill="#7a2cbf" stroke="#ffffff" stroke-width="1.6"/>
+</defs>
+<g fill="none" stroke-width="2.5">
+<circle cx="520" cy="596" r="52" stroke="#17181c" stroke-dasharray="2 5" stroke-opacity="0.8"/>
+<circle cx="775" cy="440" r="86" stroke="#7a2cbf" stroke-dasharray="10 6" stroke-opacity="0.85"/>
+<circle cx="775" cy="440" r="86" stroke="#17181c" stroke-dasharray="10 6" stroke-dashoffset="8" stroke-opacity="0.85"/>
+<circle cx="1046" cy="216" r="74" stroke="#7a2cbf" stroke-dasharray="2 5" stroke-opacity="0.85"/>
+</g>
+<g font-family="Helvetica, Arial, sans-serif" font-weight="700" font-size="13" text-anchor="middle">
+<circle cx="462" cy="560" r="12" fill="#ffffff" stroke="#17181c" stroke-width="3"/><text x="462" y="565" fill="#17181c">A</text>
+<circle cx="702" cy="388" r="12" fill="#ffffff" stroke="#7a2cbf" stroke-width="3"/><text x="702" y="393" fill="#17181c">B</text>
+<circle cx="984" cy="170" r="12" fill="#ffffff" stroke="#7a2cbf" stroke-width="3"/><text x="984" y="175" fill="#17181c">C</text>
+</g>
+<use href="#ia" x="480" y="582"/><use href="#ia" x="522" y="570"/><use href="#ia" x="566" y="560"/>
+<use href="#aa" x="452" y="604"/><use href="#aa" x="606" y="556"/><use href="#ea" x="530" y="594"/>
+<use href="#ia" x="160" y="690"/><use href="#ia" x="240" y="700"/><use href="#ia" x="300" y="722"/><use href="#ia" x="380" y="690"/>
+<use href="#ia" x="640" y="640"/><use href="#ia" x="700" y="630"/><use href="#ia" x="820" y="640"/><use href="#ia" x="900" y="672"/><use href="#ia" x="1000" y="680"/>
+<use href="#aa" x="420" y="740"/><use href="#aa" x="600" y="720"/><use href="#aa" x="820" y="730"/><use href="#aa" x="1220" y="680"/>
+<use href="#ta" x="350" y="842"/><use href="#ta" x="560" y="852"/><use href="#ta" x="760" y="860"/><use href="#ta" x="900" y="850"/>
+<use href="#ea" x="1100" y="690"/><use href="#ea" x="1060" y="704"/>
+<use href="#id" x="720" y="440"/><use href="#id" x="790" y="415"/><use href="#id" x="830" y="480"/><use href="#id" x="680" y="500"/>
+<use href="#id" x="380" y="600"/><use href="#id" x="880" y="560"/><use href="#id" x="1150" y="575"/>
+<use href="#ad" x="900" y="330"/><use href="#ad" x="640" y="400"/>
+<use href="#td" x="1040" y="200"/><use href="#td" x="1090" y="240"/><use href="#td" x="990" y="230"/>
+<use href="#ed" x="760" y="520"/>
+</svg>

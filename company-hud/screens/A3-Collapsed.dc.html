@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>A3 · All panels collapsed</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.ap{font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#1d1d1f;font-size:13px;line-height:1.3;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.gl{background:rgba(248,248,250,.74);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%);border-radius:22px;box-shadow:0 0 0 .5px rgba(0,0,0,.14),inset 0 1px 0 rgba(255,255,255,.85),0 12px 32px rgba(0,0,0,.16),0 2px 6px rgba(0,0,0,.08)}
+.tn{font-variant-numeric:tabular-nums}
+.s2{color:#6e6e73}
+.bt{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 13px;border-radius:18px;border:0;background:transparent;color:#1d1d1f;font:500 13px Inter,-apple-system,sans-serif;letter-spacing:-.005em;cursor:pointer;white-space:nowrap}
+.bt:hover{background:rgba(0,0,0,.055)}
+.bt.on{background:#007aff;color:#fff}
+.bt:disabled{color:rgba(29,29,31,.3);cursor:default;background:transparent}
+.ic{width:36px;padding:0;justify-content:center}
+.bt.gl{background:rgba(248,248,250,.74)}
+.bt.gl:hover{background:rgba(255,255,255,.92)}
+.dv{width:.5px;align-self:stretch;background:rgba(0,0,0,.14);margin:8px 4px}
+.ti{position:relative;display:flex;align-items:center;justify-content:center;width:44px;height:44px;border:0;border-radius:22px;background:transparent;color:#1d1d1f;cursor:pointer}
+.ti:hover{background:rgba(0,0,0,.055)}
+.ti:disabled{color:rgba(29,29,31,.3);cursor:default;background:transparent}
+.ti.on{background:#007aff;color:#fff}
+.tk{position:absolute;top:3px;right:5px;font:600 9px Inter,sans-serif;color:#86868b}
+.ti:disabled .tk{color:rgba(29,29,31,.2)}
+</style>
+</helmet>
+<div class="ap" style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #3d4430">
+<img src="../assets/map-real.jpg" alt="Battle map: River Polow, Selitz and Hill 400" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+
+<button class="bt gl" style="position: absolute; left: 16px; top: 16px; height: 44px; border-radius: 22px; padding: 0 12px 0 14px; gap: 8px" aria-label="Expand scenario card">
+<img src="../assets/logo-ink.svg" alt="COMPANY" style="height: 20px; width: auto">
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+</button>
+
+<button class="bt gl" style="position: absolute; left: 50%; top: 16px; transform: translateX(-50%); height: 44px; border-radius: 22px; padding: 0 14px 0 16px; gap: 10px" aria-label="12:40 remaining. A, B and C held by defender. Reinforcements in 2:30. Expand">
+<span class="tn" style="font-size: 17px; font-weight: 600; letter-spacing: -.02em">12:40</span>
+<span style="display: flex; gap: 4px">
+<svg width="24" height="24" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="none" stroke="#7a2cbf" stroke-width="3.5"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">A</text></svg>
+<svg width="24" height="24" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="none" stroke="#7a2cbf" stroke-width="3.5"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">B</text></svg>
+<svg width="24" height="24" viewBox="0 0 30 30" aria-hidden="true"><circle cx="15" cy="15" r="12" fill="none" stroke="#7a2cbf" stroke-width="3.5"/><text x="15" y="19.5" text-anchor="middle" font-family="Inter, sans-serif" font-size="13" font-weight="700" fill="#1d1d1f">C</text></svg>
+</span>
+<span class="s2 tn" style="font-size: 12px">+2:30</span>
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>
+</button>
+
+<div class="gl" style="position: absolute; right: 16px; top: 16px; display: flex; align-items: center; gap: 2px; padding: 2px; border-radius: 24px">
+<button class="bt ic" style="width: 40px; height: 40px; border-radius: 20px" aria-label="Pause (Space)"><svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/></svg></button>
+<button class="bt" style="height: 40px; border-radius: 20px; padding: 0 10px; font-weight: 600" aria-label="Speed 1×, press 1 2 3 or , . to change">1×</button>
+<button class="bt ic" style="width: 40px; height: 40px; border-radius: 20px" aria-label="More: settings, controls, hide interface, new game"><svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><circle cx="4.5" cy="10" r="1.6"/><circle cx="10" cy="10" r="1.6"/><circle cx="15.5" cy="10" r="1.6"/></svg></button>
+</div>
+
+<div style="position: absolute; left: 16px; top: 76px; display: flex; flex-direction: column; gap: 8px">
+<button class="bt ic gl" style="width: 44px; height: 44px; border-radius: 22px" aria-label="Show selection"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4.5A1.5 1.5 0 0 1 4.5 3H7M13 3h2.5A1.5 1.5 0 0 1 17 4.5V7M17 13v2.5a1.5 1.5 0 0 1-1.5 1.5H13M7 17H4.5A1.5 1.5 0 0 1 3 15.5V13"/></svg></button>
+<button class="bt ic gl" style="width: 44px; height: 44px; border-radius: 22px" aria-label="Show forces"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><rect x="11" y="3" width="6" height="6" rx=".8"/><path d="M6 11.5l3.4 5.5H2.6z"/><path d="M14 11l3 1.7v3.6L14 18l-3-1.7v-3.6z"/></svg></button>
+<button class="bt ic gl" style="width: 44px; height: 44px; border-radius: 22px" aria-label="Show legend"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8 5.5h9M8 10h9M8 14.5h9"/><circle cx="4" cy="5.5" r=".9" fill="currentColor"/><circle cx="4" cy="10" r=".9" fill="currentColor"/><circle cx="4" cy="14.5" r=".9" fill="currentColor"/></svg></button>
+</div>
+
+<button class="bt gl" style="position: absolute; left: 842px; top: 270px; width: 34px; height: 34px; padding: 0; justify-content: center; border-radius: 17px" aria-label="Alert: Polow Bridge is defended. Expand">
+<span style="width: 22px; height: 22px; border-radius: 11px; background: #ff9500; display: flex; align-items: center; justify-content: center; color: #fff; font-weight: 700; font-size: 13px">!</span>
+</button>
+
+<button class="bt" style="position: absolute; left: 14px; bottom: 14px; height: 32px; padding: 0 8px; gap: 8px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 0 8px rgba(0,0,0,.55); font-size: 12px" aria-label="Latest event. Expand event log">
+<span class="tn" style="color: rgba(255,255,255,.75); font-weight: 400">02:14</span><span style="font-weight: 600">Air strike on Selitz east</span>
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg>
+</button>
+
+<div style="position: absolute; right: 16px; bottom: 76px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 4px; padding-right: 4px; align-items: flex-end">
+<span class="tn" style="font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7)">500 m</span>
+<div style="width: 128px; height: 4px; border-radius: 2px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5)"></div>
+</div>
+<button class="bt gl" style="height: 44px; border-radius: 22px; padding: 0 12px 0 14px" aria-label="Expand select by type">Select <span class="s2 tn">19</span>
+<svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg>
+</button>
+</div>
+
+<div class="gl" style="position: absolute; right: 16px; bottom: 16px; display: flex; align-items: center; gap: 0; padding: 3px; border-radius: 25px" role="toolbar" aria-label="Orders, compact">
+<button class="ti" disabled aria-label="Move (M)"><span class="tk">M</span><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10h12M11.5 5.5L16 10l-4.5 4.5"/></svg></button>
+<button class="ti" disabled aria-label="Attack-move (A)"><span class="tk">A</span><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 10h9M8 6l4 4-4 4M16.5 4.5v11"/></svg></button>
+<button class="ti" disabled aria-label="Fire mission (F)"><span class="tk">F</span><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4"/></svg></button>
+<button class="ti" disabled aria-label="Pontoon bridge (P)"><span class="tk">P</span><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M2 14h16M4.5 14v-4M15.5 14v-4M4.5 10c3.5-3 7.5-3 11 0"/></svg></button>
+<button class="ti" disabled aria-label="Repair road (R)"><span class="tk">R</span><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.8 3.2a3.8 3.8 0 0 0-4.9 4.9L3 13l4 4 4.9-4.9a3.8 3.8 0 0 0 4.9-4.9l-2.3 2.3-2.4-.6-.6-2.4z"/></svg></button>
+<button class="ti" aria-label="Air strike, 2 left (X)"><span class="tk">X</span><svg width="19" height="19" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true"><path d="M10 1.8c.9 0 1.4.9 1.4 2v3.7l6.3 3.7v1.8l-6.3-1.9v3.6l2.1 1.6V18L10 17.3 6.5 18v-1.7l2.1-1.6v-3.6l-6.3 1.9v-1.8l6.3-3.7V3.8c0-1.1.5-2 1.4-2z"/></svg><span style="position: absolute; left: 25px; bottom: 5px; min-width: 14px; height: 14px; border-radius: 7px; background: #007aff; color: #fff; font: 600 9px Inter,sans-serif; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 1.5px #f8f8fa">2</span></button>
+<button class="ti" disabled aria-label="Hold (H)"><span class="tk">H</span><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round" aria-hidden="true"><path d="M10 2.5l6 2.2v4.6c0 3.8-2.6 6.6-6 8.2-3.4-1.6-6-4.4-6-8.2V4.7z"/></svg></button>
+<div class="dv" style="margin: 8px 2px"></div>
+<button class="ti" aria-label="Show order labels"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="#6e6e73" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 4L6 8l4 4"/></svg></button>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"map":{"editor":"enum","options":["satellite","paper (stand-in)"],"default":"satellite"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const paper = (this.props.map ?? 'satellite') !== 'satellite';
+return { paper, mapSrc: paper ? '../assets/map-paper-standin.svg' : '../assets/map-real.jpg' };
+}
+}
+</script>
+</body>
+</html>

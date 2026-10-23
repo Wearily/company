@@ -1,0 +1,128 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>D5.2 · New game, map shown</title>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&amp;display=swap" rel="stylesheet">
+<style>
+body{margin:0}
+.bp{font-family:Inter,-apple-system,BlinkMacSystemFont,system-ui,sans-serif;color:#1d1d1f;font-size:13px;line-height:1.3;letter-spacing:-.005em;-webkit-font-smoothing:antialiased}
+.mat{background:rgba(246,246,248,.9);backdrop-filter:blur(30px) saturate(180%);-webkit-backdrop-filter:blur(30px) saturate(180%)}
+.tn{font-variant-numeric:tabular-nums}
+.s2{color:#6e6e73}
+.bt{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:36px;padding:0 12px;border-radius:999px;border:0;background:rgba(0,0,0,.1);color:#1d1d1f;font:500 13px Inter,-apple-system,sans-serif;cursor:pointer;white-space:nowrap;text-decoration:none}
+.bt:hover{background:rgba(0,0,0,.16)}
+.ib{display:flex;align-items:center;justify-content:center;width:36px;height:36px;border:0;border-radius:999px;background:transparent;color:#1d1d1f;cursor:pointer}
+.ib:hover{background:rgba(0,0,0,.08)}
+.cta{display:inline-flex;align-items:center;justify-content:center;height:36px;padding:0 20px;border:0;border-radius:999px;background:#007aff;color:#fff;font:600 13.5px Inter,-apple-system,sans-serif;cursor:pointer}
+.lb{font-size:11.5px;font-weight:600;color:#6e6e73;margin:0 0 7px 2px}
+.seg{display:flex;padding:2px;border-radius:10px;background:rgba(118,118,128,.14)}
+.sg{flex:1;height:28px;padding:0 5px;border:0;border-radius:8px;background:transparent;font:500 12px Inter,sans-serif;color:#1d1d1f;cursor:pointer}
+.sg.on{background:#fff;font-weight:600;box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.grp{background:rgba(255,255,255,.66);border-radius:12px;overflow:hidden}
+.sr{display:flex;align-items:center;gap:12px;width:100%;box-sizing:border-box;min-height:44px;padding:6px 12px;border:0;background:transparent;text-align:left;font:inherit;color:inherit;cursor:pointer;box-shadow:inset 0 -.5px 0 rgba(0,0,0,.1)}
+.sr:last-child{box-shadow:none}
+.sr.on{background:rgba(10,132,255,.2)}
+.tile{height:36px;border:0;border-radius:10px;background:rgba(255,255,255,.66);font:500 12px Inter,sans-serif;color:#1d1d1f;cursor:pointer}
+.tile.on{background:rgba(10,132,255,.2);box-shadow:inset 0 0 0 1.5px #007aff;font-weight:600}
+.fld{display:flex;align-items:center;height:36px;padding:0 10px;border-radius:10px;background:rgba(255,255,255,.66);box-shadow:inset 0 0 0 .5px rgba(0,0,0,.14);font:500 13px Inter,sans-serif;color:#1d1d1f}
+.sb{scrollbar-width:none}
+.sb::-webkit-scrollbar{display:none}
+</style>
+</helmet>
+<div class="bp" style="position: relative; width: 1440px; height: 900px; overflow: hidden; background: #3d4430">
+<img src="../assets/map-real.jpg" alt="Battlefield preview, free to pan and zoom" style="position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover">
+
+<section class="mat" role="dialog" aria-label="New game" style="position: absolute; left: 0; top: 0; bottom: 0; width: 380px; box-sizing: border-box; display: flex; flex-direction: column; box-shadow: inset -1px 0 0 rgba(0,0,0,.08), 1px 0 0 rgba(0,0,0,.06)">
+<header style="display: flex; align-items: center; justify-content: space-between; padding: 16px 14px 12px 18px">
+<div style="display: flex; align-items: center; gap: 12px">
+<img src="../assets/logo-ink.svg" alt="COMPANY" style="height: 20px; width: auto">
+<h1 style="margin: 0; font-size: 16px; font-weight: 600; letter-spacing: -.015em">New Game</h1>
+</div>
+<button class="bt" style="width: 28px; height: 28px; padding: 0; " aria-label="Close and go back to game (Esc)"><svg width="11" height="11" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button>
+</header>
+<div class="sb" style="flex: 1; min-height: 0; overflow-y: auto; padding: 0 18px 16px; display: flex; flex-direction: column; gap: 16px; -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent); mask-image: linear-gradient(to bottom, #000 calc(100% - 24px), transparent)">
+<div>
+<div class="lb">Scenario</div>
+<div class="grp" role="radiogroup" aria-label="Scenario">
+<button class="sr on" role="radio" aria-checked="true"><span style="flex: 1"><span style="display: block; font-weight: 600">Standard Battle</span><span class="s2" style="font-size: 12px">Take or hold A, B and C over 15 minutes.</span></span><svg width="15" height="15" viewBox="0 0 16 16" fill="none" stroke="#007aff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5l3.2 3.2L13 4.8"/></svg></button>
+<button class="sr" role="radio" aria-checked="false"><span style="flex: 1"><span style="display: block; font-weight: 500">Last Stand</span><span class="s2" style="font-size: 12px">A thin defence holds out against a far larger attack.</span></span></button>
+<button class="sr" role="radio" aria-checked="false"><span style="flex: 1"><span style="display: block; font-weight: 500">Blitz</span><span class="s2" style="font-size: 12px">A short clock and an armor-heavy attack.</span></span></button>
+<button class="sr" role="radio" aria-checked="false"><span style="flex: 1"><span style="display: block; font-weight: 500">Seize the Crossing</span><span class="s2" style="font-size: 12px">Everything hinges on taking the bridge at A.</span></span></button>
+<button class="sr" role="radio" aria-checked="false"><span style="flex: 1"><span style="display: block; font-weight: 500">Counterattack</span><span class="s2" style="font-size: 12px">The defender starts behind and must win ground back.</span></span></button>
+<button class="sr" role="radio" aria-checked="false"><span style="flex: 1"><span style="display: block; font-weight: 500">Meeting Engagement</span><span class="s2" style="font-size: 12px">Both sides arrive at once, with no time to dig in.</span></span></button>
+<button class="sr" role="radio" aria-checked="false"><span style="flex: 1"><span style="display: block; font-weight: 500">Night Assault</span><span class="s2" style="font-size: 12px">Short sight lines; the attack goes in after dark.</span></span></button>
+</div>
+</div>
+<div>
+<div class="lb">Battlefield</div>
+<div style="display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px" role="radiogroup" aria-label="Battlefield">
+<button class="tile on" role="radio" aria-checked="true">River Town</button>
+<button class="tile" role="radio" aria-checked="false">Lake Narrows</button>
+<button class="tile" role="radio" aria-checked="false">City Fight</button>
+<button class="tile" role="radio" aria-checked="false">Open Steppe</button>
+<button class="tile" role="radio" aria-checked="false">Mountain Pass</button>
+<button class="tile" role="radio" aria-checked="false">Deep Woods</button>
+</div>
+</div>
+<div>
+<div class="lb">Climate</div>
+<div class="seg" role="radiogroup" aria-label="Climate"><button class="sg on" role="radio" aria-checked="true">Temperate</button><button class="sg" role="radio" aria-checked="false">Arid</button><button class="sg" role="radio" aria-checked="false">Desert</button><button class="sg" role="radio" aria-checked="false">Winter</button><button class="sg" role="radio" aria-checked="false">Tundra</button></div>
+</div>
+<div style="display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px">
+<div><div class="lb">Side</div><div class="seg" role="radiogroup" aria-label="Side"><button class="sg on" role="radio" aria-checked="true">Attack</button><button class="sg" role="radio" aria-checked="false">Defend</button></div></div>
+<div><div class="lb">Difficulty</div><div class="seg" role="radiogroup" aria-label="Difficulty"><button class="sg" role="radio" aria-checked="false">Easy</button><button class="sg on" role="radio" aria-checked="true">Normal</button><button class="sg" role="radio" aria-checked="false">Hard</button></div></div>
+</div>
+<div><div class="lb">Defense strength</div><div class="seg" role="radiogroup" aria-label="Defense strength"><button class="sg" role="radio" aria-checked="false">Light</button><button class="sg on" role="radio" aria-checked="true">Standard</button><button class="sg" role="radio" aria-checked="false">Heavy</button></div></div>
+<div>
+<label class="lb" for="bseed2" style="display: block">Map seed</label>
+<div style="display: flex; gap: 8px"><input id="bseed2" class="fld tn" value="48213" style="flex: 1; min-width: 0; border: 0"><button class="bt">New Map</button></div>
+</div>
+<div>
+<div class="lb">Game code</div>
+<div style="display: flex; gap: 8px"><input class="fld tn" readonly value="ST-RT-TE-ASN-PGW" aria-label="Game code" style="flex: 1; min-width: 0; border: 0; letter-spacing: .02em; text-overflow: clip; white-space: nowrap"><button class="bt" aria-label="Copy shareable link"><svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="5" width="8.5" height="8.5" rx="2"/><path d="M10.5 3.5V3a1.5 1.5 0 0 0-1.5-1.5H4A1.5 1.5 0 0 0 2.5 3v5A1.5 1.5 0 0 0 4 9.5h.5"/></svg>Copy Link</button></div>
+</div>
+</div>
+<footer style="display: flex; align-items: center; gap: 8px; padding: 12px 14px 16px; box-shadow: inset 0 1px 0 rgba(0,0,0,.08)">
+<a class="bt" href="D5-NewGame.dc.html"><svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><rect x="2.5" y="3.5" width="15" height="13" rx="3"/><path d="M7.5 3.5v13"/></svg>Hide Map</a>
+<button class="bt" style="flex: 1">Back to Game</button>
+<button class="cta">Start</button>
+</footer>
+</section>
+
+<div style="position: absolute; left: 910px; top: 18px; transform: translateX(-50%); font-size: 12.5px; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.85), 0 0 8px rgba(0,0,0,.55); white-space: nowrap">Drag to pan · Scroll to zoom</div>
+
+<div class="mat" style="position: absolute; right: 16px; top: 50%; transform: translateY(-50%); display: flex; flex-direction: column; padding: 4px; border-radius: 22px; box-shadow: 0 0 0 1px rgba(0,0,0,.08), 0 8px 24px rgba(0,0,0,.14)" role="toolbar" aria-label="Map controls">
+<button class="ib" aria-label="Zoom in (+)"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button>
+<div style="height: 1px; margin: 2px 6px; background: rgba(0,0,0,.1)"></div>
+<button class="ib" aria-label="Zoom out (−)"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 10h12"/></svg></button>
+<div style="height: 1px; margin: 2px 6px; background: rgba(0,0,0,.1)"></div>
+<button class="ib" aria-label="Fit whole battlefield"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"/></svg></button>
+</div>
+
+<div style="position: absolute; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 10px; align-items: flex-end">
+<div style="display: flex; flex-direction: column; gap: 4px; padding-right: 4px; align-items: flex-end">
+<span class="tn" style="font-size: 11px; font-weight: 600; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,.7)">500 m</span>
+<div style="width: 128px; height: 4px; border-radius: 2px; background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,.5)"></div>
+</div>
+<div class="mat" style="padding: 4px; border-radius: 22px; box-shadow: 0 0 0 1px rgba(0,0,0,.08)">
+<div class="seg" role="radiogroup" aria-label="Map view"><button class="sg on" style="min-width: 86px" role="radio" aria-checked="true">Satellite</button><button class="sg" style="min-width: 86px" role="radio" aria-checked="false">Strategic</button></div>
+</div>
+</div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"map":{"editor":"enum","options":["satellite","paper (stand-in)"],"default":"satellite"},"$preview":{"width":1440,"height":900}}'>
+class Component extends DCLogic {
+renderVals() {
+const paper = (this.props.map ?? 'satellite') !== 'satellite';
+return { paper, mapSrc: paper ? '../assets/map-paper-standin.svg' : '../assets/map-real.jpg' };
+}
+}
+</script>
+</body>
+</html>
