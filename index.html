@@ -795,7 +795,7 @@ const SCENARIOS={
     goal:{A:'Take all three objectives, or hold two of three when the clock runs out.',D:'Stop the attacker holding two of the three objectives when the clock runs out.'},limit:900,need:2,night:true,vision:.55,noAir:true,forces:{A:{inf:2}}},
 };
 // Game codes pack every setup option into a short shareable string: scenario-battlefield-climate-side/strength/difficulty-seed,
-// for example LS-RT-DE-DSN-15RA. Pages opened with ?game=CODE (or #game=CODE) start from those options.
+// for example LS-RT-DE-DSN-15RA. Pages opened with #game=CODE (or an older ?game=CODE link) start from those options.
 const MODE_CODE={river:'RT',lake:'LN',city:'CF',steppe:'OS',mountain:'MP',forest:'DW'},CLIM_CODE={temperate:'TE',arid:'AR',desert:'DE',snow:'WI',tundra:'TU'};
 const STR_CODE={light:'L',standard:'S',heavy:'H'},DIFF_CODE={easy:'E',normal:'N',hard:'H'};
 const keyOf=(tbl,v)=>Object.keys(tbl).find(k=>tbl[k]===v);
@@ -2966,15 +2966,16 @@ function preview(){M=genMap(opts.seed,opts.mode);setClimate(opts.climate);render
 function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).map(([k,c])=>`<button class="sr${k===opts.scen?' on':''}" role="radio" aria-checked="${k===opts.scen}" data-v="${k}"><span><b>${c.name}</b><span class="s2">${esc(c.desc)}</span></span>${ICON.tick}</button>`).join('');
   renderScensRule();
   document.querySelectorAll('#optScen button').forEach(b=>b.onclick=()=>{if(opts.scen===b.dataset.v)return;opts.scen=b.dataset.v;renderScens();syncCode();});}
-// the game code for the current options, shown on the setup screen and kept in the page address (?game=CODE; for
-// pages where the address can't be rewritten, such as some local files, #game=CODE instead)
+// the game code for the current options, shown on the setup screen and kept in the page address as #game=CODE. Only
+// the hash changes, so the page never reloads and no history entries pile up; an old ?game=CODE link is rewritten to it
 function syncCode(){const code=encodeGame(opts);$('optCode').value=code;renderScensRule();
-  try{history.replaceState(null,'',location.pathname+'?game='+code);}catch(e){try{location.replace('#game='+code);}catch(e2){}}}
+  try{history.replaceState(null,'',location.pathname+'#game='+code);}catch(e){try{location.replace('#game='+code);}catch(e2){}}}
+const gameCode=()=>(location.hash.match(/game=([\w-]+)/)||location.search.match(/[?&]game=([\w-]+)/)||[])[1];
 function renderScensRule(){const c=SCENARIOS[opts.scen];$('scenRule').textContent=`You ${opts.side==='A'?'attack':'defend'}: ${c.goal[opts.side]}`;}
 function applyOptions(o){Object.assign(opts,o);syncSegs();renderModes();renderClimates();renderScens();preview();}
 $('optCode').onchange=()=>{const o=decodeGame($('optCode').value);if(o){applyOptions(o);$('codeMsg').textContent='Game code loaded.';}else{$('codeMsg').textContent='That isn’t a valid game code.';$('optCode').value=encodeGame(opts);}};
 $('optCode').onkeydown=e=>{if(e.key==='Enter')$('optCode').onchange();};
-$('optCopy').onclick=()=>{const url=location.href.split('#')[0].split('?')[0]+'?game='+encodeGame(opts),done=m=>{$('codeMsg').textContent=m;};
+$('optCopy').onclick=()=>{const url=location.href.split('#')[0].split('?')[0]+'#game='+encodeGame(opts),done=m=>{$('codeMsg').textContent=m;};
   const fallback=()=>{const t=document.createElement('textarea');t.value=url;document.body.appendChild(t);t.select();let ok=false;try{ok=document.execCommand('copy');}catch(e){}t.remove();done(ok?'Link copied.':'Copy the code above to share it.');};
   try{navigator.clipboard.writeText(url).then(()=>done('Link copied.'),fallback);}catch(e){fallback();}};
 renderScens();
@@ -3017,9 +3018,12 @@ function frame(ts){requestAnimationFrame(frame);const dt=Math.min(.1,(ts-last)/1
 function reportError(err){console.error(err);const msg=String(err&&err.message||err);if(G&&G.phase==='play')G.paused=true;
   if(msg!==lastErr){lastErr=msg;addLog('Error: '+msg,'a');}}
 addEventListener('resize',resize);
-try{const m=(location.search.match(/[?&]game=([\w-]+)/)||location.hash.match(/game=([\w-]+)/)||[])[1],o=m&&decodeGame(decodeURIComponent(m));
+try{const m=gameCode(),o=m&&decodeGame(decodeURIComponent(m));
   if(o){Object.assign(opts,o);syncSegs();
     renderModes();renderClimates();renderScens();$('codeMsg').textContent='Game options loaded from the link. Press Start to play.';}}catch(e){}
+// a code typed or pasted into the address bar (only the #game= part changing) opens New game with it, without a reload
+addEventListener('hashchange',()=>{const m=gameCode(),o=m&&decodeGame(decodeURIComponent(m));if(!o||encodeGame(o)===encodeGame(opts))return;
+  if($('startModal').hidden)showStart();applyOptions(o);$('codeMsg').textContent='Game options loaded from the link. Press Start to play.';});
 initReplayUI();applyAppearance();applyLayout();renderSettings();
 resize();preview();fit();scaleAnchor();requestAnimationFrame(frame);
 })();

@@ -54,7 +54,7 @@ The game is named **COMPANY** (it was called Bridgehead; the files keep their ol
   - Fields: `limit` (replaces `TIME_LIMIT`, stored in `G.limit`), `need`, `holdA`, `forces`, `air`, `reinf` (`reinforce()`, `addUnit()`), `counter`, `neutral`, `deploy`, `trenches`, `night`, `vision`, `noAir`. Start positions are set in `scenarioSetup()`, and the panel shows the player's goal, the A hold timer and the next reinforcements.
 - **Game codes:** `encodeGame` / `decodeGame` pack scenario, battlefield, climate, side, strength, difficulty and seed as `SC-MODE-CLIMATE-{side}{strength}{difficulty}-SEED36`, for example `LS-LN-WI-DHH-15RA`.
   - The setup screen shows the code, copies a link, and accepts a pasted code.
-  - The page address is kept as `?game=CODE` (`history.replaceState`, falling back to `#game=CODE`), and a page opened with either form starts from those options.
+  - The page address is kept as `#game=CODE` (`syncCode`, `history.replaceState`, falling back to `location.replace`), so it never reloads the page or adds history entries. A page opened with `#game=CODE`, or an older `?game=CODE` link (rewritten to the hash), starts from those options (`gameCode()`). Changing just the `#game=` part in the address bar opens New game with that code, without a reload (`hashchange`). Copy Link copies the `#game=` form.
   - A link to a local file only works on the same machine; share the code itself instead.
 
 - **Replay (satellite copy):** the end screen has **Watch replay**.
