@@ -321,6 +321,28 @@ body.replaying .log{bottom:200px}
 .mapctl .zoom .bt{width:40px;height:40px}
 .mapctl .views{right:16px;bottom:16px;padding:6px;border-radius:24px}
 .mapctl .views .seg{width:184px}
+/* game modifiers: what the chosen setup changes, top right of the New game screen. Each row: a coloured icon tile, what
+   changes (and why, underneath), and the number. The header collapses it to a pill. */
+.mods{position:absolute;top:16px;right:16px;width:250px;box-sizing:border-box;padding:0 0 8px;display:flex;flex-direction:column;max-height:calc(100% - 32px);pointer-events:auto;z-index:1;border-radius:18px}
+.modsHd{display:flex;align-items:center;gap:7px;width:100%;box-sizing:border-box;height:34px;padding:0 10px 0 14px;border:0;background:transparent;color:var(--ink);font:600 13px var(--font);letter-spacing:-.01em;cursor:pointer;flex:none}
+.modsHd .n{min-width:18px;height:18px;padding:0 5px;box-sizing:border-box;border-radius:9px;background:var(--fill);font:600 11px/18px var(--font);letter-spacing:0;text-align:center;color:var(--ink-2)}
+.modsHd .chev{margin-left:auto}
+.modsList{padding:0 12px 0 13px;overflow:auto;scrollbar-width:none;min-height:0;flex:0 1 auto;display:flex;flex-direction:column}
+.modsList::-webkit-scrollbar{display:none}
+.mrow{display:flex;align-items:center;gap:7px;min-height:24px;font-size:12px;line-height:1.25}
+.mrow>svg{flex:none}
+.mrow .ml{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mrow .mv{flex:none;font-weight:600;text-align:right}
+.mrow .mv .cnts{gap:6px}.mrow .mv .cnt{gap:2px}
+.mv.up{color:var(--ok-text)}.mv.down{color:var(--contested-text)}
+.mnone{font-size:12px;color:var(--ink-2);padding:2px 0 2px}
+.mods.shut{width:auto;padding:0;border-radius:17px}.mods.shut .modsList{display:none}.mods.shut .chev{transform:rotate(180deg)}
+/* centered sheet: it moves left to leave the panel room, and the panel stays off narrower screens */
+@media (min-width:1210px){#startModal:not(.showmap){padding-right:282px}}
+@media (max-width:1209px){#startModal:not(.showmap) .mods{display:none}}
+/* with the map shown, zoom sits above the view switch at the bottom right, under the panel */
+#startModal.showmap .mods{max-height:calc(100% - 252px)}
+.mapctl .zoom{top:auto;bottom:76px;transform:none}
 .end{width:640px;max-width:100%;padding:28px 28px 24px}
 .end>header{display:flex;flex-direction:column;align-items:center;text-align:center;gap:8px;margin-bottom:22px}
 .end>header .logo{height:22px;width:73px;margin-bottom:10px}
@@ -411,6 +433,13 @@ body.replaying .log{bottom:200px}
 :root[data-layout="docked"] .pop{top:64px}
 :root[data-layout="docked"] .menu{top:62px}
 :root[data-layout="docked"] #btnShowUI{top:8px}
+:root[data-layout="docked"] .mods{top:0;right:0;border-radius:0;background:var(--bar);box-shadow:inset .5px 0 0 var(--hairline),inset 0 -.5px 0 var(--hairline)}
+:root[data-layout="docked"] .mods.shut{border-radius:0}
+:root[data-layout="docked"] #startModal:not(.showmap) .mods{max-height:100%}
+@media (min-width:1210px){:root[data-layout="docked"] #startModal:not(.showmap){padding-right:266px}}
+:root[data-layout="docked"] #startModal.showmap{padding:0}
+:root[data-layout="docked"] #startModal.showmap .ng{border-radius:0;height:100%;background:var(--bar);box-shadow:inset -.5px 0 0 var(--hairline)}
+:root[data-layout="docked"] #startModal.showmap .mods{max-height:calc(100% - 236px)}
 
 /* narrower screens */
 @media (max-width:1359px){
@@ -473,6 +502,7 @@ body.replaying .log{bottom:200px}
   .ng>footer>span{display:none}
   .ng>footer>div{flex:1}.ng>footer>div>*{flex:1}
   #ngShowMap{display:none}
+  .mods{display:none!important}
   #startModal.showmap .ng{width:100%;height:auto}
   .end{padding:20px 16px 16px}
   .end footer{flex-direction:column-reverse;align-items:stretch}
@@ -648,6 +678,10 @@ body.replaying .log{bottom:200px}
       <div class="gl zoom"><button class="bt" id="zoomIn" aria-label="Zoom in"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M10 4v12M4 10h12"/></svg></button><button class="bt" id="zoomOut" aria-label="Zoom out"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 10h12"/></svg></button><button class="bt" id="zoomFit" aria-label="Fit the map"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4.5A1.5 1.5 0 0 1 4.5 3H7M13 3h2.5A1.5 1.5 0 0 1 17 4.5V7M17 13v2.5a1.5 1.5 0 0 1-1.5 1.5H13M7 17H4.5A1.5 1.5 0 0 1 3 15.5V13"/></svg></button></div>
       <div class="gl views"><div class="seg wide" id="ngView"><button data-view="satellite">Satellite</button><button data-view="paper">Strategic</button></div></div>
     </div>
+    <aside class="gl mods" id="mods" aria-label="Game modifiers: what these settings change">
+      <button class="modsHd" id="modsHd" aria-expanded="true" data-tip="Collapse"><span>Modifiers</span><span class="n tn" id="modsN"></span><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button>
+      <div class="modsList" id="modsList"></div>
+    </aside>
     <section class="sheet ng gl" role="dialog" aria-label="New game">
       <header><div><svg class="logo" role="img" aria-label="COMPANY"><use href="#logo"/></svg><h1>New Game</h1></div>
         <button class="bt fill ngx" id="ngClose" aria-label="Close and go back to the game (Esc)" hidden><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button></header>
@@ -735,7 +769,7 @@ const SUPPLY={major:160,minor:96,depot:240,link:96,zoc:56,claim:140};
 const FRONT_GAP=110;
 const TRENCH={fire:.42,shell:.45,air:.5,hide:.6,snap:40,gap:18};
 const STREAM_FIRE=.5,STREAM_EXPOSED=1.15;
-// Frozen rivers and lakes (climates with frozen:true). Infantry and engineers can cross on foot at ICE.move; the ice won't
+// Frozen rivers and lakes (climates with frozen:true, i.e. Winter). Infantry and engineers can cross on foot at ICE.move; the ice won't
 // take armour or guns. Out on the ice there is nothing to hide behind: a unit there fires at ICE.fire, takes ICE.exposed
 // times the damage from fire, shells and bombs, and is seen from ICE.seen times as far.
 const ICE={move:.45,fire:.7,exposed:1.25,seen:1.25};
@@ -1186,7 +1220,7 @@ const CLIMATES={
   arid:{name:'Arid',desc:'Dusty plots, irrigated fields, olive orchards, greenhouses and flat-roofed villages.',rules:'Sightlines 5% longer.',offroad:1,vision:1.05},
   desert:{name:'Desert',desc:'Dune seas and gravel plains, crop circles, palm groves and a green irrigated river valley.',rules:'Soft sand: off-road movement 10% slower. Sightlines 15% longer.',offroad:.9,vision:1.15},
   snow:{name:'Winter',desc:'Deep snow on fields and roofs, dark snowy forest, cleared roads and a frozen river.',rules:'Deep snow: off-road movement 20% slower, vision 10% shorter. Infantry and engineers can cross the frozen river and lakes on foot, slowly and in the open.',offroad:.8,vision:.9,frozen:true},
-  tundra:{name:'Tundra',desc:'Moss, lichen and bog, sparse taiga, gravel roads, bright metal roofs and frozen water.',rules:'Boggy ground: off-road movement 15% slower. Infantry and engineers can cross the frozen river and lakes on foot, slowly and in the open.',offroad:.85,vision:1.05,frozen:true},
+  tundra:{name:'Tundra',desc:'Moss, lichen and bog, sparse taiga, gravel roads and bright metal roofs.',rules:'Boggy ground: off-road movement 15% slower.',offroad:.85,vision:1.05},
 };
 // Per-climate palette and drawing choices. parcels: whether open ground is cut into farm parcels; forest: how forest
 // is drawn (canopy, snowpine, grove of tree dots, sparse taiga); riparian: the band along the river; stream: wet or dry.
@@ -1226,11 +1260,11 @@ const SATK={
   tundra:{parcels:false,forest:'taiga',
     crop:[[156,150,98],[166,156,104],[146,142,94]],grass:[[124,120,86],[136,128,92],[110,106,78],[150,140,106],[118,116,82]],bog:[78,82,58],lichen:[176,170,128],
     hedge:null,track:[160,152,128],furrow:0,tree:[30,46,34],ground:[126,120,88],rock:[132,130,122],town:[140,138,130],garden:[120,118,86],
-    water:[[[30,48,66],[58,78,92]]],ice:[178,188,194],iceDark:[118,134,148],gravel:[170,168,158],riparian:{col:[92,100,64],w:24,style:'scrub'},
+    water:[[[30,48,66],[58,78,92]]],gravel:[170,168,158],riparian:{col:[92,100,64],w:24,style:'scrub'},
     roofs:{core:[[128,64,56],[66,90,76],[74,92,118],[132,132,130],[56,56,58],[150,136,90]],apart:[[146,146,144],[118,118,120],[80,96,118]],
       industrial:[[176,178,178],[140,144,146]],village:[[128,64,56],[66,90,76],[74,92,118],[56,56,58],[150,136,90],[132,132,130]]},
     pitched:{core:true,apart:false,industrial:false,village:true},asphalt:[100,100,98],road:[156,148,128],roadCase:null,street:[146,140,124],dirt:true,
-    stream:{style:'frozen',col:[172,184,192],fringe:[84,92,60]},grade:{sat:.8,mul:.93,add:[6,7,8]}},
+    stream:{style:'wet',col:[34,50,62],fringe:[84,92,60]},grade:{sat:.8,mul:.93,add:[6,7,8]}},
 };
 const satClimate=()=>CLIMATES[M.climate]?M.climate:'temperate';
 // tileable smooth value noise, `cells` lattice cells across an n×n tile
@@ -1618,12 +1652,14 @@ function rebuildTrenchMask(){M.trench.fill(0);for(const t of G.trenches)for(let 
   for(let s=0;s<=n;s++){const x=a.x+(b.x-a.x)*s/n,y=a.y+(b.y-a.y)*s/n,cx=Math.floor(x/C),cy=Math.floor(y/C);
     for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=cx+dx,ny=cy+dy;if(nx>=0&&ny>=0&&nx<GW&&ny<GH)M.trench[ny*GW+nx]=1;}}}}
 // A side's force: the base table, the battlefield's changes, then difficulty if the computer plays that side.
-function forceFor(side,base){const f={...base},dm=(MAP_MODES[M.mode].forces||{})[side]||{};
+// o: a setup {mode, scen, player, diff}; the running game's by default (the New game screen passes the chosen options)
+function forceFor(side,base,o){o=o||{mode:M.mode,scen:G.scen,player:G.player,diff:G.diff};const sc=SCENARIOS[o.scen]||SCENARIOS.standard,f={...base},dm=(MAP_MODES[o.mode].forces||{})[side]||{};
   for(const k in dm)f[k]=Math.max(k==='inf'?3:0,(f[k]||0)+dm[k]);
-  const sf=(SC().forces||{})[side]||{};for(const k in sf)f[k]=Math.max(k==='inf'?3:0,(f[k]||0)+sf[k]);
-  if(side!==G.player){const k=DIFFICULTY[G.diff].force;for(const t of ['inf','tank','art'])if(f[t])f[t]=Math.max(1,Math.round(f[t]*k));}
+  const sf=(sc.forces||{})[side]||{};for(const k in sf)f[k]=Math.max(k==='inf'?3:0,(f[k]||0)+sf[k]);
+  if(side!==o.player){const k=DIFFICULTY[o.diff].force;for(const t of ['inf','tank','art'])if(f[t])f[t]=Math.max(1,Math.round(f[t]*k));}
   return f;}
-const airFor=side=>SC().noAir?0:Math.max(0,AIR.count+(MAP_MODES[M.mode].air||0)+((SC().air||{})[side]||0)+(side!==G.player?DIFFICULTY[G.diff].air:0));
+const airFor=(side,o)=>{o=o||{mode:M.mode,scen:G.scen,player:G.player,diff:G.diff};const sc=SCENARIOS[o.scen]||SCENARIOS.standard;
+  return sc.noAir?0:Math.max(0,AIR.count+(MAP_MODES[o.mode].air||0)+((sc.air||{})[side]||0)+(side!==o.player?DIFFICULTY[o.diff].air:0));};
 function spawn(){const f=forceFor('D',FORCES[G.strength]),atk=forceFor('A',ATK),o=M.objs;let id=0;
   const mk=(side,type,x,y)=>{const p=cc(nearestPassable(type,clamp(x,6,W-6),clamp(y,6,H-6)));const T=TYPES[type];
     const u={id:++id,side,type,x:p.x+(Math.random()-.5)*3,y:p.y+(Math.random()-.5)*3,hp:T.hp,max:T.hp,path:[],mode:'idle',tgt:null,rev:0,sup:true,lastHit:-99,
@@ -2706,7 +2742,7 @@ const DOCTRINE_DESC={broad:'All three crossings attacked at once.',feint:'A dive
 // Interface preferences: layout and appearance, which panels are collapsed, which sections are open. Kept between
 // battles, and between visits where the browser allows it.
 const ui={layout:'floating',appearance:'light',panel:'auto',left:false,tab:'sel',sec:{objs:true,forces:true},
-  compact:{scen:false,status:false,bottom:false,log:false},hidden:false,dots:new Set()};
+  compact:{scen:false,status:false,bottom:false,log:false,mods:false},hidden:false,dots:new Set()};
 try{const s=JSON.parse(localStorage.getItem('company.ui')||'null');if(s){for(const k of ['layout','appearance','left'])if(k in s)ui[k]=s[k];Object.assign(ui.sec,s.sec||{});Object.assign(ui.compact,s.compact||{});}}catch(e){}
 function saveUI(){try{localStorage.setItem('company.ui',JSON.stringify({layout:ui.layout,appearance:ui.appearance,left:ui.left,sec:ui.sec,compact:ui.compact}));}catch(e){}}
 const darkMQ=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):{matches:false};
@@ -2968,9 +3004,77 @@ function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).map(([k,
   document.querySelectorAll('#optScen button').forEach(b=>b.onclick=()=>{if(opts.scen===b.dataset.v)return;opts.scen=b.dataset.v;renderScens();syncCode();});}
 // the game code for the current options, shown on the setup screen and kept in the page address as #game=CODE. Only
 // the hash changes, so the page never reloads and no history entries pile up; an old ?game=CODE link is rewritten to it
-function syncCode(){const code=encodeGame(opts);$('optCode').value=code;renderScensRule();
+function syncCode(){const code=encodeGame(opts);$('optCode').value=code;renderScensRule();renderMods();
   try{history.replaceState(null,'',location.pathname+'#game='+code);}catch(e){try{location.replace('#game='+code);}catch(e2){}}}
 const gameCode=()=>(location.hash.match(/game=([\w-]+)/)||location.search.match(/[?&]game=([\w-]+)/)||[])[1];
+/* Game modifiers: what the chosen setup changes, from the player's side, listed at the top right of the New game screen.
+   Forces and air strikes come from the same forceFor / airFor the game uses, so the numbers match what spawns. */
+const MODIC={clock:'<circle cx="10" cy="10" r="7"/><path d="M10 6v4.3l2.8 1.8"/>',
+  goal:'<circle cx="10" cy="10" r="7"/><circle cx="10" cy="10" r="3"/><circle cx="10" cy="10" r=".7" fill="currentColor"/>',
+  force:'<circle cx="6" cy="6" r="3"/><rect x="11" y="3" width="6" height="6" rx=".8"/><path d="M6 11.5l3.4 5.5H2.6z"/><path d="M14 11l3 1.7v3.6L14 18l-3-1.7v-3.6z"/>',
+  air:'<path fill="currentColor" stroke="none" d="M10 1.8c.9 0 1.4.9 1.4 2v3.7l6.3 3.7v1.8l-6.3-1.9v3.6l2.1 1.6V18L10 17.3 6.5 18v-1.7l2.1-1.6v-3.6l-6.3 1.9v-1.8l6.3-3.7V3.8c0-1.1.5-2 1.4-2z"/>',
+  noair:'<path fill="currentColor" stroke="none" opacity=".55" d="M10 1.8c.9 0 1.4.9 1.4 2v3.7l6.3 3.7v1.8l-6.3-1.9v3.6l2.1 1.6V18L10 17.3 6.5 18v-1.7l2.1-1.6v-3.6l-6.3 1.9v-1.8l6.3-3.7V3.8c0-1.1.5-2 1.4-2z"/><path d="M3 3l14 14"/>',
+  eye:'<path d="M2 10s3-5.5 8-5.5S18 10 18 10s-3 5.5-8 5.5S2 10 2 10z"/><circle cx="10" cy="10" r="2.4"/>',
+  moon:'<path d="M15.8 12.6A6.8 6.8 0 0 1 7.4 4.2a6.8 6.8 0 1 0 8.4 8.4z"/>',
+  speed:'<path d="M3.2 14.5a7 7 0 1 1 13.6 0"/><path d="M10 13.4l3.6-4.2"/>',
+  ice:'<path d="M10 2.5v15M3.5 6.25l13 7.5M3.5 13.75l13-7.5M8 3.8l2 1.6 2-1.6M8 16.2l2-1.6 2 1.6"/>',
+  river:'<path d="M2.5 7.5c1.9-1.3 3.6-1.3 5 0s3.1 1.3 5 0 3.6-1.3 5 0M2.5 12.5c1.9-1.3 3.6-1.3 5 0s3.1 1.3 5 0 3.6-1.3 5 0"/>',
+  lake:'<ellipse cx="10" cy="10" rx="7.5" ry="4.8"/><path d="M6.5 10c1-.7 2-.7 3 0s2 .7 3 0"/>',
+  dry:'<path d="M10 2.5v15M2.5 10h15"/><circle cx="10" cy="10" r="2.2"/>',
+  rock:'<path d="M2 16l5.5-9 3.5 5.5 2-3 5 6.5z"/>',
+  city:'<path d="M3 17V8l4-2v11M7 17V4h6v13M13 17V9l4 2v6M2 17h16"/>',
+  woods:'<path d="M10 2.5l5 7h-3l3.5 5h-11L8 9.5H5z"/><path d="M10 14.5v3"/>',
+  trench:'<path d="M2 12l2.7-4 2.7 4 2.6-4 2.7 4 2.6-4 2.7 4"/>',
+  flag:'<path d="M5 17.5V3M5 3.5h9.5l-2.2 3.5 2.2 3.5H5"/>',
+  reinf:'<path d="M10 4v12M4 10h12"/>',
+  diff:'<path d="M4 16v-3M8 16v-6M12 16V7M16 16V4"/>',
+  neutral:'<circle cx="10" cy="10" r="7" stroke-dasharray="2.5 2.6"/>',
+  counter:'<path d="M4 7h11l-3-3M16 13H5l3 3"/>'};
+// coloured glyph inline with the text
+const modIcon=(k,col)=>`<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:${col}" aria-hidden="true">${MODIC[k]}</svg>`;
+// Only what differs from a standard game (Standard Battle, River Town, Temperate, Normal, standard defense) is listed.
+// Each row: icon, what changes, the value; the reason is in its tooltip.
+function setupMods(o){const sc=SCENARIOS[o.scen],mm=MAP_MODES[o.mode],cl=CLIMATES[o.climate],dif=DIFFICULTY[o.diff],me=o.side,them=me==='A'?'D':'A',R=[];
+  const ctx={mode:o.mode,scen:o.scen,player:me,diff:o.diff},sideCol={A:'var(--atk-ring)',D:'var(--defender-ring)'};
+  const pct=v=>{const p=Math.round((v-1)*100);return (p>0?'+':p<0?'−':'')+Math.abs(p)+'%';},tone=v=>v>1?'up':v<1?'down':'';
+  const TN={inf:'infantry',tank:'armor',art:'artillery',eng:'engineers'};
+  // a force as changes against the standard one: +2 armor, −2 infantry
+  const delta=(fs,base,s)=>{const d=UNIT_TYPES.filter(t=>(fs[t]||0)!==(base[t]||0));return d.length?{val:`<span class="cnts">${d.map(t=>{const n=(fs[t]||0)-(base[t]||0);return `<span class="cnt">${n>0?'+':'−'}${Math.abs(n)}${uIco(t,s,9)}</span>`;}).join('')}</span>`,
+    tip:d.map(t=>{const n=(fs[t]||0)-(base[t]||0);return `${n>0?'+':'−'}${Math.abs(n)} ${TN[t]}`;}).join(', ')+` (${UNIT_TYPES.map(t=>`${fs[t]||0} ${TN[t]}`).join(', ')})`}:null;};
+  if(sc.limit!==900)R.push({ic:'clock',col:'#007aff',label:'Time limit',val:fmt(sc.limit)});
+  if(sc.neutral||sc.holdA||sc.need!==2)R.push({ic:'goal',col:'#ff3b30',label:'To win',tip:sc.goal[me],
+    val:sc.neutral?'Most objectives':sc.holdA?(me==='A'?'Hold A ':'Deny A ')+fmt(sc.holdA):sc.need>=3?(me==='A'?'Take all 3':'Keep 1 of 3'):(me==='A'?'Hold 2 of 3':'Keep 2 of 3')});
+  for(const [s,who] of [[me,'Your force'],[them,'Enemy force']]){const d=delta(forceFor(s,s==='D'?FORCES[o.strength]:ATK,ctx),s==='D'?FORCES.standard:ATK,s);
+    if(d)R.push({ic:'force',col:sideCol[s],label:who,val:d.val,tip:d.tip});}
+  const aMe=airFor(me,ctx),aThem=airFor(them,ctx);
+  if(sc.noAir)R.push({ic:'noair',col:'#8e8e93',label:'Air strikes',val:'None',tone:'down',tip:'None in this scenario'});
+  else if(aMe!==AIR.count||aThem!==AIR.count)R.push({ic:'air',col:'#32ade6',label:'Air strikes',val:`You ${aMe} · Enemy ${aThem}`,tip:`Standard is ${AIR.count} each`});
+  const vis=mm.vision*cl.vision*(sc.vision||1);
+  if(Math.round((vis-1)*100))R.push({ic:sc.night?'moon':'eye',col:sc.night?'#5856d6':'#af52de',label:sc.night?'Vision (night)':'Vision',val:pct(vis),tone:tone(vis),
+    tip:[sc.night?'Darkness '+pct(sc.vision):'',mm.vision!==1?mm.name+' '+pct(mm.vision):'',cl.vision!==1?cl.name+' '+pct(cl.vision):''].filter(Boolean).join(' · ')});
+  if(cl.offroad!==1)R.push({ic:'speed',col:'#ff9500',label:'Off-road movement',val:pct(cl.offroad),tone:'down',tip:`${cl.rules.split(':')[0]}; roads unaffected`});
+  if(cl.frozen&&mm.wet)R.push({ic:'ice',col:'#5ac8fa',label:'Frozen water',val:'Infantry cross',
+    tip:`Infantry and engineers cross the frozen river and lakes on foot. On the ice: fire ${pct(ICE.fire)}, damage taken ${pct(ICE.exposed)}, seen ${Math.round((ICE.seen-1)*100)}% farther`});
+  if(!mm.wet)R.push({ic:'dry',col:'#a2845e',label:'No river',val:'Open front',tip:mm.rules});
+  if(mm.lake)R.push({ic:'lake',col:'#30b0c7',label:'Lake',val:'No pontoons',tip:mm.rules});
+  if(mm.ridges)R.push({ic:'rock',col:'#7d7461',label:'Rock ridges',val:'No armor',tip:'Armor and artillery can\'t cross rock; infantry climbs slowly'});
+  const km=v=>(v*M_PER_PX/1000).toFixed(1),bud=BUDGET[o.strength]*mm.budget,bud0=BUDGET.standard;
+  if(sc.trenches===false)R.push({ic:'trench',col:'#a2845e',label:'Trenches',val:'None',tip:'Nobody starts dug in'});
+  // a defender who deploys always sees how much trench there is to dig; it's coloured only when it differs from standard
+  else if(me==='D'&&sc.deploy!==false){const d=Math.abs(bud-bud0)>1;R.push({ic:'trench',col:'#a2845e',label:'Trench budget',val:km(bud)+' km',tone:d?tone(bud/bud0):'',
+    tip:'To dig before the battle, on top of the trenches already at A, B and C'+(d?`. Standard is ${km(bud0)} km`:'')});}
+  if(me==='D'&&sc.deploy===false)R.push({ic:'flag',col:'#5856d6',label:'Deployment',val:'None',tip:'The battle starts at once'});
+  if(sc.counter)R.push({ic:'counter',col:'#ff9500',label:'Attacker holds A, B',val:'At start',tip:'The attacker starts holding A and B'});
+  if(sc.neutral)R.push({ic:'neutral',col:'#8e8e93',label:'Objectives',val:'Neutral',tip:'Both sides start at their depots and race for them'});
+  for(const r of sc.reinf||[]){const d=delta(r.units,{},r.side);R.push({ic:'reinf',col:'#34c759',label:`Reinforcements ${fmt(r.t)}`,val:d.val,tip:`${r.side===me?'Yours':'The enemy\'s'}, at their depot: `+d.tip.split(' (')[0]});}
+  if(o.diff!=='normal')R.push({ic:'diff',col:'#8e8e93',label:'Difficulty',val:dif.name,
+    tip:`Computer: ${pct(dif.force)} units, ${dif.air>0?'+':'−'}${Math.abs(dif.air)} air strike, calls one every ${Math.round(AIR.aiCooldown*dif.cool)} s`});
+  return R;}
+function renderMods(){const R=setupMods(opts),el=$('mods'),shut=!!ui.compact.mods;el.classList.toggle('shut',shut);$('modsN').textContent=R.length;
+  $('modsHd').setAttribute('aria-expanded',!shut);$('modsHd').dataset.tip=shut?'Show modifiers':'Collapse';
+  setH($('modsList'),R.length?R.map(r=>`<div class="mrow"${r.tip?` data-tip="${esc(r.tip)}"`:''}>${modIcon(r.ic,r.col)}<span class="ml">${r.label}</span><span class="mv tn${r.tone?' '+r.tone:''}">${r.val}</span></div>`).join('')
+    :'<div class="mnone">None: standard rules</div>');}
+$('modsHd').onclick=()=>{ui.compact.mods=!ui.compact.mods;saveUI();renderMods();};
 function renderScensRule(){const c=SCENARIOS[opts.scen];$('scenRule').textContent=`You ${opts.side==='A'?'attack':'defend'}: ${c.goal[opts.side]}`;}
 function applyOptions(o){Object.assign(opts,o);syncSegs();renderModes();renderClimates();renderScens();preview();}
 $('optCode').onchange=()=>{const o=decodeGame($('optCode').value);if(o){applyOptions(o);$('codeMsg').textContent='Game code loaded.';}else{$('codeMsg').textContent='That isn’t a valid game code.';$('optCode').value=encodeGame(opts);}};
@@ -2983,7 +3087,7 @@ $('optSeed').onchange=()=>{const v=parseInt($('optSeed').value,10);if(v>0){opts.
 $('optReroll').onclick=()=>{opts.seed=1+Math.floor(Math.random()*99999);preview();};
 $('optStart').onclick=()=>newGame({...opts});
 function showStart(){if(G&&G.phase==='play')G.paused=true;closePops();$('endModal').hidden=true;const back=!G||G.phase==='over';$('optResume').hidden=back;$('ngClose').hidden=back;
-  $('startModal').hidden=false;updateHUD(true);}
+  $('startModal').hidden=false;renderMods();updateHUD(true);}
 $('btnMenu').onclick=showStart;
 // a map previewed from the menu replaces M, so restore the game's own map before resuming
 $('optResume').onclick=$('ngClose').onclick=()=>{if(!G||G.phase==='over')return;if(M.seed!==G.seed||M.mode!==G.mode||M.climate!==G.climate){if(M.seed!==G.seed||M.mode!==G.mode)M=genMap(G.seed,G.mode);setClimate(G.climate);renderTerrain();rebuildTrenchMask();M.dmg=G.dmg;applyCrossings();}
