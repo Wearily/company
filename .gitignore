@@ -1,1 +1,4 @@
 .DS_Store
+
+# the folder Vercel publishes (built by vercel.json from index.html)
+dist/

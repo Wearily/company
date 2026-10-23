@@ -4,6 +4,7 @@ The game is named **COMPANY** (it was called Bridgehead; the files keep their ol
 
 ## Current state
 
+- **Hosting:** https://companymap.vercel.app/, deployed by Vercel from the GitHub repo (Wearily/company). `vercel.json` publishes only the game: its build copies `index.html` into `dist/` (git-ignored) and Vercel serves that folder, so CLAUDE.md, `bridgehead.html`, `company-hud/` and anything else in the repo stay off the site. A file the page needs at runtime must be added to that `buildCommand`. The GitHub repo itself is public.
 - The game is `index.html`, where all current work happens (the satellite copy described below). `bridgehead.html` is the older, paper-only version. Each is one file: one inline `<script>` with plain JS and Canvas 2D, no build step and no dependencies apart from Google Fonts.
 - The file has no `<html>`, `<head>` or `<body>` tags, because the claude.ai artifact host wraps it.
 - It has **not been played end to end**, so expect runtime bugs and balance problems. Fix those before adding features.
