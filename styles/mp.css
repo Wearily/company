@@ -1,0 +1,45 @@
+/* Multiplayer: the Multiplayer window, the lobby bar on the New game sheet, and the lobby-mode buttons. Lobby mode is
+   body.mp-lobby, with body.mp-host or body.mp-guest (src/ui/lobby.js). */
+#mpLeave,#mpReady,#mpStart{display:none}
+body.mp-lobby #optStart,body.mp-lobby #optMulti,body.mp-lobby #ngOpenReplay,body.mp-lobby #optResume,body.mp-lobby #ngClose{display:none!important}
+body.mp-lobby #mpLeave,body.mp-host #mpStart,body.mp-guest #mpReady{display:inline-flex}
+/* no computer player, so no difficulty */
+body.mp-lobby .ng-right div:has(> #optDiff){display:none}
+/* the guest sees the host's settings but can't change them */
+body.mp-guest .ng-body :is(button,input),body.mp-guest .ng-gen{pointer-events:none}
+body.mp-guest .ng-body :is(.grp,.tiles,.seg,.row8),body.mp-guest .ng-gen{opacity:.55}
+.cta:disabled{background:var(--fill);color:var(--ink-disabled);cursor:default}
+#mpReady.on{background:var(--ok)}
+body.mp-guest #lbCopy{display:none}
+.lbName .lb{display:block;margin:0 0 3px}.lbName .fld{width:130px;height:30px}
+/* chat (T in a multiplayer battle): a message box where the event log ends; the log moves up while it's open */
+.chatIn{position:absolute;width:min(460px,60vw);height:30px;padding:0 12px;border:0;border-radius:15px;outline:none;pointer-events:auto;
+  background:rgba(20,22,26,.55);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);color:#fff;font:500 12.5px var(--font);box-shadow:0 2px 10px rgba(0,0,0,.25)}
+.chatIn::placeholder{color:rgba(255,255,255,.6)}
+body.chatting .log{transform:translateY(-38px);-webkit-mask-image:none;mask-image:none}
+/* the host's time switch: the guest sees it, locked */
+.lbTime{flex-basis:100%}
+body.mp-guest .lbTime{pointer-events:none;opacity:.55}
+/* a setting multiplayer fixes (fog of war): the switch shows its value, greyed out, with a note */
+.tgl:disabled{opacity:.45;cursor:default}
+.lockNote{display:none;font-size:11.5px;margin-top:2px}
+#fogRow.locked .lockNote{display:block}
+.lobbyBar{display:flex;align-items:center;flex-wrap:wrap;gap:12px 18px;margin:-4px 0 18px;padding:12px 16px;border-radius:14px;background:var(--fill)}
+.lobbyBar .lb{margin:0 0 3px}
+.lbRoom{font-size:22px;font-weight:700;letter-spacing:.06em;line-height:1}
+.lbPlayers{display:flex;gap:18px;margin-left:auto;flex-wrap:wrap}
+.lbP{display:flex;align-items:center;gap:8px;font-size:13px}
+.lbSt{font-size:11.5px;font-weight:600;padding:3px 8px;border-radius:10px;background:var(--fill-hover);color:var(--ink-2)}
+.lbSt.ok{background:var(--ok);color:#fff}
+.lbNote{flex-basis:100%;margin:0;font-size:12px}.lbNote:empty{display:none}
+.mp{width:620px;max-width:100%;padding:22px 24px 20px}
+.mp>header{display:flex;align-items:center;justify-content:space-between;margin-bottom:16px}
+.mpGrid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.mpBox{display:flex;flex-direction:column;gap:10px;padding:16px;border-radius:14px;background:var(--fill)}
+.mpBox .lb{margin:0}.mpBox p{margin:0;font-size:12.5px;line-height:1.4;flex:1}
+.mpBox .row8 .fld{flex:1;min-width:0;text-transform:uppercase;letter-spacing:.08em;font-weight:600}
+.mpSmall{width:420px}.mpSmall>header{margin-bottom:10px}.mpSmall>p{margin:0 0 18px;font-size:13px;line-height:1.45}
+.mpFoot{display:flex;justify-content:flex-end;gap:10px}
+.cta.danger{background:var(--danger)}
+.mpLocal{margin:8px 4px 0;font-size:12px}
+@media (max-width:600px){.mpGrid{grid-template-columns:1fr}.lbPlayers{margin-left:0}}

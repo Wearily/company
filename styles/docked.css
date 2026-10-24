@@ -1,0 +1,149 @@
+/* The Docked layout: flush top bar, outliner and inspector side bars, one command dock. */
+/* --- docked: the top bar and the command dock run flush along the edges; outliner and inspector slide in from the sides */
+:root[data-layout="docked"] #bar{display:flex}
+#bar,#sideL,#sideR{display:none}
+#bar{position:absolute;left:0;right:0;top:0;height:var(--bar-h);box-sizing:border-box;padding:0 12px;align-items:center;gap:10px;background:var(--bar);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:inset 0 -.5px 0 var(--hairline),0 1px 0 rgba(0,0,0,.06);pointer-events:auto}
+#bar .barL{flex:1;display:flex;align-items:center;gap:10px;min-width:0}
+#bar .barR{flex:1;display:flex;align-items:center;justify-content:flex-end;min-width:0}
+:root[data-layout="docked"] #leftcol{display:none}
+:root[data-layout="docked"] #bar .scen,:root[data-layout="docked"] #bar #status,:root[data-layout="docked"] #bar #ctrls{position:static;transform:none;background:none;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;border-radius:0;padding:0}
+:root[data-layout="docked"] #bar .scen{width:auto;flex-direction:row;align-items:center;gap:10px;cursor:default;min-width:0}
+:root[data-layout="docked"] #bar .scen .goal{display:none}
+:root[data-layout="docked"] #bar .scen .hd .side-badge{display:none}
+:root[data-layout="docked"] #bar .scen .ttl{display:flex;flex-direction:column;min-width:0;padding-left:10px;box-shadow:inset .5px 0 0 var(--hairline)}
+.scen .ttl b{font-weight:600;white-space:nowrap;display:flex;align-items:center;gap:6px}
+.scen .ttl b .side-badge{padding:1px 8px;font-weight:500}
+:root[data-layout="docked"] #bar .scen .meta{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+:root[data-layout="docked"] #bar .scen .meta .m1{display:none}:root[data-layout="docked"] #bar .scen .meta .m2{display:inline}
+:root[data-layout="docked"] #bar .scen>.meta{display:none}
+:root[data-layout="docked"] #bar #status{gap:2px;flex:none}
+:root[data-layout="docked"] #bar #status .clk{align-items:flex-end;padding-right:12px;cursor:default}
+:root[data-layout="docked"] #bar #status .clk b{font-size:20px}
+:root[data-layout="docked"] #bar #status .dv{display:none}
+:root[data-layout="docked"] #bar .obj{height:40px;gap:8px;padding:0 10px 0 6px}
+:root[data-layout="docked"] #bar .xtra{padding-left:12px}
+:root[data-layout="docked"] #bar #ctrls{gap:4px}
+:root[data-layout="docked"] #bar #ctrls .bt.ic{width:32px;height:32px}
+:root[data-layout="docked"] #bar #ctrls .seg{margin:0}
+:root[data-layout="docked"] #bar #ctrls .seg button{height:26px;min-width:36px;font-size:12px}
+:root[data-layout="docked"] #bar #ctrls .tglR,:root[data-layout="docked"] #bar #ctrls .dvD{display:inline-flex}
+#ctrls .dvD{display:none;margin:14px 4px}
+.tglL,.tglR{width:32px;height:32px;padding:0}
+.tglL.on,.tglR.on{background:var(--fill-hover);color:var(--ink)}
+:root[data-layout="docked"] #sideL,:root[data-layout="docked"] #sideR{position:absolute;top:var(--bar-h);bottom:var(--dock-h);width:var(--side-w);box-sizing:border-box;padding:10px;display:flex;flex-direction:column;gap:6px;background:var(--bar);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);overflow:auto;scrollbar-width:none;pointer-events:auto;transition:transform .2s}
+#sideL{left:0;box-shadow:inset -.5px 0 0 var(--hairline)}
+#sideR{right:0;box-shadow:inset .5px 0 0 var(--hairline);padding-top:4px!important}
+:root[data-layout="docked"] #sideL.off{transform:translateX(-100%)}
+:root[data-layout="docked"] #sideR.off{transform:translateX(100%)}
+:root[data-layout="docked"] .side .secHd{height:30px;padding:0 8px;border-radius:10px;justify-content:flex-start;gap:6px;font-size:11.5px}
+:root[data-layout="docked"] .side .secHd:hover{background:var(--group)}
+:root[data-layout="docked"] .side .secHd .act{margin-left:auto}
+:root[data-layout="docked"] .side .secHd .chev{order:-1;transform:rotate(180deg)}
+:root[data-layout="docked"] .side .sec.shut .secHd .chev{transform:rotate(90deg)}
+:root[data-layout="docked"] .side .secBody .grp{margin:0}
+:root[data-layout="docked"] .side .rw{min-height:32px;padding:0 10px}
+:root[data-layout="docked"] .side .sec+.sec{margin-top:4px}
+:root[data-layout="docked"] #secObjs,:root[data-layout="docked"] #goalLine,:root[data-layout="docked"] #secMods{display:flex}
+#goalLine{font-size:11.5px;color:var(--ink-2);padding:6px 8px 4px;line-height:1.4}
+:root[data-layout="docked"] #sideR .selHd{padding:8px 6px 4px}
+:root[data-layout="docked"] #sideR .selHd .bt{display:none}
+:root[data-layout="docked"] #sideR .selTypes,:root[data-layout="docked"] #sideR .selHp{padding-left:6px;padding-right:6px}
+:root[data-layout="docked"] #sideR .secBody .grp{margin:0}
+:root[data-layout="docked"] #dock{left:0;right:0;bottom:0;height:var(--dock-h);flex-direction:row;align-items:center;justify-content:center;gap:2px;max-width:none;padding:0 12px;background:var(--bar);-webkit-backdrop-filter:var(--glass-blur);backdrop-filter:var(--glass-blur);box-shadow:inset 0 .5px 0 var(--hairline);pointer-events:auto;overflow-x:auto;scrollbar-width:none}
+:root[data-layout="docked"] #dock .selbar{display:contents}
+:root[data-layout="docked"] #dock .selgrp{order:1}:root[data-layout="docked"] #dock .selbar>.dv{order:2;margin:14px 8px}
+:root[data-layout="docked"] #dock .orders,:root[data-layout="docked"] #dock .deploybar{order:3}
+:root[data-layout="docked"] #dock .ovgrp{order:5;padding-left:8px;margin-left:8px;box-shadow:inset .5px 0 0 var(--hairline)}
+:root[data-layout="docked"] #dock .orders,:root[data-layout="docked"] #dock .deploybar{background:none;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;padding:0;border-radius:0;overflow:visible}
+:root[data-layout="docked"] #dock .selbar .bt{height:32px;padding:0 10px}
+:root[data-layout="docked"] #dock .selbar .bt.ic{width:32px;padding:0}
+:root[data-layout="docked"] #dock .tb{flex-direction:row;height:32px;min-width:0;padding:0 10px;gap:6px;border-radius:16px;font-size:13px}
+:root[data-layout="docked"] #dock .tk{position:static;font-size:11.5px;font-weight:500;order:3}
+:root[data-layout="docked"] #dock .tb .ico svg{width:16px;height:16px}
+:root[data-layout="docked"] #dock .badge{position:static;order:2;margin-left:-2px;box-shadow:none}
+:root[data-layout="docked"] #dock .ico{display:contents}
+:root[data-layout="docked"] #dock .lbtoggle,:root[data-layout="docked"] #selPill{display:none!important}
+:root[data-layout="docked"] #dock .deploybar .tb.dig{height:40px;align-self:center}
+:root[data-layout="docked"] #dock .deploybar .cta{height:40px}
+:root[data-layout="docked"] .hint{top:calc(var(--bar-h) + 12px);background:none;-webkit-backdrop-filter:none;backdrop-filter:none;box-shadow:none;color:var(--on-map);text-shadow:var(--on-map-shadow);padding:0;max-width:calc(100% - 600px)}
+:root[data-layout="docked"] .hint b{color:var(--on-map-accent)}
+:root[data-layout="docked"] .hint .s2{color:var(--on-map)}
+:root[data-layout="docked"] .log{bottom:calc(var(--dock-h) + 16px);left:calc(var(--logL,0px) + 20px)}
+:root[data-layout="docked"] .replaybar{left:0;right:0;bottom:0;border-radius:0;background:var(--bar);box-shadow:inset 0 .5px 0 var(--hairline)}
+:root[data-layout="docked"] .pop{top:64px}
+:root[data-layout="docked"] .menu{top:62px}
+:root[data-layout="docked"] #btnShowUI{top:8px}
+:root[data-layout="docked"] #startModal.showmap{padding:0}
+:root[data-layout="docked"] #startModal.showmap .ng{border-radius:0;height:100%;background:var(--bar);box-shadow:inset -.5px 0 0 var(--hairline)}
+
+/* narrower screens */
+@media (max-width:1359px){
+  #status .obj .on2{display:none}
+  #status .obj{padding:0 6px;width:44px}
+  :root[data-layout="docked"] #bar .obj .on2{display:none}
+}
+@media (max-width:1023px){
+  .orders .tb{min-width:44px;width:44px;height:44px;border-radius:22px;padding:0;gap:0}
+  .orders .tb .tl{display:none}
+  .orders .tk{top:3px;right:5px}
+  .orders .badge{left:auto;right:-9px;top:auto;bottom:-6px;min-width:14px;height:14px;font-size:9px;line-height:14px}
+  .orders .lbtoggle{display:none}
+  .hint{max-width:calc(100% - 32px);top:70px}
+  #leftcol{width:300px}
+  #status .xtra span{display:none}
+  :root[data-layout="docked"] #bar .scen .ttl{display:none}
+  :root[data-layout="docked"] #dock .tb .tl{display:none}
+}
+/* phones: compact top capsules, a rail of round buttons, the inspector as a bottom sheet, full-width command rows */
+@media (max-width:599px){
+  #leftcol{top:96px;bottom:auto;width:auto}
+  #scenCard,#scenPill{display:none!important}
+  #railInfo{display:inline-flex}
+  #status{left:12px;top:12px;transform:none}
+  #ctrls{right:12px;top:12px}
+  .insp{position:fixed;left:6px;right:6px;bottom:132px;width:auto;max-height:calc(100% - 200px);border-radius:var(--r-sheet);background:var(--glass-strong);padding-bottom:16px;z-index:3}
+  .insp .sec{margin-top:0!important}
+  .insp .secHd{display:none}
+  .insp .sec.shut .secBody{display:block}
+  .insp .selHd .bt{background:var(--fill)}
+  #scenCard.phoneOpen{display:flex!important;position:fixed;left:12px;right:12px;top:68px;width:auto;z-index:3}
+  #dock{left:8px;right:8px;bottom:8px;align-items:stretch;gap:8px}
+  .selbar{overflow-x:auto;scrollbar-width:none;justify-content:flex-start}
+  .selbar::-webkit-scrollbar{display:none}
+  .orders{justify-content:flex-start}
+  .orders .tb{min-width:56px;width:auto;height:48px;flex-direction:column;gap:3px;border-radius:16px}
+  .orders .tb .tl{display:block;font-size:10px}
+  .deploybar{flex-wrap:wrap;justify-content:space-between}
+  .deploybar .cta{width:100%;justify-content:center;margin:0}
+  .budget{flex:1}
+  .log{left:14px;bottom:146px;font-size:11px;max-width:calc(100% - 28px);max-height:39px}
+  .hint{top:62px;font-size:11.5px;padding:5px 12px;max-width:calc(100% - 24px)}
+  :root[data-layout="docked"] #sideL,:root[data-layout="docked"] #sideR{width:min(272px,86vw)}
+  .pop,.menu{left:6px;right:6px;top:auto!important;bottom:6px;width:auto!important;max-height:80%;border-radius:var(--r-sheet)}
+  .pop::before{display:none}
+  #helpModal .cols{grid-template-columns:1fr}
+  #helpModal .legend{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .callout .tx{display:none}.callout .nub{display:none}.callout .gl{padding:5px;border-radius:17px}
+  .replaybar{left:6px;right:6px;bottom:6px;padding:12px 14px}
+  .rb-key,#rpTime{display:none}
+  body.replaying .log{bottom:192px}
+  .sheetwrap{padding:0;align-items:flex-end}
+  .sheet{margin:0;width:100%!important;border-radius:var(--r-sheet) var(--r-sheet) 0 0;max-height:100%;overflow:auto}
+  .ng{padding:16px 16px 0}
+  .ng-body{grid-template-columns:1fr;gap:16px}
+  .ng>footer{position:sticky;bottom:0;background:var(--glass-strong);margin:16px -16px 0;padding:12px 16px 16px}
+  .ng>footer>span{display:none}
+  .ng>footer>div{flex:1}.ng>footer>div>*{flex:1}
+  #ngShowMap{display:none}
+  .ng>footer{flex-wrap:wrap}.ng-gen{width:100%}.ng-goal{margin:12px 2px 0}
+  .mods{display:none!important}
+  #modsGame:not([hidden]){display:flex!important;left:6px!important;right:6px;top:auto!important;bottom:132px;width:auto;max-height:calc(100% - 200px)!important;border-radius:var(--r-sheet);background:var(--glass-strong);z-index:3}
+  #startModal.showmap .ng{width:100%;height:auto}
+  .end{padding:20px 16px 16px}
+  .end footer{flex-direction:column-reverse;align-items:stretch}
+  .end footer>div{display:grid;grid-template-columns:1fr 1fr}
+  .end footer>div:first-child{grid-template-columns:1fr auto auto}
+  .tiles3>div{padding:10px}
+  .tiles3 b{font-size:18px}
+}
+@media (prefers-reduced-transparency:reduce){.gl,#bar,#sideL,#sideR,#dock{-webkit-backdrop-filter:none!important;backdrop-filter:none!important}.gl{background:var(--glass-strong)}}

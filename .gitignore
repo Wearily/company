@@ -2,3 +2,6 @@
 
 # the folder Vercel publishes (built by vercel.json from index.html)
 dist/
+
+# replay files you download from the game and share for analysis (they can be large)
+replays/
