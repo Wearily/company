@@ -27,10 +27,10 @@ function exitReplay(){if(!RP)return;const loaded=RP.real.loaded;G=RP.real;RP=nul
 const REPLAY_FMT='company-replay';
 function replayData(g){const R=g.rec;
   return{format:REPLAY_FMT,version:1,saved:new Date().toISOString(),code:g.code,
-    opts:{scen:g.scen,mode:g.mode,climate:g.climate,side:g.player,strength:g.strength,diff:g.diff,seed:g.seed,gen2:!!g.gen2},
+    opts:{scen:g.scen,mode:g.mode,climate:g.climate,side:g.player,strength:g.strength,diff:g.diff,seed:g.seed,gen2:genV(g.gen2)},
     over:g.over,time:g.time,plan:g.plan?{name:g.plan.name,key:g.plan.key}:null,trenches:g.trenches,
     names:{objs:g.objs.map(o=>({key:o.key,name:o.name,kind:o.kind||'',x:o.x,y:o.y})),bridges:g.bridges.map(b=>({id:b.id,x:Math.round(b.x),y:Math.round(b.y)}))},
-    rec:{frames:R.frames.map(f=>({t:Math.round(f.t*100)/100,id:[...f.id],x:[...f.x],y:[...f.y],hp:[...f.hp],fl:[...f.fl],fire:f.fire,obj:f.obj,bh:f.bh,air:f.air,holdA:f.holdA,pont:f.pont})),
+    rec:{frames:R.frames.map(f=>({t:Math.round(f.t*100)/100,id:[...f.id],x:[...f.x],y:[...f.y],hp:[...f.hp],fl:[...f.fl],fire:f.fire,obj:f.obj,bh:f.bh,air:f.air,holdA:f.holdA,pont:f.pont,vp:f.vp})),
       meta:[...R.meta].map(([id,m])=>[id,m.side,m.type,m.max,m.died===Infinity?-1:m.died]),
       booms:R.booms,shells:R.shells,strikes:R.strikes,log:R.log,dmg:R.dmg.map(d=>({t:d.t,list:[...d.list]})),downs:R.downs,events:R.events,ai:R.ai||[]}};}
 async function downloadReplay(g){g=g||(RP?RP.real:G);if(!g||!g.rec||g.rec.frames.length<2){addLog('No replay recorded yet');return;}
@@ -50,7 +50,7 @@ function loadReplay(d){const o=d.opts,sc=SCENARIOS[o.scen]||SCENARIOS.standard;c
     dmg:d.rec.dmg.map(q=>({t:q.t,list:Int32Array.from(q.list)}))};
   G={player:o.side,strength:o.strength,seed:o.seed,mode:o.mode,gen2:o.gen2,diff:o.diff,climate:o.climate,scen:o.scen,limit:sc.limit,code:d.code,loaded:true,
     depot:{A:M.depA,D:M.depD},trenches:d.trenches||[],sup:{A:new Uint8Array(N),D:new Uint8Array(N)},cov:{A:new Uint8Array(N),D:new Uint8Array(N)},
-    objs:M.objs.map(q=>({...q,owner:'D',p:1,contested:false})),bridges:M.spans.map((b,id)=>({id,x:b.sym.x,y:b.sym.y,ang:b.sym.ang,len:b.sym.len,kind:b.sym.kind,cells:b.cells,down:false,hp:CROSSING_HP.bridge,max:CROSSING_HP.bridge})),
+    objs:M.objs.map((q,k)=>({...q,...((d.names&&d.names.objs&&d.names.objs[k])||{}),owner:'D',p:1,contested:false})),bridges:M.spans.map((b,id)=>({id,x:b.sym.x,y:b.sym.y,ang:b.sym.ang,len:b.sym.len,kind:b.sym.kind,cells:b.cells,down:false,hp:CROSSING_HP.bridge,max:CROSSING_HP.bridge})),
     air:{A:0,D:0},reinfDone:new Set(),over:d.over,rec:R,plan:d.plan,dmg:new Uint8Array(N),dmgList:[],pontoons:[],units:[],acc:{}};
   M.dmg=G.dmg;rebuildTrenchMask();applyCrossings();settings.style=settings.style||'satellite';renderTerrain();
   $('startModal').hidden=true;$('startModal').classList.remove('showmap');$('endModal').hidden=true;startReplay();}
@@ -62,7 +62,7 @@ function replayView(t){const {R,RV}=RP,F=R.frames;let lo=0,hi=F.length-1;while(l
     if(!u){u={id,side:m.side,type:m.type,max:m.max,hp:m.max,x:0,y:0,path:[],queue:null,mode:'idle',sel:false,flash:0,moving:false,deployT:3,sup:true,fireAt:null,tgt:null};RP.uc.set(id,u);}
     const j=gi.get(id),x1=j!==undefined?g.x[j]:f.x[k],y1=j!==undefined?g.y[j]:f.y[k],h1=j!==undefined?g.hp[j]:f.hp[k];
     u.x=f.x[k]+(x1-f.x[k])*a;u.y=f.y[k]+(y1-f.y[k])*a;u.hp=Math.max(1,m.max*(f.hp[k]+(h1-f.hp[k])*a)/255);
-    u.moving=Math.hypot(x1-f.x[k],y1-f.y[k])>1;u.sup=!(f.fl[k]&1);u.mode=f.fl[k]&2?'hold':'idle';u.deployT=f.fl[k]&4?3:0;u.flash=0;us.push(u);}
+    u.moving=Math.hypot(x1-f.x[k],y1-f.y[k])>1;u.sup=!(f.fl[k]&1);u.mode=f.fl[k]&2?'hold':'idle';u.deployT=f.fl[k]&4?3:0;u.wounded=!!(f.fl[k]&8);u.flash=0;us.push(u);}
   RV.units=us;const byId=new Map(us.map(u=>[u.id,u]));
   // direct fire: a tracer flickers along each shooter's line of fire
   RV.tracers=[];for(let k=0;k<f.fire.length;k+=2){const sh=byId.get(f.fire[k]),e=byId.get(f.fire[k+1]);if(!sh||!e)continue;
@@ -89,7 +89,10 @@ function buildTimeline(){const cvs=$('rpLine'),w=Math.max(200,cvs.clientWidth||0
   const str=F.map(f=>{const sum={A:0,D:0};for(let i=0;i<f.id.length;i++){const m=R.meta.get(f.id[i]);sum[m.side]+=W8[m.type]*f.hp[i]/255;}return sum;});
   const mx=Math.max(1,...str.map(q=>Math.max(q.A,q.D)));
   c.strokeStyle=v('--hairline');c.lineWidth=1;c.beginPath();c.moveTo(L,gy+gh/2);c.lineTo(w,gy+gh/2);c.stroke();
-  c.lineJoin='round';for(const sd of ['A','D']){c.strokeStyle=col[sd];c.lineWidth=2;c.beginPath();F.forEach((f,i)=>{const x=X(f.t),y=gy+gh-2-str[i][sd]/mx*(gh-4);i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();}
+  // (Company Command: victory points are the lines that matter; strength is drawn faint behind them)
+  const vpOn=!!F[0].vp;
+  c.lineJoin='round';for(const sd of ['A','D']){c.strokeStyle=col[sd];c.lineWidth=2;c.globalAlpha=vpOn?.3:1;c.beginPath();F.forEach((f,i)=>{const x=X(f.t),y=gy+gh-2-str[i][sd]/mx*(gh-4);i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();c.globalAlpha=1;
+    if(vpOn){const k=sd==='A'?0:1;c.lineWidth=2.5;c.setLineDash([5,3]);c.beginPath();F.forEach((f,i)=>{const x=X(f.t),y=gy+gh-2-(f.vp?f.vp[k]:0)/ECON.vp0*(gh-4);i?c.lineTo(x,y):c.moveTo(x,y);});c.stroke();c.setLineDash([]);}}
   // who held A, B and C: one rounded band each, orange while contested
   c.font=`700 10px ${v('--font')}`;c.textAlign='center';c.textBaseline='middle';
   for(let o=0;o<3;o++){const y=by+o*10;c.fillStyle=v('--ink-2');c.fillText('ABC'[o],7,y+4);

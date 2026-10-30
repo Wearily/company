@@ -3,10 +3,10 @@
 // Loaded as a classic script in the order index.html lists: the files share one scope.
 'use strict';
 /* the New game sheet */
-const opts={side:'A',strength:'standard',seed:1+Math.floor(Math.random()*99999),mode:'river',diff:'normal',climate:'temperate',scen:'standard',gen2:true};
+const opts={side:'A',strength:'standard',seed:1+Math.floor(Math.random()*99999),mode:'river',diff:'normal',climate:'temperate',scen:'standard',gen2:3};
 const segInit=(id,key)=>document.querySelectorAll(`#${id} button`).forEach(b=>b.onclick=()=>{opts[key]=b.dataset.v;document.querySelectorAll(`#${id} button`).forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-checked',x===b);});syncCode();});
 segInit('optSide','side');segInit('optStr','strength');segInit('optDiff','diff');
-function syncSegs(){const gb=$('optGen');gb.classList.toggle('on',!!opts.gen2);gb.setAttribute('aria-checked',!!opts.gen2);for(const [id,key] of [['optSide','side'],['optStr','strength'],['optDiff','diff']])document.querySelectorAll(`#${id} button`).forEach(b=>{b.classList.toggle('on',b.dataset.v===opts[key]);b.setAttribute('aria-checked',b.dataset.v===opts[key]);});}
+function syncSegs(){const gb=$('optGen');const gOn=genV(opts.gen2)>=3;gb.classList.toggle('on',gOn);gb.setAttribute('aria-checked',gOn);for(const [id,key] of [['optSide','side'],['optStr','strength'],['optDiff','diff']])document.querySelectorAll(`#${id} button`).forEach(b=>{b.classList.toggle('on',b.dataset.v===opts[key]);b.setAttribute('aria-checked',b.dataset.v===opts[key]);});}
 // battlefield picker: one tile per map type; choosing one redraws the preview behind the sheet
 function renderModes(){$('optMode').innerHTML=Object.entries(MAP_MODES).map(([k,m])=>`<button class="tile${k===opts.mode?' on':''}" role="radio" aria-checked="${k===opts.mode}" data-v="${k}" title="${esc((opts.gen2&&m.desc2||m.desc)+' '+m.rules)}">${m.name}</button>`).join('');
   document.querySelectorAll('#optMode button').forEach(b=>b.onclick=()=>{if(opts.mode===b.dataset.v)return;opts.mode=b.dataset.v;renderModes();preview();});}
@@ -19,7 +19,9 @@ renderClimates();
 function setClimate(c){M.climate=c;M.offroad=CLIMATES[c].offroad;M.frozen=!!CLIMATES[c].frozen;fieldCache.clear();}
 function preview(){M=makeMap(opts.seed,opts.mode,opts.gen2);setClimate(opts.climate);renderTerrain();fieldCache.clear();$('optSeed').value=opts.seed;syncCode();}
 // scenario picker: one row each, with its description
-function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).map(([k,c])=>`<button class="sr${k===opts.scen?' on':''}" role="radio" aria-checked="${k===opts.scen}" data-v="${k}"><span><b>${c.name}</b><span class="s2">${esc(c.desc)}</span></span>${ICON.tick}</button>`).join('');
+// a blue ★ New badge after a scenario's name (SCENARIOS[k].isNew)
+const NEW_BADGE='<span class="newB"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z"/></svg>New</span>';
+function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).map(([k,c])=>`<button class="sr${k===opts.scen?' on':''}" role="radio" aria-checked="${k===opts.scen}" data-v="${k}"><span><b>${c.name}${c.isNew?NEW_BADGE:''}</b><span class="s2">${esc(c.desc)}</span></span>${ICON.tick}</button>`).join('');
   renderScensRule();
   document.querySelectorAll('#optScen button').forEach(b=>b.onclick=()=>{if(opts.scen===b.dataset.v)return;opts.scen=b.dataset.v;renderScens();syncCode();});}
 // the game code for the current options, shown on the setup screen. The page address is left alone: a game URL
@@ -55,7 +57,10 @@ const MODIC={clock:'<circle cx="10" cy="10" r="7"/><path d="M10 6v4.3l2.8 1.8"/>
   diff:'<path d="M4 16v-3M8 16v-6M12 16V7M16 16V4"/>',
   neutral:'<circle cx="10" cy="10" r="7" stroke-dasharray="2.5 2.6"/>',
   counter:'<path d="M4 7h11l-3-3M16 13H5l3 3"/>',
-  map:'<path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/>'};
+  map:'<path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/>',
+  build:'<path d="M2.5 17V8.5l5 3v-3l5 3V5.5l5 2.5V17z"/>',
+  fuel:'<path d="M10 2.5C7.3 6 5.5 8.5 5.5 11.2a4.5 4.5 0 0 0 9 0c0-2.7-1.8-5.2-4.5-8.7z"/>',
+  pop:'<circle cx="7" cy="7" r="2.6"/><circle cx="13.5" cy="8" r="2.2"/><path d="M2.5 16c.5-3 2.3-4.5 4.5-4.5s4 1.5 4.5 4.5M11.5 12.2c2.6-.6 4.6.8 5.2 3.8"/>'};
 // coloured glyph inline with the text
 const modIcon=(k,col)=>`<svg width="14" height="14" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="color:${col}" aria-hidden="true">${MODIC[k]}</svg>`;
 // Only what differs from a standard game (Standard Battle, River Town, Temperate, Normal, standard defense) is listed.
@@ -67,11 +72,20 @@ function setupMods(o){const sc=SCENARIOS[o.scen],mm=MAP_MODES[o.mode],cl=CLIMATE
   // a force as changes against the standard one: +2 armor, −2 infantry
   const delta=(fs,base,s)=>{const d=UNIT_TYPES.filter(t=>(fs[t]||0)!==(base[t]||0));return d.length?{val:`<span class="cnts">${d.map(t=>{const n=(fs[t]||0)-(base[t]||0);return `<span class="cnt">${n>0?'+':'−'}${Math.abs(n)}${uIco(t,s,9)}</span>`;}).join('')}</span>`,
     tip:d.map(t=>{const n=(fs[t]||0)-(base[t]||0);return `${n>0?'+':'−'}${Math.abs(n)} ${TN[t]}`;}).join(', ')+` (${UNIT_TYPES.map(t=>`${fs[t]||0} ${TN[t]}`).join(', ')})`}:null;};
-  if(!o.gen2)R.push({ic:'map',col:'#8e8e93',label:'Map generation',val:'Legacy',tip:'The original generator: one river through the middle, the town at the main bridge, a hill behind it. Older game codes use it.'});
+  if(genV(o.gen2)===2)R.push({ic:'map',col:'#8e8e93',label:'Map generation',val:'Old',tip:'The previous generator (V2), with the New map generation switch off. Game codes ending V2 use it.'});
+  if(!o.gen2)R.push({ic:'map',col:'#8e8e93',label:'Map generation',val:'Legacy',tip:'The original generator: one river through the middle, the town at the main bridge, a hill behind it. Only game codes from before V2 use it.'});
   if(sc.limit!==900)R.push({ic:'clock',col:'#007aff',label:'Time limit',val:fmt(sc.limit)});
   if(sc.neutral||sc.holdA||sc.need!==2)R.push({ic:'goal',col:'#ff3b30',label:'To win',tip:sc.goal[me],
-    val:sc.neutral?'Most objectives':sc.holdA?(me==='A'?'Hold A ':'Deny A ')+fmt(sc.holdA):sc.need>=3?(me==='A'?'Take all 3':'Keep 1 of 3'):(me==='A'?'Hold 2 of 3':'Keep 2 of 3')});
-  for(const [s,who] of [[me,'Your force'],[them,'Enemy force']]){const d=delta(forceFor(s,s==='D'?FORCES[o.strength]:ATK,ctx),s==='D'?FORCES.standard:ATK,s);
+    val:sc.vp?'Victory points':sc.neutral?'Most objectives':sc.holdA?(me==='A'?'Hold A ':'Deny A ')+fmt(sc.holdA):sc.need>=3?(me==='A'?'Take all 3':'Keep 1 of 3'):(me==='A'?'Hold 2 of 3':'Keep 2 of 3')});
+  // Company Command: the same small start for both, then everything is built at the depot
+  if(sc.econ){const st=ECON.start,c=ECON.cost;
+    R.push({ic:'force',col:sideCol[me],label:'Each side starts with',val:`<span class="cnts">${UNIT_TYPES.filter(t=>st[t]).map(t=>`<span class="cnt">${st[t]}${uIco(t,me,9)}</span>`).join('')}</span>`,tip:`Both companies start at their depots with ${UNIT_TYPES.filter(t=>st[t]).map(t=>`${st[t]} ${TN[t]}`).join(', ')}, ${ECON.mp0} manpower and ${ECON.fuel0} fuel`});
+    R.push({ic:'build',col:'#ff9500',label:'Build at your depot',val:'Takes time',tip:UNIT_TYPES.map(t=>`${TNAME[t]} ${c[t].mp} manpower${c[t].fuel?' + '+c[t].fuel+' fuel':''}, ${c[t].t} s`).join(' · ')});
+    R.push({ic:'reinf',col:'#34c759',label:'Manpower',val:`${ECON.inc.mp}/min + ground`,tip:`${ECON.inc.mp} a minute, +${ECON.obj.mp} for each objective held, plus up to ${ECON.terr.mp} for ground your supply network reaches (the enemy's half counts most). Upkeep for each unit comes off it`});
+    R.push({ic:'fuel',col:'#ff9500',label:'Fuel',val:'From objectives',tip:`${ECON.inc.fuel} a minute, +${ECON.obj.fuel} for each objective held, plus up to ${ECON.terr.fuel} for ground. Tanks and artillery need it`});
+    R.push({ic:'goal',col:'#ff3b30',label:'Victory points',val:`${ECON.vp0} each`,tip:`From ${fmt(ECON.vpGrace)}, the side holding fewer objectives loses ${ECON.vpRate[1]}, ${ECON.vpRate[2]} or ${ECON.vpRate[3]} points a second (1, 2 or 3 behind). At 0 it loses`});
+    R.push({ic:'pop',col:'#5856d6',label:'Population cap',val:String(ECON.popCap),tip:UNIT_TYPES.map(t=>`${TNAME[t]} ${c[t].pop}`).join(' · ')});}
+  else for(const [s,who] of [[me,'Your force'],[them,'Enemy force']]){const d=delta(forceFor(s,s==='D'?FORCES[o.strength]:ATK,ctx),s==='D'?FORCES.standard:ATK,s);
     if(d)R.push({ic:'force',col:sideCol[s],label:who,val:d.val,tip:d.tip});}
   const aMe=airFor(me,ctx),aThem=airFor(them,ctx);
   if(sc.noAir)R.push({ic:'noair',col:'#8e8e93',label:'Air strikes',val:'None',tone:'down',tip:'None in this scenario'});
@@ -95,7 +109,7 @@ function setupMods(o){const sc=SCENARIOS[o.scen],mm=MAP_MODES[o.mode],cl=CLIMATE
   if(sc.neutral)R.push({ic:'neutral',col:'#8e8e93',label:'Objectives',val:'Neutral',tip:'Both sides start at their depots and race for them'});
   for(const r of sc.reinf||[]){const d=delta(r.units,{},r.side);R.push({ic:'reinf',col:'#34c759',label:`Reinforcements ${fmt(r.t)}`,val:d.val,tip:`${r.side===me?'Yours':'The enemy\'s'}, at their depot: `+d.tip.split(' (')[0]});}
   if(o.diff!=='normal')R.push({ic:'diff',col:'#8e8e93',label:'Difficulty',val:dif.name,
-    tip:`Computer: ${pct(dif.force)} units, ${dif.air>0?'+':'−'}${Math.abs(dif.air)} air strike, calls one every ${Math.round(AIR.aiCooldown*dif.cool)} s`});
+    tip:sc.econ?`Computer: ${pct(dif.econ)} income, ${dif.air>0?'+':'−'}${Math.abs(dif.air)} air strike`:`Computer: ${pct(dif.force)} units, ${dif.air>0?'+':'−'}${Math.abs(dif.air)} air strike, calls one every ${Math.round(AIR.aiCooldown*dif.cool)} s`});
   return R;}
 function renderMods(){const R=setupMods(opts),el=$('mods'),shut=!!ui.compact.mods;el.classList.toggle('shut',shut);$('modsN').textContent=R.length;
   $('modsHd').setAttribute('aria-expanded',!shut);$('modsHd').dataset.tip=shut?'Show modifiers':'Collapse';
@@ -110,7 +124,7 @@ $('modsGameX').onclick=()=>{ui.modsG=false;updateHUD(true);};
 $('modsHd').onclick=()=>{ui.compact.mods=!ui.compact.mods;saveUI();renderMods();};
 function renderScensRule(){const c=SCENARIOS[opts.scen];$('scenRule').textContent=`You ${opts.side==='A'?'attack':'defend'}: ${c.goal[opts.side]}`;}
 // the New map generation switch: a different generator is a different map, so the preview is rebuilt
-$('optGen').onclick=()=>{opts.gen2=!opts.gen2;syncSegs();renderModes();preview();};
+$('optGen').onclick=()=>{opts.gen2=genV(opts.gen2)>=3?2:3;syncSegs();renderModes();preview();};
 function applyOptions(o){Object.assign(opts,o);syncSegs();renderModes();renderClimates();renderScens();preview();}
 $('optCode').onchange=()=>{const o=decodeGame($('optCode').value);if(o){applyOptions(o);$('codeMsg').textContent='Game code loaded.';}else{$('codeMsg').textContent='That isn’t a valid game code.';$('optCode').value=encodeGame(opts);}};
 $('optCode').onkeydown=e=>{if(e.key==='Enter')$('optCode').onchange();};

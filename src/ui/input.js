@@ -23,21 +23,30 @@ function clearSel(){for(const u of mine())u.sel=false;}
 function orderAt(sx,sy,shift,direct){const w=s2w(sx,sy);
   // past the border is scenery: no orders, strikes, pontoons or repairs there
   if(w.x<0||w.y<0||w.x>W||w.y>H)return;if(G.orderMode==='air'){if(G.phase==='play')airAt(w.x,w.y);return;}
+  if(G.orderMode==='rally'){rallyAt(w.x,w.y);return;}
   const sel=selected();if(!sel.length)return;
-  const queue=shift&&G.phase==='play'&&(G.orderMode==='move'||G.orderMode==='amove');
-  const dir=direct&&G.phase==='play'&&(G.orderMode==='move'||G.orderMode==='amove');
+  const queue=shift&&G.phase==='play'&&G.orderMode==='move';
+  const dir=direct&&G.phase==='play'&&G.orderMode==='move';
   if(act({k:'order',ids:sel.map(u=>u.id),x:w.x,y:w.y,mode:G.orderMode,direct:dir,queue}))G.marks.push({x:w.x,y:w.y,t:.7,mode:G.phase==='deploy'?'move':G.orderMode,direct:dir});}
 // an air strike where the player clicked (the mode goes back to move after one strike)
 function airAt(x,y){const a=act({k:'air',x,y});if(a)G.marks.push({x:a.x,y:a.y,t:.7,mode:'air'});setMode('move');}
 // hold the selected units
 function holdSel(){const sel=selected();if(sel.length)act({k:'hold',ids:sel.map(u=>u.id)});}
 // Click a unit to select it (Shift adds or removes it); click the map to order the selection (Shift queues the order).
-function clickAt(sx,sy,shift){if(G.orderMode==='air'&&G.phase==='play')return orderAt(sx,sy);const u=pick(sx,sy);
+function clickAt(sx,sy,shift){if((G.orderMode==='air'&&G.phase==='play')||G.orderMode==='rally')return orderAt(sx,sy);const u=pick(sx,sy);
   if(u){if(!shift)clearSel();u.sel=shift?!u.sel:true;selectionChanged();}
   else if(selected().length&&(G.phase==='play'||G.phase==='deploy'))orderAt(sx,sy,shift);}
-function tapAt(sx,sy){if(G.orderMode==='air'&&G.phase==='play')return orderAt(sx,sy);const u=pick(sx,sy);if(u){u.sel=!u.sel;selectionChanged();}else if(selected().length)orderAt(sx,sy);}
+function tapAt(sx,sy){if((G.orderMode==='air'&&G.phase==='play')||G.orderMode==='rally')return orderAt(sx,sy);const u=pick(sx,sy);if(u){u.sel=!u.sel;selectionChanged();}else if(selected().length)orderAt(sx,sy);}
 // An order mode that needs a unit type the selection doesn't have (engineers for pontoon and repair, artillery for a
 // fire mission) drops back to move when the selection changes. The player can pick the mode again afterwards.
+// S splits the selection, as in Hearts of Iron: it keeps half of it, half of each unit type (an odd one out goes to the
+// kept half by type order until it's half the total), taking the units on the west (or north) side of the group, so
+// each half is a usable force in its own place. Pressing it again halves it again.
+function splitSel(){const sel=selected();if(sel.length<2)return;
+  const xs=sel.map(u=>u.x),ys=sel.map(u=>u.y),byX=Math.max(...xs)-Math.min(...xs)>=Math.max(...ys)-Math.min(...ys),pos=u=>byX?u.x:u.y;
+  const of=UNIT_TYPES.map(t=>sel.filter(u=>u.type===t).sort((a,b)=>pos(a)-pos(b))).filter(a=>a.length),take=of.map(a=>a.length>>1);
+  let need=Math.ceil(sel.length/2)-take.reduce((a,b)=>a+b,0);of.forEach((a,k)=>{if(need>0&&a.length%2){take[k]++;need--;}});
+  of.forEach((a,k)=>a.forEach((u,j)=>{if(j>=take[k])u.sel=false;}));selectionChanged();updateHUD(true);}
 function selectionChanged(){const sel=selected();if(!G||!sel.length)return;const m=G.orderMode;
   if((m==='repair'||m==='bridge')&&!sel.some(u=>u.type==='eng'))setMode('move');
   else if(m==='fire'&&!sel.some(u=>u.type==='art'))setMode('move');}
@@ -90,6 +99,7 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys.add(e.k
   // Esc closes an open popover first; ? opens Controls; U hides or shows the whole interface
   if(k==='escape'&&closePops())return;
   if(k==='escape'&&ui.modsG){ui.modsG=false;updateHUD(true);return;}
+  if(k==='escape'&&ui.depot&&G.econ){ui.depot=false;updateHUD(true);return;}
   if(e.key==='?'){e.preventDefault();togglePop('helpModal',$('btnHelp'));return;}
   if(k==='u'&&!e.metaKey&&!e.ctrlKey){toggleUI();return;}
   if(RP){if(e.code==='Space'){e.preventDefault();rpToggle();}else if(e.key==='.'||e.key==='>')rpSpeedStep(1);else if(e.key===','||e.key==='<')rpSpeedStep(-1);
@@ -97,11 +107,11 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys.add(e.k
   if(e.metaKey||e.ctrlKey){if(k==='a'){e.preventDefault();mine().forEach(u=>u.sel=true);selectionChanged();}
     else if(k==='z'&&!e.shiftKey){e.preventDefault();act({k:'undo'});}return;}
   if(e.code==='Space'){e.preventDefault();togglePause();}
-  else if(k==='m')setMode('move');else if(k==='a')setMode('amove');else if(k==='f')setMode('fire');else if(k==='p')setMode('bridge');else if(k==='x')setMode('air');else if(k==='r')setMode('repair');else if(k==='h')holdSel();
-  else if(k==='s')toggleSup();else if(k==='q'){mine().forEach(u=>u.sel=true);selectionChanged();}
+  else if(depotKey(k)){}
+  else if(k==='m')setMode('move');else if(k==='a'){mine().forEach(u=>u.sel=true);selectionChanged();}else if(k==='f')setMode('fire');else if(k==='p')setMode('bridge');else if(k==='x')setMode('air');else if(k==='r')setMode('repair');else if(k==='h')holdSel();
+  else if(k==='1')toggleSup();else if(k==='s')splitSel();
   else if(k==='o')toggleSetting('arrows');else if(k==='v')toggleSetting('fog');else if(k==='y')setView(settings.style==='paper'?'satellite':'paper');
   else if(k==='escape'){clearSel();setMode('move');setTool(null);updateHUD();}
-  else if(k==='1'||k==='2'||k==='3')setSpeed([1,2,4][+k-1]);
   // . and , step the speed up and down
   else if(e.key==='.'||e.key==='>'||e.key===','||e.key==='<'){const sp=[1,2,4],i=Math.max(0,sp.indexOf(G.speed)),up=e.key==='.'||e.key==='>';setSpeed(sp[clamp(i+(up?1:-1),0,2)]);}
   else if(k==='l')toggleFront();

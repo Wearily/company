@@ -47,7 +47,7 @@ function resumeBuild(u){for(const p of G.pontoons){if(p.done||p.side!==u.side)co
   for(const k of ['a','b'])if(dist(u,p[k])<PONTOON.reach){u.build=p.id;u.buildEnd=p[k];u.buildFrom=k;return;}}}
 function buildStep(u,dt){const p=G.pontoons.find(q=>q.id===u.build);if(!p||p.done){u.build=null;return;}
   if(u.moving||dist(u,u.buildEnd)>=PONTOON.reach)return;p.from=p.from||u.buildFrom;
-  p.progress+=dt*(u.sup?1:.6)/PONTOON.time;if(p.progress<1)return;
+  p.progress+=dt*(.6+.4*supF(u))/PONTOON.time;if(p.progress<1)return;
   p.progress=1;p.done=true;applyCrossings();G.acc.sup=0;for(const e of G.units)if(e.build===p.id)e.build=null;
   tell(r=>p.side===r?[`Pontoon bridge complete near ${placeName(p)}`,'d']:[`The enemy has bridged the river near ${placeName(p)}`,'a']);}
 // Damaged cells are also grouped into stretches (8-connected, then merged when within 40 px), each marked with one red X.
@@ -74,7 +74,7 @@ function nearestDamage(u){const w=u.repair;let best=-1,bd=1e9;for(const i of G.d
 function repairStep(u,dt){if(u.moving)return;const i=nearestDamage(u);
   if(i<0){u.repair=null;tellTo(u.side,`Road repaired near ${placeName(u)}`,'d');return;}
   const c=cc(i);if(Math.hypot(c.x-u.x,c.y-u.y)>ROAD_DMG.reach){if(!u.path.length&&!route(u,c.x,c.y,'move'))u.repair=null;return;}
-  u.rp+=dt*(u.sup?1:.6);if(u.rp<ROAD_DMG.cellTime)return;u.rp=0;G.dmg[i]=0;roadDamageChanged();}
+  u.rp+=dt*(.6+.4*supF(u));if(u.rp<ROAD_DMG.cellTime)return;u.rp=0;G.dmg[i]=0;roadDamageChanged();}
 // AI engineers with nothing else to do repair cratered road on their own bank, away from visible enemies.
 // The attacker also leaves alone craters within reach of defenders it remembers (dug in and quiet, say).
 function aiRepair(u){if(u.repair)return true;const foe=u.side==='A'?'D':'A',bank=M.side(u.x,u.y);let best=-1,bd=600;

@@ -9,7 +9,7 @@ const MP={
   supabaseUrl:'https://qkbjyfcjcjstnsvbjkuc.supabase.co',
   supabaseKey:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFrYmp5ZmNqY2pzdG5zdmJqa3VjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI4NzE1MDYsImV4cCI6MjEwODQ0NzUwNn0.5Ok-wwNDDKK3P3OHlAZpkMyKbyXpPqf2TU9vDKNmD1M',
   supabaseLib:'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js',
-  proto:4,                                   // bumped when the messages change; players on different versions can't join
+  proto:7,                                   // bumped when the messages change; players on different versions can't join
   codeLen:6,codeChars:'ABCDEFGHJKLMNPQRSTUVWXYZ23456789',   // room codes: no 0/O or 1/I to mix up
   tick:1,                                    // seconds between keep-alive pings
   peerTimeout:15,                            // seconds without a word before the other player counts as gone

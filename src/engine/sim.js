@@ -27,12 +27,6 @@ function trenchSight(){const S=G.tSeen||(G.tSeen=new Set()),us=G.units.filter(u=
     for(const u of us)if(segDist(u,a,b)<=u.vr){S.add(key);break;}}}
 function nearestRoad(p){const c=cellOf(p.x,p.y),cx=c%GW,cy=Math.floor(c/GW);for(let r=0;r<14;r++)for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){
   const nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;const j=ny*GW+nx;if(M.road[j])return j;}return -1;}
-// Supply runs from the depot along roads, cut where the enemy holds the ground (see enemyHeld). Supplied highways, bridges and
-// pontoons cover SUPPLY.major px around them, supplied minor roads SUPPLY.minor px, and the depot SUPPLY.depot px.
-// A finished pontoon whose near landing is covered carries supply over the river: its span is supplied (so its far
-// landing covers like a highway), and roads within SUPPLY.link px of either landing join the network, so supply flows
-// on into the far bank's roads. Pontoons can chain, one supplying the next.
-const isMajor=i=>M.road[i]>=2;
 // Multi-source 8-connected distance in cells (Chebyshev), capped at r. With `pass`, the spread only enters cells
 // where pass(i) holds, so it flows around obstacles instead of through them.
 function cover8(src,r,pass){const d=new Uint8Array(N).fill(255),q=new Int32Array(N);let h=0,t=0;
@@ -135,42 +129,42 @@ function frontShape(snap){const ease=(S,t)=>{for(let i=0;i<N;i++)S[i]=snap?t[i]:
     for(let i=0;i<N;i++){px[i*4]=r;px[i*4+1]=g;px[i*4+2]=bl;px[i*4+3]=(1-B[i])*34;}}
   frontCtx.putImageData(img,0,0);}
 const frontCv=document.createElement('canvas');frontCv.width=GW;frontCv.height=GH;const frontCtx=frontCv.getContext('2d');
-function computeSupply(s){const dep=G.depot[s],blk=enemyHeld(s);
-  // Supply follows the army: it reaches your own half of the battlefield, and only the ground you have taken on the enemy's.
-  const home=s==='A'?1:-1;updateClaim(s,home);const cl=G.claim[s],reach=new Uint8Array(N);
-  for(let i=0;i<N;i++){const x=(i%GW)*C+C/2,y=Math.floor(i/GW)*C+C/2;reach[i]=M.side(x,y)===home||cl[i]?1:0;}
-  const sup=new Uint8Array(N),q=new Int32Array(N);let h=0,t=0;
-  // cratered road (G.dmg) doesn't carry supply until engineers repair it
-  const seed=i=>{if(i>=0&&!sup[i]&&M.road[i]&&!blk[i]&&!G.dmg[i]&&reach[i]){sup[i]=1;q[t++]=i;}};
-  const flood=()=>{while(h<t){const i=q[h++],x=i%GW,y=Math.floor(i/GW);for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=x+dx,ny=y+dy;
-    if(nx>=0&&ny>=0&&nx<GW&&ny<GH)seed(ny*GW+nx);}}};
-  seed(nearestRoad(dep));flood();
-  // the supplied area spreads out from supplied roads over land: never through enemy-held ground, never across water
-  // (except on a bridge or pontoon, which are road cells), so a pocket ringed by the enemy goes dry
-  const land=i=>!blk[i]&&reach[i]&&(M.cls[i]!==WATER||M.road[i]>0||M.frozen);
-  const rMaj=Math.round(SUPPLY.major/C),rMin=Math.round(SUPPLY.minor/C),rDep=Math.round(SUPPLY.depot/C),dc=cellOf(dep.x,dep.y),dcx=dc%GW,dcy=Math.floor(dc/GW);
-  const dDep=cover8(i=>i===dc&&!blk[i],rDep,land);
-  const coverage=()=>{const a=cover8(i=>sup[i]&&isMajor(i),rMaj,land),b=cover8(i=>sup[i]&&M.road[i]===1,rMin,land),c=new Uint8Array(N);
-    for(let i=0;i<N;i++){const dx=i%GW-dcx,dy=Math.floor(i/GW)-dcy;c[i]=a[i]<=rMaj||b[i]<=rMin||(dDep[i]<=rDep&&dx*dx+dy*dy<=rDep*rDep)?1:0;}return c;};
-  let cov=coverage();const linked=new Set(),rl=Math.round(SUPPLY.link/C);
-  for(let grew=true;grew;){grew=false;
-    for(const p of G.pontoons){if(!p.done||linked.has(p))continue;
-      if(!p.cells.some(i=>sup[i])&&!cov[cellOf(p.a.x,p.a.y)]&&!cov[cellOf(p.b.x,p.b.y)])continue;
-      linked.add(p);grew=true;for(const i of p.cells)seed(i);
-      for(const e of [p.a,p.b]){const ec=cellOf(e.x,e.y),ex=ec%GW,ey=Math.floor(ec/GW);
-        for(let dy=-rl;dy<=rl;dy++)for(let dx=-rl;dx<=rl;dx++){const nx=ex+dx,ny=ey+dy;if(nx>=0&&ny>=0&&nx<GW&&ny<GH&&dx*dx+dy*dy<=rl*rl)seed(ny*GW+nx);}}
-      flood();}
-    if(grew)cov=coverage();}
+// Supply efficiency for side s (G.cov[s], 0–100 per cell): 100 minus the least loss of any route from the depot (see
+// SUPPLY). The search runs over two layers: the road network (intact road cells, cheap) and cross-country (any ground
+// supply may cross, dearer by terrain). Leaving the roads is free; getting back onto them costs SUPPLY.rejoin, so a
+// crater or a stretch of road the enemy holds forces a costly detour rather than cutting supply outright. Enemy-held
+// ground (enemyHeld), open water and the enemy's half beyond the ground taken (updateClaim) can't be crossed, so a pocket,
+// or a far bank whose crossings are down, gets 0. Pontoons are road cells and carry supply like any road.
+// G.sup[s] marks the road cells the road layer reaches (drawn as supplied roads).
+function computeSupply(s){const dep=G.depot[s],blk=enemyHeld(s),home=s==='A'?1:-1;updateClaim(s,home);const cl=G.claim[s];
+  const ok=new Uint8Array(N),zone=new Uint8Array(N),rz=SUPPLY.depot*SUPPLY.depot;
+  for(let i=0;i<N;i++){const x=(i%GW)*C+C/2,y=Math.floor(i/GW)*C+C/2;
+    ok[i]=!blk[i]&&(M.side(x,y)===home||cl[i])&&(M.cls[i]!==WATER||M.road[i]>0||M.frozen)?1:0;zone[i]=(x-dep.x)**2+(y-dep.y)**2<=rz?1:0;}
+  const onRoad=i=>M.road[i]>0&&!G.dmg[i],fc=i=>M.road[i]?(G.dmg[i]?SUPPLY.crater:SUPPLY.field[0]):SUPPLY.field[M.cls[i]];
+  // node i is cell i cross-country, node N+i is cell i on the road network
+  const d=new Float32Array(2*N).fill(Infinity),done=new Uint8Array(2*N),h=new Heap(),dc=cellOf(dep.x,dep.y);
+  const go=(n,v)=>{v=Math.fround(v);if(v<100&&v<d[n]){d[n]=v;h.push(n,v);}};go(dc,0);
+  while(h.size){const n=h.pop();if(done[n])continue;done[n]=1;const road=n>=N,i=road?n-N:n,x=i%GW,y=Math.floor(i/GW),di=d[n];
+    if(road)go(i,di);else if(onRoad(i))go(N+i,di+(zone[i]?0:SUPPLY.rejoin));
+    for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(!dx&&!dy)continue;const nx=x+dx,ny=y+dy;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;
+      const j=ny*GW+nx;if(!ok[j]||road&&!onRoad(j))continue;
+      if(dx&&dy&&(!ok[y*GW+nx]||!ok[ny*GW+x]))continue;
+      const k=zone[j]?0:(dx&&dy?1.414:1)*(road?SUPPLY.road[M.road[j]]:fc(j));go(road?N+j:j,di+k);}}
+  const cov=new Uint8Array(N),sup=new Uint8Array(N);
+  for(let i=0;i<N;i++){const v=Math.min(d[i],d[N+i]);if(v<100)cov[i]=Math.max(5,Math.ceil((100-v)/5)*5);if(d[N+i]<100)sup[i]=1;}
   G.sup[s]=sup;G.cov[s]=cov;
-  for(const u of G.units){if(u.side!==s)continue;const ok=!!cov[cellOf(u.x,u.y)];
-    if(u.sup&&!ok&&G.phase==='play')tellTo(u.side,`${TYPES[u.type].name} near ${placeName(u)} is cut off from supply`,'a');
-    u.sup=ok;}}
+  for(const u of G.units){if(u.side!==s)continue;const r=cov[cellOf(u.x,u.y)]/100;
+    if(u.supR>0&&!r&&G.phase==='play')tellTo(u.side,`${TYPES[u.type].name} near ${placeName(u)} is cut off from supply`,'a');
+    u.supR=r;if(G.phase!=='play')u.sp=r;u.sup=supF(u)>=1;}}
+// how far a unit's stocks keep it fighting: 1 at SUPPLY.ok or more, falling to 0 with empty stocks; the out-of-supply
+// penalties (slower moves, weaker fire, slower guns and engineering) grow as it falls
+const supF=u=>clamp((u.sp??1)/SUPPLY.ok,0,1);
 const dugIn=u=>!u.moving&&M.trench[cellOf(u.x,u.y)]===1;
 function cover(e){const i=cellOf(e.x,e.y);let m=1;if(dugIn(e))m=TRENCH.fire;else if(M.cls[i]===URBAN)m=.55;else if(M.cls[i]===FOREST)m=.7;else if(M.cls[i]===STREAM&&!M.road[i])m=STREAM_EXPOSED;else if(iceAt(i))m=ICE.exposed;
   if(e.moving)m*=1.15;m*=1-HILL.cover*hillK(e.x,e.y);return m;}
-function hit(e,amt){e.hp-=amt;e.lastHit=G.time;}
+function hit(e,amt){e.hp-=amt;e.lastHit=G.time;if(e.hp<e.max*WOUND.at)e.wounded=true;}
 function moveUnit(u,dt){const p=u.path[0],dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,dy);let m=mult(u.type,cellOf(u.x,u.y));if(m<=0)m=.3;
-  const s=TYPES[u.type].speed*m*(u.sup?1:.8)*dt;
+  const s=TYPES[u.type].speed*m*(.8+.2*supF(u))*dt;
   // units sharing a waypoint push each other apart, so count it as reached once close
   // the last point counts as reached once close if friends already stand on it (they'd otherwise push each other off it forever)
   const crowd=u.path.length===1&&d<16&&G.units.some(v=>v!==u&&v.side===u.side&&Math.hypot(v.x-p.x,v.y-p.y)<14);
@@ -181,7 +175,7 @@ function moveUnit(u,dt){const p=u.path[0],dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,
     if(mult(u.type,cellOf(nx,u.y)))ny=u.y;else if(mult(u.type,cellOf(u.x,ny)))nx=u.x;else{u.path=[];if(u.mode!=='hold')u.mode='idle';return;}}
   u.x=nx;u.y=ny;}
 const inStream=u=>{const i=cellOf(u.x,u.y);return M.cls[i]===STREAM&&!M.road[i];};
-function directFire(u,dt){const e=u.tgt;let amt=DPS[u.type][e.type]*cover(e)*(u.sup?1:.6)*(.5+.5*u.hp/u.max)*dt;if(u.moving)amt*=.6;if(inStream(u))amt*=STREAM_FIRE;else if(onIce(u))amt*=ICE.fire;
+function directFire(u,dt){const e=u.tgt;let amt=DPS[u.type][e.type]*cover(e)*(.6+.4*supF(u))*(.5+.5*u.hp/u.max)*dt;if(u.moving)amt*=.6;if(inStream(u))amt*=STREAM_FIRE;else if(onIce(u))amt*=ICE.fire;
   hit(e,amt);u.rev=Math.max(u.rev,2.5);u.fx-=dt;
   if(u.fx<=0){u.fx=.3+Math.random()*.6;G.tracers.push({x1:u.x,y1:u.y,x2:e.x+(Math.random()-.5)*8,y2:e.y+(Math.random()-.5)*8,t:.2,side:u.side,heavy:u.type==='tank'});u.flash=.12;}}
 function artStep(u,dt){const T=TYPES.art;if(u.moving||inStream(u)){u.deployT=0;return;}
@@ -191,7 +185,7 @@ function artStep(u,dt){const T=TYPES.art;if(u.moving||inStream(u)){u.deployT=0;r
   if(!aim){let bd=1e9;for(const e of G.units){if(e.side===u.side||!G.vis[u.side].has(e.id))continue;const d=dist(u,e);if(d>=T.minRange&&d<=rngR&&d<bd){bd=d;aim=e;spotted=true;}}}
   if(!aim)return;const d=dist(u,aim),sc=(spotted?12:20)+d*.04,a=Math.random()*Math.PI*2,rr=Math.sqrt(Math.random())*sc;
   G.shells.push({x0:u.x,y0:u.y,x1:aim.x+Math.cos(a)*rr,y1:aim.y+Math.sin(a)*rr,t:0,T:.8+d/300,side:u.side,mission:aim===u.fireAt});
-  u.cd=6+Math.random()*2*(u.sup?1:2.2);u.rev=Math.max(u.rev,1.5);u.flash=.2;}
+  u.cd=6+Math.random()*2*(2.2-1.2*supF(u));u.rev=Math.max(u.rev,1.5);u.flash=.2;}
 function separate(){const U=G.units;for(let i=0;i<U.length;i++)for(let j=i+1;j<U.length;j++){const a=U[i],b=U[j];if(a.side!==b.side)continue;
   const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;if(d2>=196||d2<1e-4)continue;const d=Math.sqrt(d2),push=(14-d)*.25,nx=dx/d*push,ny=dy/d*push;
   if(canPush(a,-nx,-ny)){a.x-=nx;a.y-=ny;}if(canPush(b,nx,ny)){b.x+=nx;b.y+=ny;}}}
@@ -209,10 +203,11 @@ function placeName(u){let best=null,bd=1e9;for(const o of G.objs){const d=dist(u
 function step(dt){
   G.time+=dt;
   if((G.acc.vis-=dt)<=0){G.acc.vis=.2;computeVis();}
-  if((G.acc.sup-=dt)<=0){G.acc.sup=1;computeSupply('A');computeSupply('D');}
-  if((G.acc.ai-=dt)<=0){G.acc.ai=2;if(!G.mp){G.player==='A'?aiDefender():aiAttacker();aiAir(G.player==='A'?'D':'A');recAI();}}
+  // supply: one side every half second, each side once a second
+  if((G.acc.sup-=dt)<=0){G.acc.sup=.5;G.supSide=G.supSide==='A'?'D':'A';computeSupply(G.supSide);}
+  if((G.acc.ai-=dt)<=0){G.acc.ai=2;if(!G.mp){if(G.econ){const cs=G.player==='A'?'D':'A';aiCommander(cs);aiMuster(cs);}G.player==='A'?aiDefender():aiAttacker();aiAir(G.player==='A'?'D':'A');recAI();}}
   if((G.acc.cap-=dt)<=0){G.acc.cap=.5;capture(.5);}
-  reinforce();
+  reinforce();if(G.econ)econStep(dt);
   if((G.acc.front-=dt)<=0){G.acc.front=.5;updateFront();}
   for(const u of G.units){u.rev=Math.max(0,u.rev-dt);u.flash=Math.max(0,u.flash-dt);
     if(u.type!=='art'){let best=null,bd=rangeOf(u);
@@ -224,7 +219,9 @@ function step(dt){
     if(u.type==='art')artStep(u,dt);else if(u.tgt)directFire(u,dt);
     if(u.type==='eng'&&!u.build&&!u.repair&&!u.moving)resumeBuild(u);
     if(u.build)buildStep(u,dt);else if(u.repair)repairStep(u,dt);
-    if(u.sup&&G.time-u.lastHit>10&&u.hp<u.max)u.hp=Math.min(u.max,u.hp+1.2*dt);}
+    // stocks follow the route's efficiency, filling quickly and running down slowly; healing goes with them
+    u.sp=(u.sp??1)+clamp((u.supR??1)-(u.sp??1),-SUPPLY.drain*dt,SUPPLY.fill*dt);u.sup=supF(u)>=1;
+    if(G.time-u.lastHit>10&&u.hp<hpTop(u))u.hp=Math.min(hpTop(u),u.hp+SUPPLY.heal*u.sp*dt);}
   separate();
   for(const s of G.shells){s.t+=dt;if(s.t>=s.T){s.done=true;G.booms.push({x:s.x1,y:s.y1,t:0,r:30});G.craters.push({x:s.x1,y:s.y1});
     for(const e of G.units){if(e.side===s.side)continue;const d=Math.hypot(e.x-s.x1,e.y-s.y1);if(d>=44)continue;const ci=cellOf(e.x,e.y);
@@ -240,7 +237,7 @@ function step(dt){
     G.units=G.units.filter(u=>u.hp>0);for(const u of G.units)if(u.tgt&&u.tgt.hp<=0)u.tgt=null;}
   recScan();checkEnd();}
 // the win check, after every step: all three objectives, a side wiped out, a scenario's own goal, or the clock
-function checkEnd(){const sc=SC(),ownA=G.objs.filter(o=>o.owner==='A').length,ownD=G.objs.filter(o=>o.owner==='D').length,aA=G.units.some(u=>u.side==='A'),aD=G.units.some(u=>u.side==='D');
+function checkEnd(){if(SC().vp)return checkVP();const sc=SC(),ownA=G.objs.filter(o=>o.owner==='A').length,ownD=G.objs.filter(o=>o.owner==='D').length,aA=G.units.some(u=>u.side==='A'),aD=G.units.some(u=>u.side==='D');
   if(ownA===3)return end('A','The attacker holds all three objectives.');
   if(sc.neutral&&ownD===3)return end('D','The defender holds all three objectives.');
   if(!aD)return end('A','The defending force has been destroyed.');

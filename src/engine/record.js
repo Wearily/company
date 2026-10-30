@@ -26,10 +26,10 @@ function recScan(){const R=G.rec;if(!R)return;
   if(G.time>=R.next){R.next=G.time+REC_DT;recFrame();}}
 function recFrame(){const R=G.rec,us=G.units,n=us.length;
   const f={t:G.time,id:new Uint16Array(n),x:new Int16Array(n),y:new Int16Array(n),hp:new Uint8Array(n),fl:new Uint8Array(n),fire:[],
-    obj:G.objs.map(o=>[o.owner,o.p,o.contested]),bh:G.bridges.map(b=>b.hp),air:{...G.air},holdA:G.holdA,
+    obj:G.objs.map(o=>[o.owner,o.p,o.contested]),bh:G.bridges.map(b=>b.hp),air:{...G.air},holdA:G.holdA,vp:G.econ?[G.econ.A.vp,G.econ.D.vp]:undefined,
     pont:G.pontoons.map(p=>({id:p.id,side:p.side,a:p.a,b:p.b,x:p.x,y:p.y,progress:p.progress,done:p.done,from:p.from,hp:p.hp,max:p.max}))};
   us.forEach((u,k)=>{f.id[k]=u.id;f.x[k]=Math.round(u.x);f.y[k]=Math.round(u.y);f.hp[k]=Math.round(clamp(u.hp/u.max,0,1)*255);
-    f.fl[k]=(u.sup?0:1)|(u.mode==='hold'?2:0)|(u.type==='art'&&u.deployT>=3&&!u.moving?4:0);
+    f.fl[k]=(u.sup?0:1)|(u.mode==='hold'?2:0)|(u.type==='art'&&u.deployT>=3&&!u.moving?4:0)|(u.wounded?8:0);
     if(!R.meta.has(u.id))R.meta.set(u.id,{side:u.side,type:u.type,max:u.max,died:Infinity});
     if(u.tgt&&u.type!=='art')f.fire.push(u.id,u.tgt.id);});
   recAdd(f);}

@@ -11,6 +11,8 @@
 //   trench {parts, spent, live}              dug trench lines; live: the budget was already spent while drawing
 //   undo   {}                                undo the last order or trench
 //   begin  {}                                the defender ends deployment and the battle starts
+//   surrender {}                             give up (multiplayer)
+//   build  {type}  cancel {i}  rally {x, y}  Company Command: queue a unit at the depot, cancel one, set the rally point
 function act(c){if(!G)return null;
   // the guest's screen sends the order to the host, whose battle carries it out (a trench's cost is charged there)
   if(G.mp&&G.mp.role==='guest'){G.mp.send(c.k==='trench'?{...c,live:false}:c);return c.k==='air'?(G.air[G.player]>0?airAim(c.x,c.y):null):true;}
@@ -32,6 +34,10 @@ function runCmd(side,c){if(!G||G.phase==='over')return null;
       for(const t of parts){G.trenches.push(t);G.userTrench.push(t);}
       if(parts.length){rebuildTrenchMask();G.undo.push({side,trench:parts,spent:c.spent});}return parts.length>0;}
     case 'undo':return undo(side);
+    // Company Command: queue a unit at the depot, cancel a queued one (refunded), or set the rally point
+    case 'build':return econBuild(side,c.type);
+    case 'cancel':return econCancel(side,c.i);
+    case 'rally':return econRally(side,c.x,c.y);
     case 'begin':{if(G.phase!=='deploy')return null;G.phase='play';recInit();G.ctrl=null;updateFront();if(settings.front)frontShape(true);G.undo=[];G.paused=false;
       tell(()=>['The attack has begun','a']);return true;}}
   return null;}

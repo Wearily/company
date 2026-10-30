@@ -38,11 +38,20 @@ const ROAD_DMG={radius:14,move:.5,cellTime:2.5,reach:22};
 // high ground: bonuses grow with height from `from` to full at `to` (normalized height). At full height direct fire
 // reaches `range` farther, artillery `artRange` farther, vision `vision` farther, and incoming fire is cut by `cover`.
 const HILL={from:.62,to:.95,range:.4,artRange:.2,vision:.35,cover:.12};
-// supply reach (px): around supplied highways, bridges and pontoons; around supplied minor roads; around the depot;
-// how far a supplied pontoon's landing reaches to join roads; zone of control: an enemy unit holds the ground within this
-// distance unless one of your units is closer, and supply can't pass through enemy-held ground
+// Supply (see computeSupply). A side's supply efficiency at a cell (0–100%) is 100 minus the least loss of any route from
+// its depot: little along roads (`road`, by road flag: 1 road, 2 highway, 3 bridge, 4 pontoon), more cross-country by
+// ground (`field`, by terrain class; WATER's entry is frozen water), `crater` on cratered road, and `rejoin` for getting
+// back onto the road network from cross-country (round a crater or a blocked stretch of road). Losses are per 8 px cell.
+// There's no loss within `depot` px of the depot.
+// zoc: an enemy unit holds the ground within this distance unless one of your units is closer; supply can't pass through
+// enemy-held ground, open water or the enemy's half beyond the ground you have taken, so a pocket gets 0.
 // claim: how far around each of your units ground on the enemy's half of the battlefield counts as taken (see updateClaim)
-const SUPPLY={major:160,minor:96,depot:240,link:96,zoc:56,claim:140};
+// Units carry stocks (u.sp, 0–1) that rise toward their route's efficiency by up to `fill` a second and fall by up to
+// `drain`, so supply lasts a while after a cut. Below `ok` the out-of-supply penalties grow (supF); healing runs at
+// `heal` HP/s times the stocks.
+const SUPPLY={depot:240,zoc:56,claim:140,
+  road:[0,.08,.03,.03,.12],field:[.8,.9,1.3,.6,1.6,1.6,2.5],crater:2,rejoin:25,
+  ok:.6,fill:1/20,drain:1/120,heal:1.5};
 // Trenches. A unit is dug in when it stands on a trench (within about 12 px of the line) and isn't moving. Dug in, it
 // takes `fire` × direct-fire damage, `shell` × artillery and `air` × bomb damage, and is seen at `hide` × enemy vision
 // range. Orders aimed within `snap` px of a trench put the units onto the trench line, `gap` px apart, so a click next
@@ -51,6 +60,10 @@ const SUPPLY={major:160,minor:96,depot:240,link:96,zoc:56,claim:140};
 const FRONT_CLOSE=16,FRONT_GAP=110;
 const TRENCH={fire:.42,shell:.45,air:.5,hide:.6,snap:40,gap:18};
 const STREAM_FIRE=.5,STREAM_EXPOSED=1.15;
+// wounds: a unit knocked below `at` of its health is wounded for the rest of the battle and heals back only to `cap`
+// of it (its health bar shows the lost part greyed out); hpTop(u) is the most a unit can heal to
+const WOUND={at:.25,cap:.5};
+const hpTop=u=>u.wounded?u.max*WOUND.cap:u.max;
 // Frozen rivers and lakes (climates with frozen:true, i.e. Winter). Infantry and engineers can cross on foot at ICE.move; the ice won't
 // take armour or guns. Out on the ice there is nothing to hide behind: a unit there fires at ICE.fire, takes ICE.exposed
 // times the damage from fire, shells and bombs, and is seen from ICE.seen times as far.
@@ -93,13 +106,15 @@ const MAP_MODES={
 };
 // Difficulty changes only the computer's side: force size, air strikes, how often it calls them, and how soon an
 // assault breaks off (the share of a group left when it falls back).
-const DIFFICULTY={easy:{name:'Easy',force:.8,air:-1,cool:1.5,breakAt:.5},normal:{name:'Normal',force:1,air:0,cool:1,breakAt:.4},hard:{name:'Hard',force:1.2,air:1,cool:.75,breakAt:.3}};
+// (econ: the computer's income in Company Command)
+const DIFFICULTY={easy:{name:'Easy',force:.8,air:-1,cool:1.5,breakAt:.5,econ:.8},normal:{name:'Normal',force:1,air:0,cool:1,breakAt:.4,econ:1},hard:{name:'Hard',force:1.2,air:1,cool:.75,breakAt:.3,econ:1.25}};
 // Scenarios: the goal and setup of a game, on any battlefield, played from either side. limit: seconds; need: how many
 // objectives the attacker must hold when time runs out (3+ means it must take all three before then); holdA: seconds the
 // attacker must hold objective A without a break to win; forces/air: changes per side; reinf: reinforcements reaching a
 // side's depot at time t; counter: the attacker starts holding A and B; neutral: objectives start unowned and either side
 // wins with more of them; deploy: false skips the defender's deployment; trenches: false means none; night: darker map,
-// vision × vision, no air strikes.
+// vision × vision, no air strikes; econ: units are bought and built at the depots (ECON, econ.js); vp: victory points
+// decide the battle instead of the objective rules.
 const SCENARIOS={
   standard:{code:'ST',name:'Standard Battle',desc:'The full battle for the crossing, the town and the hill.',
     goal:{A:'Take all three objectives, or hold two of three when the clock runs out.',D:'Stop the attacker holding two of the three objectives when the clock runs out.'},limit:900,need:2},
@@ -117,7 +132,24 @@ const SCENARIOS={
     goal:{A:'Hold more objectives than the enemy at 12:00, or all three at once.',D:'Hold more objectives than the enemy at 12:00, or all three at once.'},limit:720,neutral:true,deploy:false,trenches:false,forces:{D:{tank:1,art:1}}},
   night:{code:'NA',name:'Night Assault',desc:'A larger infantry attack under darkness: sight cut to about half and no air strikes.',
     goal:{A:'Take all three objectives, or hold two of three when the clock runs out.',D:'Stop the attacker holding two of the three objectives when the clock runs out.'},limit:900,need:2,night:true,vision:.55,noAir:true,forces:{A:{inf:2}}},
+  command:{code:'CC',name:'Company Command',isNew:true,desc:'Both companies start small at their depots. Earn manpower and fuel, build units, and hold objectives to drain the enemy’s victory points.',
+    goal:{A:'Drain the enemy’s 500 victory points by holding more objectives, or destroy their company.',D:'Drain the enemy’s 500 victory points by holding more objectives, or destroy their company.'},
+    limit:1500,neutral:true,deploy:false,trenches:false,econ:true,vp:true},
 };
+// Company Command (econ.js). Rates are per minute. Each side starts with `start` at its depot and mp0 manpower / fuel0
+// fuel. cost: manpower, fuel, build time (s) and population per unit type. Income: inc (base) + obj per objective held
+// + terr × territory share (ground covered by the side's own supply network: the enemy's half in full, its own half at
+// terr.own, as a share of half the battlefield's land); upkeep per unit comes off manpower, never below minNet of the
+// gross. An enemy within depotR of a depot slows its production to raidMul. Finished units appear spawnOff px in front
+// of the depot and walk to the rally point (rallyOff px forward unless set). Victory points: vp0 each; from vpGrace s,
+// the side holding fewer objectives loses vpRate[gap] a second. ai: the computer's target mix and limits.
+const ECON={start:{inf:5,tank:1,art:0,eng:1},mp0:600,fuel0:90,
+  cost:{inf:{mp:240,fuel:0,t:20,pop:2},tank:{mp:320,fuel:90,t:40,pop:4},art:{mp:280,fuel:50,t:35,pop:3},eng:{mp:200,fuel:0,t:18,pop:2}},
+  upkeep:{inf:6,tank:14,art:10,eng:5},minNet:.3,popCap:44,queue:5,
+  inc:{mp:180,fuel:6},obj:{mp:50,fuel:24},terr:{mp:160,fuel:24,own:.25},
+  depotR:220,raidMul:.35,spawnOff:50,rallyOff:150,
+  vp0:500,vpRate:[0,.75,1.5,3],vpGrace:90,
+  ai:{mix:{inf:.55,tank:.25,art:.12,eng:.08},engMax:2,artMax:3,queue:2,wave:5}};
 // Game codes pack every setup option into a short shareable string: scenario-battlefield-climate-side/strength/difficulty-seed,
 // for example LS-RT-DE-DSN-15RA-V2. The last part, V2, means the new map generator; a code without it (every code made
 // before it existed) uses the legacy generator, so old links keep their maps. Pages opened with #game=CODE (or an older
@@ -125,12 +157,15 @@ const SCENARIOS={
 const MODE_CODE={river:'RT',lake:'LN',city:'CF',steppe:'OS',mountain:'MP',forest:'DW'},CLIM_CODE={temperate:'TE',arid:'AR',desert:'DE',snow:'WI',tundra:'TU'};
 const STR_CODE={light:'L',standard:'S',heavy:'H'},DIFF_CODE={easy:'E',normal:'N',hard:'H'};
 const keyOf=(tbl,v)=>Object.keys(tbl).find(k=>tbl[k]===v);
-function encodeGame(o){return [SCENARIOS[o.scen].code,MODE_CODE[o.mode],CLIM_CODE[o.climate],o.side+STR_CODE[o.strength]+DIFF_CODE[o.diff],o.seed.toString(36).toUpperCase()].join('-')+(o.gen2?'-V2':'');}
-function decodeGame(code){const p=String(code||'').trim().toUpperCase().split('-');if(!(p.length===5||(p.length===6&&p[5]==='V2'))||p[3].length!==3)return null;
+// The map generator is a version number in opts.gen2 (the name is older than V3): 0 legacy, 2 V2, 3 V3 (newest; the
+// New map generation switch). true in older settings and replays means V2.
+const genV=g=>g===true?2:(+g||0);
+function encodeGame(o){const v=genV(o.gen2);return [SCENARIOS[o.scen].code,MODE_CODE[o.mode],CLIM_CODE[o.climate],o.side+STR_CODE[o.strength]+DIFF_CODE[o.diff],o.seed.toString(36).toUpperCase()].join('-')+(v>=2?'-V'+v:'');}
+function decodeGame(code){const p=String(code||'').trim().toUpperCase().split('-');if(!(p.length===5||(p.length===6&&(p[5]==='V2'||p[5]==='V3')))||p[3].length!==3)return null;
   const scen=Object.keys(SCENARIOS).find(k=>SCENARIOS[k].code===p[0]),mode=keyOf(MODE_CODE,p[1]),climate=keyOf(CLIM_CODE,p[2]),side=p[3][0],
     strength=keyOf(STR_CODE,p[3][1]),diff=keyOf(DIFF_CODE,p[3][2]),seed=parseInt(p[4],36);
   if(!scen||!mode||!climate||(side!=='A'&&side!=='D')||!strength||!diff||!(seed>0&&seed<1e9))return null;
-  return{scen,mode,climate,side,strength,diff,seed,gen2:p.length===6};}
+  return{scen,mode,climate,side,strength,diff,seed,gen2:p.length===6?+p[5].slice(1):0};}
 const SC=()=>SCENARIOS[(G&&G.scen)||'standard'];
 const COL={A:'#17181c',D:'#7a2cbf',N:'#5f635d',sel:'#ffc400',road:'#e3120b',water:'#0b57f0',ice:'#a9c5f2',forest:'#0d7a2e',field:'#f8c9a0',ink:'#1b1d1a',trench:'#4a3523'};
 const SIDE_NAME={A:'Attacker',D:'Defender'};

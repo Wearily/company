@@ -89,7 +89,7 @@ function mpLobby(){if(L.role==='host')mpSend('lobby',{guest:L.peer,ready:L.ready
 const mpKey=()=>encodeGame(opts)+(L.time?'/T':'');
 function mpOptsChanged(){if(L.role!=='host'||L.inGame)return;const k=mpKey();if(k===L.key)return;L.key=k;L.ready=false;mpLobby();lobbyChanged();}
 // the guest's copy of the host's settings, with the sides swapped; the preview map is only rebuilt if the map changed
-function mpApplyOpts(o){const mine={...o,side:otherSide(o.side)},newMap=!M||mine.seed!==opts.seed||mine.mode!==opts.mode||!!mine.gen2!==!!opts.gen2,newLook=mine.climate!==opts.climate;
+function mpApplyOpts(o){const mine={...o,side:otherSide(o.side)},newMap=!M||mine.seed!==opts.seed||mine.mode!==opts.mode||genV(mine.gen2)!==genV(opts.gen2),newLook=mine.climate!==opts.climate;
   Object.assign(opts,mine);syncSegs();renderModes();renderClimates();renderScens();
   if(newMap)preview();else{if(newLook){setClimate(opts.climate);renderTerrain();}$('optSeed').value=opts.seed;syncCode();}}
 function mpSetTime(b){if(L.role!=='host'||L.inGame)return;L.time=!!b;mpOptsChanged();lobbyChanged();}

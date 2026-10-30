@@ -39,6 +39,7 @@
           <button class="bt ic gl" id="railInfo" aria-label="Scenario and goal"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="7.8"/><path d="M10 9v5"/><circle cx="10" cy="6.3" r=".5" fill="currentColor"/></svg></button>
           <button class="bt ic gl" data-open="sel" aria-label="Show selection" data-tip="Selection"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4.5A1.5 1.5 0 0 1 4.5 3H7M13 3h2.5A1.5 1.5 0 0 1 17 4.5V7M17 13v2.5a1.5 1.5 0 0 1-1.5 1.5H13M7 17H4.5A1.5 1.5 0 0 1 3 15.5V13"/></svg></button>
           <button class="bt ic gl" data-open="forces" aria-label="Show forces" data-tip="Forces"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="6" r="3"/><rect x="11" y="3" width="6" height="6" rx=".8"/><path d="M6 11.5l3.4 5.5H2.6z"/><path d="M14 11l3 1.7v3.6L14 18l-3-1.7v-3.6z"/></svg></button>
+          <button class="bt ic gl" data-open="depot" id="railDepot" aria-label="Show depot" data-tip="Depot" data-key="B" hidden><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 17V8.5l5 3v-3l5 3V5.5l5 2.5V17z"/><path d="M6 17v-3h3v3"/></svg></button>
           <button class="bt ic gl" id="railMods" aria-label="Show game modifiers" data-tip="Modifiers"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M3 6h8M15 6h2M3 14h2M9 14h8"/><circle cx="13" cy="6" r="2"/><circle cx="7" cy="14" r="2"/></svg></button>
         </div>
         <div id="cards">
@@ -49,6 +50,8 @@
           <section class="sec" id="secMods"><button class="secHd" data-sec="mods"><span>Modifiers</span><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button><div class="secBody"><div class="grp modsSide" id="modsSide"></div></div></section>
         </aside>
           <aside class="gl insp" id="forcesCard" aria-label="Forces" hidden><div class="selHd"><b>Forces</b><button class="bt ic cardX" id="forcesX" aria-label="Close forces" data-tip="Close"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button></div></aside>
+          <aside class="gl insp" id="depotCard" aria-label="Depot" hidden><div class="selHd"><b>Depot</b><button class="bt ic cardX" id="depotX" aria-label="Close depot" data-tip="Close" data-key="B"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button></div>
+            <section class="sec" id="secDepot"><button class="secHd" data-sec="depot"><span>Depot</span><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button><div class="secBody"><div id="depot"></div></div></section></aside>
           <aside class="gl mods modsG" id="modsGame" aria-label="Game modifiers: what this battle's settings change" hidden>
             <div class="modsHd"><span>Modifiers</span><span class="n tn" id="modsGameN"></span><button class="bt ic cardX" id="modsGameX" aria-label="Close modifiers (Esc)" data-tip="Close" data-key="Esc"><svg width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button></div>
             <div class="modsList" id="modsGameList"></div>
@@ -60,7 +63,7 @@
     <div class="gl" id="status"></div>
     <div class="gl" id="ctrls">
       <button class="bt ic" id="btnPause" aria-label="Pause" data-tip="Pause" data-key="Space"></button>
-      <div class="seg full" id="speed" role="group" aria-label="Speed"><button data-s="1" class="on" data-tip="Speed" data-key="1">1×</button><button data-s="2" data-tip="Speed" data-key="2">2×</button><button data-s="4" data-tip="Speed" data-key="3">4×</button></div>
+      <div class="seg full" id="speed" role="group" aria-label="Speed"><button data-s="1" class="on" data-tip="Speed">1×</button><button data-s="2" data-tip="Speed">2×</button><button data-s="4" data-tip="Speed">4×</button></div>
       <button class="bt cmp" id="btnSpeedC" aria-label="Speed, press 1 2 3 or , . to change" data-tip="Speed" data-key=", .">1×</button>
       <span class="dv dvD"></span>
       <button class="bt ic full" id="btnSettings" aria-label="Settings" data-tip="Settings"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M8.56 1.83L11.44 1.83L11.66 3.82L13.20 4.46L14.76 3.20L16.80 5.24L15.54 6.80L16.18 8.34L18.17 8.56L18.17 11.44L16.18 11.66L15.54 13.20L16.80 14.76L14.76 16.80L13.20 15.54L11.66 16.18L11.44 18.17L8.56 18.17L8.34 16.18L6.80 15.54L5.24 16.80L3.20 14.76L4.46 13.20L3.82 11.66L1.83 11.44L1.83 8.56L3.82 8.34L4.46 6.80L3.20 5.24L5.24 3.20L6.80 4.46L8.34 3.82z" stroke-linejoin="round"/><circle cx="10" cy="10" r="2.6"/></svg></button>
@@ -80,20 +83,19 @@
     <div id="dock">
       <div class="gl selbar" id="selBar">
         <div class="selgrp" id="selGrp">
-          <button class="bt" data-sel="all" aria-label="Select all (Q)" data-tip="Select all" data-key="Q">All <span class="s2 tn" id="selAllN"></span></button>
+          <button class="bt" data-sel="all" aria-label="Select all (A)" data-tip="Select all" data-key="A">All <span class="s2 tn" id="selAllN"></span></button>
           <button class="bt" data-sel="inf" data-tip="Infantry"></button><button class="bt" data-sel="tank" data-tip="Armor"></button><button class="bt" data-sel="art" data-tip="Artillery"></button><button class="bt" data-sel="eng" data-tip="Engineers"></button>
           <button class="bt" data-sel="none" id="selClear" data-tip="Clear selection" data-key="Esc">Clear</button>
         </div>
         <div class="dv"></div>
         <div class="ovgrp" id="ovGrp">
-          <button class="bt ic" id="btnSup" aria-label="Supply lines (S)" data-tip="Supply lines" data-key="S"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="15" r="2"/><circle cx="16" cy="5" r="2"/><path d="M5.6 13.6c2-2 1.4-5.6 4.4-6.6 1.6-.5 3 .1 4.4-.6" stroke-dasharray="2 2.4"/></svg></button>
+          <button class="bt ic" id="btnSup" aria-label="Supply lines (1)" data-tip="Supply lines" data-key="1"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="4" cy="15" r="2"/><circle cx="16" cy="5" r="2"/><path d="M5.6 13.6c2-2 1.4-5.6 4.4-6.6 1.6-.5 3 .1 4.4-.6" stroke-dasharray="2 2.4"/></svg></button>
           <button class="bt ic" id="btnFront" aria-label="Line of control (L)" data-tip="Line of control" data-key="L"><svg width="19" height="19" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><path d="M2 12c2.5-4 4.5 2 7.5-1.5S15 7 18 9"/></svg></button>
         </div>
       </div>
       <button class="bt gl pill" id="selPill" hidden aria-label="Expand select by type">Select <span class="s2 tn" id="selPillN"></span><svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 10l4-4 4 4"/></svg></button>
       <div class="gl orders" id="modes" role="toolbar" aria-label="Orders">
         <button class="tb" data-mode="move" aria-label="Move (M)"><span class="tk">M</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3.5 10h12M11.5 5.5L16 10l-4.5 4.5"/></svg></span><span class="tl">Move</span></button>
-        <button class="tb" data-mode="amove" aria-label="Attack-move (A)"><span class="tk">A</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 10h9M8 6l4 4-4 4M16.5 4.5v11"/></svg></span><span class="tl">Attack-move</span></button>
         <button class="tb" data-mode="fire" aria-label="Fire mission (F)"><span class="tk">F</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><circle cx="10" cy="10" r="6"/><path d="M10 1.5v4M10 14.5v4M1.5 10h4M14.5 10h4"/></svg></span><span class="tl">Fire</span></button>
         <button class="tb" data-mode="bridge" aria-label="Pontoon bridge (P), needs engineers"><span class="tk">P</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" aria-hidden="true"><path d="M2 14h16M4.5 14v-4M15.5 14v-4M4.5 10c3.5-3 7.5-3 11 0"/></svg></span><span class="tl">Pontoon</span></button>
         <button class="tb" data-mode="repair" aria-label="Repair road (R), needs engineers"><span class="tk">R</span><span class="ico"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12.8 3.2a3.8 3.8 0 0 0-4.9 4.9L3 13l4 4 4.9-4.9a3.8 3.8 0 0 0 4.9-4.9l-2.3 2.3-2.4-.6-.6-2.4z"/></svg></span><span class="tl">Repair</span></button>
@@ -142,6 +144,7 @@
         <div class="rw"><span>Order arrows <span class="s2 k">O</span></span><button class="tgl" data-set="arrows" role="switch" aria-label="Order arrows"><span></span></button></div>
         <div class="rw" id="fogRow"><span>Fog of war <span class="s2 k">V</span><span class="s2 lockNote">Always on in multiplayer</span></span><button class="tgl" data-set="fog" role="switch" aria-label="Fog of war"><span></span></button></div>
         <div class="rw"><span>Map view <span class="s2 k">Y</span></span><div class="seg" id="setView" style="width:190px"><button data-view="satellite">Satellite</button><button data-view="paper">Strategic</button></div></div>
+        <div class="rw"><span>Unit symbols</span><div class="seg" id="setSymbols" style="width:190px"><button data-sym="simple">Simple</button><button data-sym="nato">NATO</button></div></div>
         <div class="rw"><span>Line of control</span><div class="seg" id="setFrontStyle" style="width:190px"><button data-fs="one">Single line</button><button data-fs="two">Two lines</button></div></div>
       </div>
     </section>
@@ -165,17 +168,18 @@
         </div>
         <div><div class="lb">Keys</div><div class="grp">
           <div class="rw"><span>Pause</span><span class="keys"><kbd>Space</kbd></span></div>
-          <div class="rw"><span>Speed</span><span class="keys"><kbd>1</kbd><kbd>2</kbd><kbd>3</kbd><kbd>,</kbd><kbd>.</kbd></span></div>
-          <div class="rw"><span>Move · Attack-move</span><span class="keys"><kbd>M</kbd><kbd>A</kbd></span></div>
+          <div class="rw"><span>Speed</span><span class="keys"><kbd>,</kbd><kbd>.</kbd></span></div>
+          <div class="rw"><span>Move</span><span class="keys"><kbd>M</kbd></span></div>
           <div class="rw"><span>Fire mission</span><span class="keys"><kbd>F</kbd></span></div>
           <div class="rw"><span>Pontoon · Repair</span><span class="keys"><kbd>P</kbd><kbd>R</kbd></span></div>
           <div class="rw"><span>Air strike · Hold</span><span class="keys"><kbd>X</kbd><kbd>H</kbd></span></div>
-          <div class="rw"><span>Supply · Line of control</span><span class="keys"><kbd>S</kbd><kbd>L</kbd></span></div>
-          <div class="rw"><span>Select all · Clear</span><span class="keys"><kbd>Q</kbd><kbd>Esc</kbd></span></div>
+          <div class="rw"><span>Supply · Line of control</span><span class="keys"><kbd>1</kbd><kbd>L</kbd></span></div>
+          <div class="rw"><span>Select all · Clear</span><span class="keys"><kbd>A</kbd><kbd>Esc</kbd></span></div>
+          <div class="rw"><span>Split selection in half</span><span class="keys"><kbd>S</kbd></span></div>
           <div class="rw"><span>Undo</span><span class="keys"><kbd id="undoKbd">⌘Z</kbd></span></div>
           <div class="rw"><span>Arrows · Fog · Map view</span><span class="keys"><kbd>O</kbd><kbd>V</kbd><kbd>Y</kbd></span></div>
           <div class="rw"><span>Pan · zoom</span><span class="keys"><kbd>←↑→↓</kbd><kbd>+</kbd><kbd>−</kbd></span></div>
-          <div class="rw"><span>Hide interface</span><span class="keys"><kbd>U</kbd></span></div><div class="rw"><span>Chat (multiplayer)</span><span class="keys"><kbd>T</kbd></span></div></div></div>
+          <div class="rw"><span>Hide interface</span><span class="keys"><kbd>U</kbd></span></div><div class="rw"><span>Chat (multiplayer)</span><span class="keys"><kbd>T</kbd></span></div><div class="rw"><span>Depot · build · rally (Company Command)</span><span class="keys"><kbd>B</kbd><kbd>4</kbd>–<kbd>7</kbd><kbd>G</kbd></span></div></div></div>
       </div>
       <div class="lb" style="margin-top:14px">Legend</div><div class="grp legend" id="legend"></div>
       <p class="note">Units on a trench that aren't moving are dug in (brown arc): they take well under half damage and are harder to spot. Click next to a trench to man it.</p>
@@ -230,7 +234,7 @@
         </div>
       </div>
       <p class="s2 ng-goal" id="scenRule"></p>
-      <footer><label class="ng-gen" data-tip="Off: the legacy generator, the original maps (older game codes use it)"><button class="tgl on" id="optGen" role="switch" aria-checked="true" aria-label="New map generation"><span></span></button><span>New map generation</span></label>
+      <footer><label class="ng-gen" data-tip="Off: the old map generation (V2)"><button class="tgl on" id="optGen" role="switch" aria-checked="true" aria-label="New map generation"><span></span></button><span>New map generation</span></label>
         <div><button class="bt lg" id="ngShowMap"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round" aria-hidden="true"><path d="M2.5 5l5-2 5 2 5-2v12l-5 2-5-2-5 2z"/><path d="M7.5 3v12M12.5 5v12"/></svg><span id="ngShowMapT">Show Map</span></button><button class="bt lg" id="optResume" hidden>Back to Game</button><button class="bt lg" id="optMulti" data-tip="Play against another person"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="7" cy="7" r="3"/><path d="M1.8 16.5c.6-2.9 2.6-4.5 5.2-4.5s4.6 1.6 5.2 4.5"/><circle cx="14" cy="6.5" r="2.4"/><path d="M13.6 11.2c2.3-.1 4 1.2 4.6 3.8"/></svg><span>Multiplayer</span></button><button class="cta" id="optStart">Start</button><button class="bt lg" id="mpLeave">Leave</button><button class="cta" id="mpReady">Ready</button><button class="cta" id="mpStart" disabled>Start Game</button></div></footer>
     </section>
   </div>
@@ -287,6 +291,7 @@
 <script src="src/engine/sim.js"></script>
 <script src="src/engine/record.js"></script>
 <script src="src/engine/ai.js"></script>
+<script src="src/engine/econ.js"></script>
 <script src="src/engine/crossings.js"></script>
 <script src="src/engine/orders.js"></script>
 <script src="src/engine/commands.js"></script>
@@ -294,6 +299,7 @@
 <script src="src/render/draw.js"></script>
 <script src="src/ui/replay.js"></script>
 <script src="src/ui/hud.js"></script>
+<script src="src/ui/depot.js"></script>
 <script src="src/ui/newgame.js"></script>
 <script src="src/ui/endsheet.js"></script>
 <script src="src/net/config.js"></script>

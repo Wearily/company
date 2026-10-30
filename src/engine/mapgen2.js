@@ -11,18 +11,35 @@
 // river and the lakes are functions of world x, y, so the scenery ring (genOuter) carries them past the border.
 // Each map checks itself (objectives reachable by infantry and armor from both depots, a bridge on a river map, room
 // behind B) and rolls again with the next sub-seed if not, so a seed always gives the same map.
-function genMap2(seed,mode){mode=MAP_MODES[mode]?mode:'river';let m=null;
-  for(let t=0;t<6&&!(m&&m.ok);t++)m=genMap2Try(seed,mode,t);
+// V3 (ver 3, codes ending V3) is the same generator with more variety, on its own random stream: each seed first rolls
+// a landscape character (open farmland, copses, forested, wetland, highland, plateau), then a wider range of rivers
+// (big oxbow loops too, placed further north or south, never near-straight), different settlement patterns (one
+// main town, twin towns, or scattered villages), objectives kept off the east and west edges,
+// road density, and more spread between the objectives. Every V3 roll is behind `V3`, so V2 maps are unchanged.
+const LOOKS={farmland:{name:'Open farmland',scale:1.25,forest:.55,field:1.5,hills:-1,big:.25},bocage:{name:'Copses',scale:.9,forest:1.05,field:1.25,hills:0,big:.3},
+  forested:{name:'Forested',scale:.9,forest:1.6,field:.65,hills:1,big:.35,woods:true},wetland:{name:'Wetland',scale:1,forest:.8,field:.75,hills:-1,big:.2,wet:true},
+  highland:{name:'Highland',scale:.8,forest:1.15,field:.7,hills:3,big:.6,valley:.6},plateau:{name:'Plateau',scale:1.3,forest:.9,field:1.1,hills:0,big:.35,escarp:true}};
+// how likely each character is on each battlefield
+const LOOK_W={river:{farmland:3,bocage:2,forested:1.5,wetland:1.5,highland:1,plateau:1.5},lake:{farmland:2,bocage:1.5,forested:1.5,wetland:3,highland:1,plateau:1},
+  city:{farmland:3,bocage:2,forested:1,wetland:1,highland:1,plateau:1.5},steppe:{farmland:4,bocage:1,forested:.5,wetland:1,highland:1.5,plateau:2.5},
+  mountain:{farmland:.5,bocage:.5,forested:2,wetland:.5,highland:4,plateau:2},forest:{farmland:.5,bocage:2,forested:4,wetland:2,highland:1.5,plateau:.5}};
+function genMap2(seed,mode,ver){mode=MAP_MODES[mode]?mode:'river';let m=null;
+  for(let t=0;t<6&&!(m&&m.ok);t++)m=genMap2Try(seed,mode,t,ver||2);
   return m;}
-function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
-  const r=rng((seed*7+mp.salt+23117+att*104729)>>>0),noise=makeNoise(r),R=(a,b)=>a+(b-a)*r(),RI=(a,b)=>Math.floor(R(a,b+.999)),pick=a=>a[r()*a.length|0];
+function genMap2Try(seed,mode,att,ver){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet,V3=ver>=3;
+  const r=rng((seed*7+mp.salt+23117+att*104729+(V3?50411:0))>>>0),noise=makeNoise(r),R=(a,b)=>a+(b-a)*r(),RI=(a,b)=>Math.floor(R(a,b+.999)),pick=a=>a[r()*a.length|0];
   const fbm=(x,y,o)=>{let s=0,a=.5,f=1,n=0;for(let i=0;i<o;i++){s+=a*noise(x*f,y*f);n+=a;a*=.5;f*=2.03;}return s/n;};
-  const M={seed,mode,wet,gen2:true,cls:new Uint8Array(N),road:new Uint8Array(N),hgt:new Float32Array(N),trench:new Uint8Array(N),lu:new Uint8Array(N)};
+  const M={seed,mode,wet,gen2:V3?3:true,cls:new Uint8Array(N),road:new Uint8Array(N),hgt:new Float32Array(N),trench:new Uint8Array(N),lu:new Uint8Array(N)};
+  // (V3) the landscape's character, and how the settlements are laid out
+  const wp=o=>{const ks=Object.keys(o),s=ks.reduce((a,k)=>a+o[k],0);let t=r()*s;for(const k of ks){t-=o[k];if(t<=0)return k;}return ks[ks.length-1];};
+  const look=V3?wp(LOOK_W[mode]||LOOK_W.river):null,LK=look?LOOKS[look]:null;
+  const townPlan=V3?(th.city?'one':wp({one:3,twin:1.5,scatter:.7})):'one';
+  if(V3)M.look={character:look,name:LK.name,towns:townPlan};
   const used=new Set();const uname=()=>{let n,g=0;do n=PRE[r()*PRE.length|0]+SUF[r()*SUF.length|0];while(used.has(n)&&g++<50);used.add(n);return n;};
   M.townName=uname();M.riverName=uname();
   const walk=(pts,fn)=>{for(let k=0;k<pts.length-1;k++){const a=pts[k],b=pts[k+1],L=dist(a,b),n=Math.max(1,Math.ceil(L/3)),ux=L?(b.x-a.x)/L:0,uy=L?(b.y-a.y)/L:0;
     for(let s=0;s<=n;s++){const x=a.x+(b.x-a.x)*s/n,y=a.y+(b.y-a.y)*s/n;if(x<0||y<0||x>=W||y>=H)continue;fn(cellOf(x,y),x,y,ux,uy);}}};
-  const S=R(...th.scale);
+  const S=R(...th.scale)*(LK?LK.scale:1);
 
   // the front line: a river course walked west to east, well past both borders so the scenery ring carries it on. Its
   // heading swings through meanders whose size and tightness change along the way (straight reaches, wide lazy loops,
@@ -30,11 +47,14 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
   // middle of the map, and it never turns more than about 55° from east, so the line stays one-valued. The profile sets
   // the character: calm, meandering, wild, mixed (straight reaches between meandering ones) or swinging.
   const XS=-1200,STP=10,NS=Math.round((W+2400)/STP)+1,CAP=.96;
-  const prof=pick(['calm','meander','meander','wild','mixed','mixed','swing']);
+  // (V3 adds an oxbow profile, wide slow loops, drops the near-straight calm one, and lets the line sit further north or south)
+  const prof=pick(V3?['meander','meander','wild','mixed','mixed','swing','oxbow','oxbow']:['calm','meander','meander','wild','mixed','mixed','swing']);
   const PR={calm:{a:[.12,.3],l:[900,1600],d:[.5,.9],s:.3},meander:{a:[.55,.9],l:[420,820],d:[.4,.8],s:.5},wild:{a:[.75,1],l:[260,520],d:[.3,.6],s:.35},
-    mixed:{a:[.6,1],l:[300,900],d:[.5,.9],s:.4},swing:{a:[.25,.55],l:[600,1100],d:[1,1.4],s:.3}}[prof];
+    mixed:{a:[.6,1],l:[300,900],d:[.5,.9],s:.4},swing:{a:[.25,.55],l:[600,1100],d:[1,1.4],s:.3},
+    oxbow:{a:[.85,1],l:[700,1250],d:[.25,.55],s:.65}}[prof];
+  if(V3)M.look.river=prof;
   const aMax=R(...PR.a),lA=R(...PR.l),lB=R(...PR.l),dAmp=R(...PR.d),q1=R(0,60),q2=R(0,60),q3=R(0,60);
-  const y0=H*R(.4,.58),tilt=R(-.2,.2)*H/W,yt=x=>clamp(y0+tilt*(x-W/2),H*.3,H*.68);
+  const y0=H*(V3?R(.32,.64):R(.4,.58)),tilt=R(-.2,.2)*H/W,yt=x=>clamp(y0+tilt*(x-W/2),H*(V3?.24:.3),H*(V3?.74:.68));
   const RV=new Float32Array(NS);
   {let y=yt(XS),ph=R(0,6.283);
     for(let k=0;k<NS;k++){const x=XS+k*STP;RV[k]=y;
@@ -49,13 +69,13 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
     for(let p=0;p<2;p++)for(let k=1;k<NS-1;k++)RV[k]=(RV[k-1]+2*RV[k]+RV[k+1])/4;
     // fit the part on the battlefield into the middle band without flattening it
     let lo=1e9,hi=-1e9;for(let x=0;x<=W;x+=STP){const v=RV[Math.round((x-XS)/STP)];lo=Math.min(lo,v);hi=Math.max(hi,v);}
-    const span=hi-lo,room=H*.46,sc=span>room?room/span:1,mid=(lo+hi)/2,tgt=clamp(mid,H*.26+span*sc/2,H*.72-span*sc/2);
+    const span=hi-lo,room=H*(V3?.5:.46),sc=span>room?room/span:1,mid=(lo+hi)/2,tgt=clamp(mid,H*(V3?.2:.26)+span*sc/2,H*(V3?.78:.72)-span*sc/2);
     for(let k=0;k<NS;k++)RV[k]=tgt+(RV[k]-mid)*sc;}
   const rvAt=x=>{const f=clamp((x-XS)/STP,0,NS-1.001),i=f|0,t=f-i;return RV[i]+(RV[i+1]-RV[i])*t;};
   const RYF=rvAt,slp=x=>(rvAt(x+10)-rvAt(x-10))/20;
   // the river's width across its flow: narrow reaches and wider ones, and for Lake Narrows one huge widening somewhere
   // along it. RWF is the width measured north–south, so a reach that runs at an angle is drawn just as wide.
-  const w0=wet?R(...th.rw):0,widen=[];
+  const w0=wet?R(...th.rw)*(V3?R(.6,1.45):1):0,widen=[];
   for(let k=RI(...(th.widen||[0,0]));k>0;k--)widen.push({x:W*R(.08,.92),a:R(14,40),s:R(70,170)});
   const bigLake=wet&&th.bigLake?{x:W*R(.28,.72),a:R(230,330),s:R(210,300)}:null;if(bigLake)widen.push(bigLake);
   const RWF=x=>{if(!wet)return 0;let w=w0*(.62+.76*fbm(x/320+9.1,5.7,2));for(const b of widen)w+=b.a*Math.exp(-(((x-b.x)/b.s)**2));
@@ -63,7 +83,7 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
   const band=(x,y)=>wet&&Math.abs(y-RYF(x))<RWF(x)/2,side=(x,y)=>y<RYF(x)?-1:1,bank=(x,y)=>Math.abs(y-RYF(x))-RWF(x)/2,rang=x=>Math.atan2(RYF(x+30)-RYF(x-30),60);
   // lakes and ponds away from the river, with ragged shores; roads go round them
   const lakes=[];
-  for(let t=0,n=RI(...th.lakes);t<300&&lakes.length<n;t++){const x=R(70,W-70),y=R(70,H-70),rx=R(55,190),ry=rx*R(.45,.85);
+  for(let t=0,n=RI(...th.lakes)+(LK&&LK.wet?RI(2,4):0);t<300&&lakes.length<n;t++){const x=R(70,W-70),y=R(70,H-70),rx=LK&&LK.wet&&lakes.length>=1?R(35,110):R(55,190),ry=rx*R(.45,.85);
     if(Math.abs(y-RYF(x))-RWF(x)/2<Math.max(rx,ry)+140||lakes.some(l=>Math.hypot(l.x-x,l.y-y)<l.rx+rx+130))continue;
     lakes.push({x,y,rx,ry,rot:R(0,3.14),k:R(0,50)});}
   const lakeF=(x,y)=>{let b=-9;for(const l of lakes){const dx=x-l.x,dy=y-l.y,c=Math.cos(l.rot),s=Math.sin(l.rot),u=(dx*c+dy*s)/l.rx,v=(-dx*s+dy*c)/l.ry;
@@ -73,11 +93,11 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
 
   // height: rolling noise at this map's own scale, a valley toward the river, hills anywhere, sometimes an escarpment that
   // gives one side the high ground, and for Mountain Pass rock massifs at any angle with a pass cut through each
-  const valley=wet?R(.18,.42):R(.04,.14),hills=[];
-  for(let t=0,n=RI(...th.hills);t<300&&hills.length<n;t++){const x=R(60,W-60),y=R(60,H-60);
+  const valley=(wet?R(.18,.42):R(.04,.14))*(LK&&LK.valley?LK.valley:1),hills=[];
+  for(let t=0,n=Math.max(0,RI(...th.hills)+(LK?LK.hills:0));t<300&&hills.length<n;t++){const x=R(60,W-60),y=R(60,H-60);
     if((wet&&bank(x,y)<140)||lakeAt(x,y)||hills.some(h=>Math.hypot(h.x-x,h.y-y)<280))continue;
-    const big=r()<.35;hills.push({x,y,a:big?R(.3,.45):R(.12,.28),s:big?R(140,220):R(80,170),big});}
-  const esc=r()<th.escarp?{sd:r()<.55?-1:1,d:R(220,460),w:R(40,90),a:R(.22,.4),k:R(0,50)}:null;
+    const big=r()<(LK?LK.big:.35);hills.push({x,y,a:big?R(.3,.45):R(.12,.28),s:big?R(140,220):R(80,170),big});}
+  const esc=(LK&&LK.escarp?true:r()<th.escarp)?{sd:r()<.55?-1:1,d:R(220,460),w:R(40,90),a:R(.22,.4),k:R(0,50)}:null;
   const massifs=[];for(let k=RI(...(th.massif||[0,0]));k>0;k--){const a=R(0,3.14),L=R(300,650);
     massifs.push({x:W*R(.12,.88),y:H*R(.15,.85),ca:Math.cos(a),sa:Math.sin(a),L,w:R(80,140),amp:R(.7,.95),k:R(0,50),pass:R(-.55,.55)*L});}
   const escY=x=>RYF(x)+esc.sd*esc.d+(fbm(x/260+esc.k,1.7,2)-.5)*160;
@@ -119,7 +139,7 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
   const mkD=(cx,cy,rx,ryy,rot,grid,sp,village,name,extra)=>{const poly=blob(cx,cy,rx,ryy,rot,village?.4:.35,noise,R(0,90));
     const d={cx,cy,poly,bb:bbox(poly),rot:grid,sp,village,name,side:side(cx,cy),...(extra||{})};D.push(d);return d;};
   const okPlace=(x,y,rad,gap)=>x>rad+30&&x<W-rad-30&&y>rad+30&&y<H-rad-30&&!lakeAt(x,y)&&lakeF(x,y)<-.6&&(!wet||bank(x,y)>rad*.6+40)&&!D.some(d=>Math.hypot(d.cx-x,d.cy-y)<gap);
-  const ts=R(.8,1.15)*(th.townScale||1),tStyle=th.city?'river':wet?pick(['river','river','river','near','inland','inland']):pick(['near','inland','inland']);
+  const ts=R(.8,1.15)*(th.townScale||1)*(townPlan==='scatter'?.55:1),tStyle=th.city?'river':V3&&wet?pick(['river','river','near','near','inland']):wet?pick(['river','river','river','near','inland','inland']):pick(['near','inland','inland']);
   let core=null,townX=null;
   if(tStyle==='river'){
     for(let t=0;t<40&&!core;t++){const x=W*R(.14,.86);if(RWF(x)>110||lakeF(x,RYF(x))>-.8)continue;townX=x;const sd=r()<.62?-1:1,a=rang(x);
@@ -132,13 +152,16 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
   if(!core)for(let t=0;t<200&&!core;t++){const x=W*R(.12,.88),sd=r()<.6?-1:1,off=tStyle==='near'?R(170,300):R(320,620),y=RYF(x)+sd*(RWF(x)/2+off);
     if(okPlace(x,y,160,0))core=mkD(x,y,R(160,205)*ts,R(90,120)*ts,R(0,3.14),R(-.3,.3),R(22,26),false,M.townName);}
   if(!core)core=mkD(W/2,H*.2,150,90,0,0,23,false,M.townName);
-  for(let k=RI(...th.towns);k>0;k--)for(let t=0;t<120;t++){const x=R(140,W-140),y=R(140,H-140);if(!okPlace(x,y,120,460))continue;
+  // (V3) twin towns: a second town of about the same size on the other side of the front, well away from the first
+  if(townPlan==='twin')for(let t=0;t<200;t++){const x=W*R(.12,.88),sd=-core.side,y=RYF(x)+sd*(RWF(x)/2+R(170,420));if(Math.abs(x-core.cx)<380||!okPlace(x,y,150,500))continue;
+    mkD(x,y,R(150,195)*ts,R(85,115)*ts,R(0,3.14),R(-.3,.3),R(22,26),false,uname());break;}
+  for(let k=townPlan==='scatter'?0:RI(...th.towns);k>0;k--)for(let t=0;t<120;t++){const x=R(140,W-140),y=R(140,H-140);if(!okPlace(x,y,120,460))continue;
     mkD(x,y,R(110,150),R(65,90),R(0,3.14),R(-.4,.4),R(20,24),false,uname());break;}
   if(r()<(th.works||.45))for(let t=0;t<120;t++){const x=R(110,W-110),y=R(110,H-110);if(!okPlace(x,y,90,300))continue;
     mkD(x,y,R(70,110),R(50,75),R(0,3.14),R(-.4,.4),R(26,32),false,uname()+' Works',{kind:'industrial',works:true});break;}
   for(let k=RI(1,3);k>0;k--)for(let t=0;t<120;t++){const x=R(80,W-80),y=R(80,H-80);if(!okPlace(x,y,40,240))continue;
     mkD(x,y,R(22,32),R(18,26),R(0,3.14),R(0,3.14),R(12,14),true,uname()+' Farm',{farm:true});break;}
-  for(let k=RI(...th.villages);k>0;k--)for(let t=0;t<120;t++){const x=R(80,W-80),y=R(80,H-80);if(!okPlace(x,y,60,280))continue;
+  for(let k=RI(...th.villages)+(townPlan==='scatter'?RI(3,6):0);k>0;k--)for(let t=0;t<120;t++){const x=R(80,W-80),y=R(80,H-80);if(!okPlace(x,y,60,280))continue;
     const a=R(0,3.14);mkD(x,y,R(38,60),R(30,46),a,a,R(13,16),true,uname());break;}
   M.D=D;
   const urb=new Uint8Array(N),inD=(d,x,y)=>inPoly(d.poly,x,y)&&!water(x,y)&&(!wet||(side(x,y)===d.side&&bank(x,y)>5));
@@ -234,7 +257,7 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
     // a lateral road along the front line, so the roads that cross it meet at crossroads
     const P=[];for(let k=0;k<=9;k++){const x=-40+(W+80)*k/9;P.push({x,y:RYF(clamp(x,0,W))+R(-35,35)});}M.roads[addRoad(catmull(P),1)].lat=true;}
   // a lateral highway across one side of the map, through whatever towns lie near it
-  if(r()<(th.lateral??.55)){const sd=r()<.5?-1:1,yL=x=>clamp(RYF(x)+sd*R(260,520),60,H-60),xa=yL(0),xb=yL(W);
+  if(r()<(V3?R(.25,.85):(th.lateral??.55))){const sd=r()<.5?-1:1,yL=x=>clamp(RYF(x)+sd*R(260,520),60,H-60),xa=yL(0),xb=yL(W);
     toRoad(cellOf(6,xa),i=>i%GW>=GW-2,cellOf(W-6,xb),{x:-40,y:xa},2,j=>flat(j)*thruTown(j)*(wet&&bank(cc(j).x,cc(j).y)<120?3:1));}
   // every bridge's two ends join the network
   // (a bridge road's own cells cost full price here, so each end finds its own way in instead of doubling back over the bridge)
@@ -247,14 +270,14 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
       const b=cellOf(w.cx,w.cy);toRoad(cellOf(v.cx,v.cy),i=>i===b,b,{x:v.cx,y:v.cy},1);}}
   for(const v of vs)if(!roadNear(v.cx,v.cy,3))toRoad(cellOf(v.cx,v.cy),i=>M.road[i]>0,-1,{x:v.cx,y:v.cy},1);
   // roads in from the map edges
-  for(let t=0,n=0,want=RI(3,7);t<40&&n<want;t++){const e=r()*4|0;
+  for(let t=0,n=0,want=V3?RI(2,9):RI(3,7);t<40&&n<want;t++){const e=r()*4|0;
     const p=e===0?{x:R(60,W-60),y:4}:e===1?{x:R(60,W-60),y:H-4}:e===2?{x:4,y:R(60,H-60)}:{x:W-4,y:R(60,H-60)};
     if((wet&&bank(p.x,p.y)<60)||lakeAt(p.x,p.y)||roadNear(p.x,p.y,18))continue;const pth=cheapest(cellOf(p.x,p.y),i=>M.road[i]>0,-1);if(!pth||pth.length>120)continue;
     commit(pth,{x:e===2?-20:e===3?W+20:p.x,y:e===0?-20:e===1?H+20:p.y});n++;}
 
   // land use: forests on noise at this map's scale, on slopes and around 2-5 random centres; fields around villages and
   // towns and in random farm regions; each takes a share of the land rolled from the theme
-  const fAt=[],pAt=[];for(let k=RI(2,5);k>0;k--)fAt.push({x:R(-100,W+100),y:R(-100,H+100),s:R(140,360),a:R(.18,.42)});
+  const fAt=[],pAt=[];for(let k=LK&&LK.woods?RI(4,8):RI(2,5);k>0;k--)fAt.push({x:R(-100,W+100),y:R(-100,H+100),s:R(140,LK&&LK.woods?460:360),a:R(.18,.42)});
   for(let k=RI(1,3);k>0;k--)pAt.push({x:R(0,W),y:R(0,H),s:R(200,420),a:R(.15,.3)});
   const sett=D.map(d=>({cx:d.cx,cy:d.cy,w:d.village?1:1.6}));
   const pull=(L,x,y)=>{let s=0;for(const a of L)s+=a.a*Math.exp(-((x-a.x)**2+(y-a.y)**2)/(a.s*a.s));return s;};
@@ -265,12 +288,12 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
   const pickT=(score,frac)=>{const v=score.filter(s=>s>-9).sort();return v.length?v[Math.max(0,v.length-Math.min(v.length,Math.floor(land*frac)))]:9;};
   const fsc=new Float32Array(N).fill(-9);
   for(let i=0;i<N;i++){const c=cc(i),b=wet?bank(c.x,c.y):99;if(b<6||urb[i]||dU[i]<=2||water(c.x,c.y))continue;fsc[i]=fsc2(c.x,c.y,slope[i]/smax,M.hgt[i]);}
-  const ft=pickT(fsc,R(...th.forest));for(let i=0;i<N;i++)if(fsc[i]>=ft)M.lu[i]=2;
-  for(const comp of components(i=>M.lu[i]===2))if(comp.length<24)for(const i of comp)M.lu[i]=0;
+  const ft=pickT(fsc,R(...th.forest)*(LK?LK.forest:1));for(let i=0;i<N;i++)if(fsc[i]>=ft)M.lu[i]=2;
+  for(const comp of components(i=>M.lu[i]===2))if(comp.length<(V3?60:24))for(const i of comp)M.lu[i]=0;
   const dF=gridDist(i=>M.lu[i]===2,4),psc=new Float32Array(N).fill(-9);
   for(let i=0;i<N;i++){const c=cc(i),b=wet?bank(c.x,c.y):99;if(b<6||urb[i]||dU[i]<=1||dF[i]<=2||water(c.x,c.y))continue;
     let vp=0;for(const v of sett)vp+=v.w*Math.exp(-((c.x-v.cx)**2+(c.y-v.cy)**2)/(230*230));psc[i]=psc2(c.x,c.y,slope[i]/smax,vp);}
-  const pt=pickT(psc,R(...th.field));for(let i=0;i<N;i++)if(psc[i]>=pt)M.lu[i]=1;
+  const pt=pickT(psc,R(...th.field)*(LK?LK.field:1));for(let i=0;i<N;i++)if(psc[i]>=pt)M.lu[i]=1;
   for(const comp of components(i=>M.lu[i]===1))if(comp.length<24)for(const i of comp)M.lu[i]=0;
   for(const comp of components(i=>M.lu[i]===1)){if(comp.length<150)continue;
     for(let k=0;k<(comp.length>420?2:1);k++){const s=comp[r()*comp.length|0],c=cc(s);if(roadNear(c.x,c.y,5))continue;
@@ -309,8 +332,9 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
   const solid=(x,y)=>{const i=cellOf(x,y);return M.cls[i]!==WATER&&M.cls[i]!==ROCK;};
   const north=(x,y)=>x>90&&x<W-90&&y>=330&&y<RYF(x)-RWF(x)/2-90&&solid(x,y);
   const wpick=L=>{const s=L.reduce((a,c)=>a+c.w,0);let t=r()*s;for(const c of L){t-=c.w;if(t<=0)return c;}return L[L.length-1];};
+  const aFlat=V3&&r()<.35;
   const aC=lineX.filter(q=>q.x>90&&q.x<W-90).map(q=>{const cause=wet&&q.len>110,nm=named(q.x,q.y,320);
-    return{x:q.x,y:q.y,kind:wet?'bridge':'crossroads',w:(q.kind===2?3:1)*(cause?1.5:1),
+    return{x:q.x,y:q.y,kind:wet?'bridge':'crossroads',w:V3&&aFlat?1:(q.kind===2?3:1)*(cause?1.5:1),
       name:wet?(cause?(bigLake?'Lake '+M.riverName:M.riverName)+' Causeway':(nm||M.riverName)+' Bridge'):(nm||uname())+' Crossroads'};});
   if(!aC.length){const x=art?art.x:W/2;aC.push({x,y:RYF(x),kind:wet?'bridge':'crossroads',w:1,name:wet?M.riverName+' Bridge':uname()+' Crossroads'});}
   const A=wpick(aC);
@@ -331,13 +355,16 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
       if(!j2)continue;const c=cc(i);if(north(c.x,c.y)&&!js.some(q=>Math.hypot(q.x-c.x,q.y-c.y)<160))js.push(c);}
     for(const c of js)cand.push({x:c.x,y:c.y,kind:'crossroads',name:(named(c.x,c.y,260)||uname())+' Crossroads',b:1.5,c:1.5});}
   const okD=(p,q,d)=>Math.hypot(p.x-q.x,p.y-q.y)>=d;
+  if(V3)for(let k=cand.length-1;k>=0;k--)if(cand[k].x<170||cand[k].x>W-170)cand.splice(k,1);
   let Bo=null,Co=null;
   // pick a kind of feature first (by weight, among the kinds on offer), then one of that kind, so the many crossroads
   // and villages don't crowd out the rest; the main town is the likeliest town
   const KB={town:4,village:3,works:2,station:1.5,farm:1.2,crossroads:1.2,hill:1,ridge:1,wood:.8},KC={hill:3,ridge:2.5,wood:2,village:1.5,crossroads:1.2,farm:1.2,station:1,works:1,town:1};
   const byKind=(L,K)=>{const kinds=[...new Set(L.map(c=>c.kind))].map(k=>({k,w:K[k]||1}));if(!kinds.length)return null;const k=wpick(kinds).k,M2=L.filter(c=>c.kind===k);return wpick(M2.map(c=>({...c,w:c.b>4?3:1})));};
   Bo=byKind(cand.filter(c=>okD(c,A,230)&&Math.hypot(c.x-A.x,c.y-A.y)<1300&&c.y>=350),KB);
-  if(Bo)Co=byKind(cand.filter(c=>c.name!==Bo.name&&okD(c,A,230)&&okD(c,Bo,260)&&Math.hypot(c.x-A.x,c.y-A.y)<1400&&Math.hypot(c.x-Bo.x,c.y-Bo.y)<1300),KC);
+  // (V3 asks for more spread between B and C when the ground allows it)
+  const spread=V3?R(260,520):260,okC=gap=>cand.filter(c=>c.name!==Bo.name&&okD(c,A,230)&&okD(c,Bo,gap)&&Math.hypot(c.x-A.x,c.y-A.y)<1400&&Math.hypot(c.x-Bo.x,c.y-Bo.y)<1300);
+  if(Bo){const L=okC(spread);Co=byKind(L.length?L:okC(260),KC);}
   M.objs=[{key:'A',name:A.name,kind:A.kind,x:A.x,y:A.y},Bo?{key:'B',name:Bo.name,kind:Bo.kind,x:Bo.x,y:Bo.y}:null,Co?{key:'C',name:Co.name,kind:Co.kind,x:Co.x,y:Co.y}:null];
 
   // depots where the arterials meet the map edges
@@ -375,5 +402,6 @@ function genMap2Try(seed,mode,att){const mp=MAP_MODES[mode],th=mp.v2,wet=mp.wet;
   M.ok=ok;M.tries=att+1;
   return M;}
 // the generator a game uses: the new one unless the New map generation switch is off
-const makeMap=(seed,mode,gen2)=>gen2?genMap2(seed,mode):genMap(seed,mode);
+// (gen: 0 legacy, 2 V2, 3 V3; true means V2)
+const makeMap=(seed,mode,gen)=>{const v=genV(gen);return v>=3?genMap2(seed,mode,3):v===2?genMap2(seed,mode):genMap(seed,mode);};
 

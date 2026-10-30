@@ -30,9 +30,9 @@ function mpHostFrame(dt){const S=G.mpS||(G.mpS={acc:0,full:0,vis:0,own:new Map()
   mpSend('f',{to:L.peer,f:mpSnap(S)});}
 function mpSnap(S){const gs=otherSide(G.player),f={t:r1(G.time),ph:G.phase},u=[],own={};
   if(G.phase==='deploy'){f.dl=Math.ceil(G.mpDeploy??MP.deployTime);f.bud=Math.round(G.budget);}
-  // each unit: id, x, y, hp, flags (supplied, moving, guns set up, revealed, mode, side, type), target id, and for the
+  // each unit: id, x, y, hp, flags (supplied, moving, guns set up, revealed, mode, side, type, wounded, stocks in 16ths), target id, and for the
   // guest's own units how many waypoints are left
-  for(const v of G.units){const fl=(v.sup?1:0)|(v.moving?2:0)|(v.type==='art'&&v.deployT>=3?4:0)|(v.rev>0?8:0)|(MP_MODES.indexOf(v.mode)<<4)|(v.side==='D'?64:0)|(UNIT_TYPES.indexOf(v.type)<<7);
+  for(const v of G.units){const fl=(v.sup?1:0)|(v.moving?2:0)|(v.type==='art'&&v.deployT>=3?4:0)|(v.rev>0?8:0)|(MP_MODES.indexOf(v.mode)<<4)|(v.side==='D'?64:0)|(UNIT_TYPES.indexOf(v.type)<<7)|(v.wounded?512:0)|(Math.round(clamp(v.sp??1,0,1)*15)<<10);
     u.push(v.id,r1(v.x),r1(v.y),r1(v.hp),fl,v.tgt?v.tgt.id:0,v.side===gs?v.path.length:-1);
     if(v.side!==gs)continue;const k=S.own.get(v.id),now=[v.path,v.queue,v.fireAt,v.build,v.repair];
     if(!k||now.some((x,j)=>x!==k[j])){S.own.set(v.id,now);
@@ -40,6 +40,9 @@ function mpSnap(S){const gs=otherSide(G.player),f={t:r1(G.time),ph:G.phase},u=[]
   f.u=u;if(Object.keys(own).length)f.own=own;
   f.o=G.objs.map(o=>[o.owner,Math.round(o.p*1000)/1000,o.contested?1:0]);f.air=G.air;f.ha=r1(G.holdA);f.lost=G.stats.lost;
   f.vis=[...G.vis[gs]];
+  // Company Command: the guest's own depot (resources, rates, queue, rally point) and both sides' victory points
+  if(G.econ){const e=G.econ[gs];f.ec={mp:e.mp,fuel:e.fuel,rate:e.rate,pop:e.pop,raid:e.raid,rally:e.rally,q:e.q,spent:e.spent};
+    f.vp=[G.econ.A.vp,G.econ.D.vp];f.bt=[G.econ.A.built,G.econ.D.built];}
   if(G.reinfDone.size!==S.rf){S.rf=G.reinfDone.size;f.rf=[...G.reinfDone];}
   const bd=G.bridges.map(b=>b.down?1:0).join('');f.bh=G.bridges.map(b=>Math.round(b.hp));if(bd!==S.bd){S.bd=bd;f.bd=bd;}
   const pk=G.pontoons.map(p=>p.id+(p.done?'d':'')).join();
@@ -71,7 +74,7 @@ function mpOnFrame(f){const N2=mpGuestState(),me=G.player;N2.prev=N2.cur;N2.cur=
   for(let k=0;k<f.u.length;k+=7){const id=f.u[k],fl=f.u[k+4],side=fl&64?'D':'A',type=UNIT_TYPES[(fl>>7)&3];ids.add(id);let u=N2.units.get(id);
     if(!u||u.side!==side||u.type!==type){const T=TYPES[type];u={id,side,type,x:f.u[k+1],y:f.u[k+2],hp:T.hp,max:T.hp,path:[],queue:null,mode:'idle',tgt:null,rev:0,sup:true,lastHit:-99,
       sel:false,build:null,buildEnd:null,cd:0,deployT:3,fx:0,fireAt:null,role:null,obj:-1,via:null,flash:0,moving:false};N2.units.set(id,u);}
-    u.sup=!!(fl&1);u.moving=!!(fl&2);u.deployT=type==='art'?(fl&4?3:0):3;u.rev=fl&8?1:0;u.mode=MP_MODES[(fl>>4)&3];
+    u.sup=!!(fl&1);u.moving=!!(fl&2);u.deployT=type==='art'?(fl&4?3:0):3;u.rev=fl&8?1:0;u.mode=MP_MODES[(fl>>4)&3];u.wounded=!!(fl&512);u.sp=((fl>>10)&15)/15;if(G.cov[me])u.supR=G.cov[me][cellOf(u.x,u.y)]/100;
     const pl=f.u[k+6];if(pl>=0&&u.path.length>pl)u.path=u.path.slice(u.path.length-pl);}
   if(me==='A')trenchSight();
   for(const id of [...N2.units.keys()])if(!ids.has(id)){N2.units.delete(id);G.ghosts.delete(id);}
@@ -82,6 +85,8 @@ function mpOnFrame(f){const N2=mpGuestState(),me=G.player;N2.prev=N2.cur;N2.cur=
   for(const [id,g] of G.ghosts)if(G.time-g.t>30)G.ghosts.delete(id);G.vis[me]=now;
   f.o.forEach((q,k)=>{const o=G.objs[k];o.owner=q[0];o.contested=!!q[2];});
   if(f.sp){G.paused=!!f.pa;G.speed=f.sp;}
+  if(f.ec&&G.econ){const e=G.econ[me],r=e.rally,keep=e.rallyT&&performance.now()-e.rallyT<1500;Object.assign(e,f.ec);if(keep)e.rally=r;
+    G.econ.A.vp=f.vp[0];G.econ.D.vp=f.vp[1];G.econ.A.built=f.bt[0];G.econ.D.built=f.bt[1];}
   G.air=f.air;G.holdA=f.ha;G.stats.lost=f.lost;if(f.rf)G.reinfDone=new Set(f.rf);
   if(f.dl!=null)G.mpDeploy=f.dl;if(f.bud!=null&&!tdraw){G.budget=f.bud;updateBudget();}
   // crossings: bridge health every frame; bridges down and pontoon sites when they change
@@ -92,7 +97,7 @@ function mpOnFrame(f){const N2=mpGuestState(),me=G.player;N2.prev=N2.cur;N2.cur=
   if(roads)applyCrossings();
   if(f.dmg){G.dmg.fill(0);for(const i of f.dmg)G.dmg[i]=1;roadDamageChanged();}
   if(f.tr){G.trenches=f.tr;G.userTrench=(f.ut||[]).map(i=>G.trenches[i]).filter(Boolean);rebuildTrenchMask();}
-  if(f.cov){unrle(f.cov,G.cov[me]);unrle(f.sup,G.sup[me]);}
+  if(f.cov){unrle(f.cov,G.cov[me]);unrle(f.sup,G.sup[me]);covCv._src=null;}
   const R=G.rec,rec=R&&f.ph!=='deploy';
   if(f.ev)for(const e of f.ev){if(e[0]==='s'){const s={t:e[1],x0:e[2],y0:e[3],x1:e[4],y1:e[5],T:e[6],side:e[7]};N2.shells.push(s);if(rec)R.shells.push(s);}
     else if(e[0]==='b'){N2.booms.push({t:e[1],x:e[2],y:e[3],r:e[4]});if(rec)R.booms.push(e[1],e[2],e[3],e[4]);}
@@ -106,11 +111,11 @@ function mpOnFrame(f){const N2=mpGuestState(),me=G.player;N2.prev=N2.cur;N2.cur=
 // can watch the replay and download it too.
 function mpRec(f,last){const R=G.rec;if(!R||(!last&&f.t<R.next))return;R.next=f.t+REC_DT;const n=f.u.length/7;
   const r={t:f.t,id:new Uint16Array(n),x:new Int16Array(n),y:new Int16Array(n),hp:new Uint8Array(n),fl:new Uint8Array(n),fire:[],
-    obj:f.o.map(q=>[q[0],q[1],!!q[2]]),bh:f.bh.slice(),air:{...f.air},holdA:f.ha,
+    obj:f.o.map(q=>[q[0],q[1],!!q[2]]),bh:f.bh.slice(),air:{...f.air},holdA:f.ha,vp:f.vp,
     pont:G.pontoons.map(p=>({id:p.id,side:p.side,a:p.a,b:p.b,x:p.x,y:p.y,progress:p.progress,done:p.done,from:p.from,hp:p.hp,max:p.max}))};
   for(let k=0,j=0;j<n;j++,k+=7){const id=f.u[k],fl=f.u[k+4],type=UNIT_TYPES[(fl>>7)&3],max=TYPES[type].hp;
     r.id[j]=id;r.x[j]=Math.round(f.u[k+1]);r.y[j]=Math.round(f.u[k+2]);r.hp[j]=Math.round(clamp(f.u[k+3]/max,0,1)*255);
-    r.fl[j]=(fl&1?0:1)|(MP_MODES[(fl>>4)&3]==='hold'?2:0)|(fl&4?4:0);
+    r.fl[j]=(fl&1?0:1)|(MP_MODES[(fl>>4)&3]==='hold'?2:0)|(fl&4?4:0)|(fl&512?8:0);
     if(!R.meta.has(id))R.meta.set(id,{side:fl&64?'D':'A',type,max,died:Infinity});if(f.u[k+5]&&type!=='art')r.fire.push(id,f.u[k+5]);}
   recAdd(r);}
 // every screen frame: place everything between the last two frames

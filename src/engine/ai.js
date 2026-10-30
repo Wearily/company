@@ -63,7 +63,7 @@ function aiDefender(){const o=G.objs,D=G.units.filter(u=>u.side==='D'),recent=ai
     else{mode='block';spot=S.block[ti]||(S.block[ti]=coverNear({x:hold.x+(S.stage.x-hold.x)*.45,y:hold.y+(S.stage.y-hold.y)*.45},130,'tank',M.wet?-1:0));}}
   if(S.mode!==mode||S.ti!==ti){S.mode=mode;S.ti=ti;}
   const rs=res.slice().sort((a,b)=>a.id-b.id),face=ti>=0?{x:o[ti].x-spot.x,y:o[ti].y-spot.y}:{x:0,y:1};
-  rs.forEach((u,k)=>{if(u.hp<u.max*.3)u.falling=true;else if(u.hp>u.max*.8)u.falling=false;
+  rs.forEach((u,k)=>{if(u.hp<u.max*.3)u.falling=true;else if(u.hp>hpTop(u)*.8)u.falling=false;
     const tg=u.falling?slotPos(S.stage,k,rs.length,0,1,u.type):mode==='counter'?{x:spot.x+(R()-.5)*50,y:spot.y+(R()-.5)*40}:slotPos(spot,k,rs.length,face.x,face.y,u.type),key=(u.falling?'heal':mode)+ti;
     if(u.goal!==key||(!u.path.length&&!u.tgt&&dist(u,tg)>50)){u.goal=key;route(u,tg.x,tg.y,u.falling?'move':'amove',spot.x,spot.y);}});
   // --- line infantry
@@ -88,7 +88,7 @@ function aiDefender(){const o=G.objs,D=G.units.filter(u=>u.side==='D'),recent=ai
     if(mine>=Math.max(1.5,en*1.15)){for(const u of cand.sort((a,b)=>dist(a,ob)-dist(b,ob)).slice(0,5)){if(u.retake===k)continue;
         u.retake=k;route(u,ob.x+(R()-.5)*60,ob.y+(R()-.5)*60,'amove',ob.x,ob.y);}}
     else if(mine<en*.7)for(const u of line)if(u.retake===k){u.retake=null;route(u,u.post.x,u.post.y,'move');}});
-  for(const u of line){if(u.hp<u.max*.3&&!u.tgt)u.falling=true;else if(u.hp>u.max*.75)u.falling=false;
+  for(const u of line){if(u.hp<u.max*.3&&!u.tgt)u.falling=true;else if(u.hp>hpTop(u)*.75)u.falling=false;
     if(u.falling){if(dist(u,S.stage)>60&&!u.path.length)route(u,S.stage.x,S.stage.y,'move');continue;}
     if(u.retake!=null){const ob=o[u.retake];if(!u.path.length&&!u.tgt&&dist(u,ob)>45)route(u,ob.x+(R()-.5)*50,ob.y+(R()-.5)*50,'amove',ob.x,ob.y);continue;}
     if(!u.path.length&&!u.tgt&&dist(u,u.post)>30)route(u,u.post.x,u.post.y,'amove');}
@@ -120,7 +120,7 @@ function planAttack(){const o=G.objs,R=Math.random,pick=a=>a[R()*a.length|0],jit
   const mk=(axis,stance,n,start)=>{const g={i:P.groups.length,axis,stance,start,state:'assemble',probe:stance==='probe',objs:order(axis),asm:P.asm(axis)};
     const x=clamp(axes[axis].x+(R()-.5)*60,40,W-40);g.pinPt=cc(nearestPassable('tank',x,M.ry(x)+M.rw(x)/2+70));g.pinUntil=start+jit(260);
     const us=pool.splice(0,Math.min(n,pool.length));g.size=us.length;us.forEach((u,k)=>{u.grp=g.i;u.slot=k;u.via=null;u.viaFor=null;});P.groups.push(g);return g;};
-  const N=pool.length;let d=pick(MAP_MODES[M.mode].doctrines.filter(k=>M.wet||k!=='crossing'));
+  const N=pool.length;let d=pick(SC().econ?['broad','hook','feint']:MAP_MODES[M.mode].doctrines.filter(k=>M.wet||k!=='crossing'));
   if(d==='crossing'){const xs=[];for(let x=120;x<W-120;x+=30){if(G.bridges.some(b=>Math.abs(b.x-x)<200)||Math.abs(x-o[0].x)<250)continue;const s=pontoonSite(x);if(!s.err)xs.push(x);}
     if(xs.length){const x=pick(xs);P.site=startPontoon('A',x,M.ry(x),true);}
     if(P.site){const a=P.site.a;axes.P={x:P.site.x,via:cc(nearestPassable('inf',a.x,a.y-40))};}else d='hook';}
@@ -207,8 +207,8 @@ function aiAttacker(){if(G.time<3)return;const o=G.objs,P=G.plan,R=Math.random,A
     // (counterattack) units already holding an objective stay on it
     if(u.holdAt){const p=u.holdAt;if(dist(u,p)>25){if(!u.path.length&&!u.tgt)route(u,p.x,p.y,'amove');}else if(!u.path.length)u.mode='hold';continue;}
     const g=P.groups[u.grp];if(!g)continue;
-    // badly hurt units fall back to their assembly area to heal, then rejoin
-    if(u.hp<u.max*.3)u.falling=true;else if(u.hp>u.max*.8)u.falling=false;
+    // badly hurt units fall back to their assembly area to heal, then rejoin (healed as far as their wounds allow)
+    if(u.hp<u.max*.3)u.falling=true;else if(u.hp>hpTop(u)*.8)u.falling=false;
     if(u.falling){if(dist(u,g.at)>60&&(u.mode!=='move'||!u.path.length||dist(u.path[u.path.length-1],g.at)>80))route(u,g.at.x,g.at.y,'move');continue;}
     // waiting units take their slot in a loose line facing north
     if(g.state==='assemble'||g.stance==='reserve'){const sp=slotPos(g.at,u.slot||0,Math.max(g.size,(u.slot||0)+1),0,-1,u.type);if(dist(u,sp)>40&&(!u.path.length||dist(u.path[u.path.length-1],sp)>80))route(u,sp.x,sp.y,'move',g.at.x,g.at.y);continue;}

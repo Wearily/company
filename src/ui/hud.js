@@ -15,7 +15,12 @@ const MAC=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent||'');
 const phone=()=>vw<600;
 const TNAME={inf:'Infantry',tank:'Armor',art:'Artillery',eng:'Engineers'};
 const UPATH={inf:'<circle cx="8" cy="8" r="6.3"/>',tank:'<rect x="2" y="2" width="12" height="12"/>',art:'<path d="M8 1.5L15 14H1z"/>',eng:'<path d="M8 1l6.2 3.5v7L8 15l-6.2-3.5v-7z"/>'};
-const uIco=(t,s,px=12)=>`<svg class="ui ${s}" width="${px}" height="${px}" viewBox="0 0 16 16" aria-hidden="true">${UPATH[t]}</svg>`;
+// NATO symbols (ui.symbols): the friendly rectangle or, for the enemy's side, the hostile diamond, with the branch in white
+const NATO_I={F:{inf:'<path d="M.8 3.2l14.4 9.6M15.2 3.2L.8 12.8"/>',tank:'<ellipse cx="8" cy="8" rx="4.2" ry="2.4"/>',art:'<circle cx="8" cy="8" r="1.9" fill="#fff"/>',eng:'<path d="M4 10.4V6.2h8v4.2M8 6.2v4.2"/>'},
+  H:{inf:'<path d="M4.3 4.3l7.4 7.4M11.7 4.3l-7.4 7.4"/>',tank:'<ellipse cx="8" cy="8" rx="3.1" ry="1.9"/>',art:'<circle cx="8" cy="8" r="1.7" fill="#fff"/>',eng:'<path d="M5.2 10.2V6.4h5.6v3.8M8 6.4v3.8"/>'}};
+const uIco=(t,s,px=12)=>{if(ui.symbols!=='nato')return `<svg class="ui ${s}" width="${px}" height="${px}" viewBox="0 0 16 16" aria-hidden="true">${UPATH[t]}</svg>`;
+  const h=!!(G&&G.player&&s!==G.player&&s!=='N');
+  return `<svg class="ui ${s}" width="${px}" height="${px}" viewBox="0 0 16 16" aria-hidden="true">${h?'<path d="M8 .6L15.4 8 8 15.4.6 8z"/>':'<rect x=".8" y="3.2" width="14.4" height="9.6"/>'}<g fill="none" stroke="#fff" stroke-width="1.4" stroke-linecap="round">${NATO_I[h?'H':'F'][t]}</g></svg>`;};
 const ICON={pause:'<svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><rect x="3.5" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/><rect x="9.3" y="2.5" width="3.2" height="11" rx="1.2" fill="currentColor"/></svg>',
   play:'<svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M4.5 2.8v10.4c0 .5.6.9 1 .6l8-5.2c.4-.3.4-.9 0-1.2l-8-5.2c-.4-.3-1 0-1 .6z"/></svg>',
   down:'<svg class="chev" width="12" height="12" viewBox="0 0 16 16" fill="none" stroke="var(--ink-2)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6l4 4 4-4"/></svg>',
@@ -32,20 +37,20 @@ const DOCTRINE_DESC={broad:'All three crossings attacked at once.',feint:'A dive
 
 // Interface preferences: layout and appearance, which panels are collapsed, which sections are open. Kept between
 // battles, and between visits where the browser allows it.
-const ui={layout:'floating',appearance:'light',panel:'auto',left:false,tab:'sel',sec:{objs:true,forces:true,mods:true},
+const ui={symbols:'simple',cardPos:{},layout:'floating',appearance:'light',panel:'auto',left:false,tab:'sel',sec:{objs:true,forces:true,mods:true,depot:true},depot:false,
   compact:{scen:false,status:false,bottom:false,log:false,mods:false},hidden:false,dots:new Set()};
-try{const s=JSON.parse(localStorage.getItem('company.ui')||'null');if(s){for(const k of ['layout','appearance','left'])if(k in s)ui[k]=s[k];Object.assign(ui.sec,s.sec||{});Object.assign(ui.compact,s.compact||{});}}catch(e){}
-function saveUI(){try{localStorage.setItem('company.ui',JSON.stringify({layout:ui.layout,appearance:ui.appearance,left:ui.left,sec:ui.sec,compact:ui.compact}));}catch(e){}}
+try{const s=JSON.parse(localStorage.getItem('company.ui')||'null');if(s){for(const k of ['layout','appearance','left','cardPos','symbols'])if(k in s)ui[k]=s[k];Object.assign(ui.sec,s.sec||{});Object.assign(ui.compact,s.compact||{});}}catch(e){}
+function saveUI(){try{localStorage.setItem('company.ui',JSON.stringify({layout:ui.layout,appearance:ui.appearance,left:ui.left,cardPos:ui.cardPos,symbols:ui.symbols,sec:ui.sec,compact:ui.compact}));}catch(e){}}
 const darkMQ=window.matchMedia?matchMedia('(prefers-color-scheme: dark)'):{matches:false};
 function applyAppearance(){document.documentElement.dataset.appearance=ui.appearance==='auto'?(darkMQ.matches?'dark':'light'):ui.appearance;if(RP)buildTimeline();}
 try{darkMQ.addEventListener('change',()=>{if(ui.appearance==='auto')applyAppearance();});}catch(e){}
 // Floating keeps each piece in its own capsule; Docked moves the same pieces into the top bar and the two side bars.
 function applyLayout(){const d=ui.layout==='docked',hud=$('hud');document.documentElement.dataset.layout=ui.layout;
   if(d){$('barL').appendChild($('scenCard'));$('barC').appendChild($('status'));$('barR').appendChild($('ctrls'));
-    $('sideL').append($('secObjs'),$('secForces'),$('secMods'));$('sideR').appendChild($('secSel'));}
+    $('sideL').append($('secObjs'),$('secDepot'),$('secForces'),$('secMods'));$('sideR').appendChild($('secSel'));}
   else{const lc=$('leftcol');lc.insertBefore($('scenCard'),lc.firstChild);hud.insertBefore($('status'),$('banner'));hud.insertBefore($('ctrls'),$('banner'));
-    $('inspector').append($('secSel'),$('secObjs'),$('secMods'));$('forcesCard').append($('secForces'));}
-  updateHUD(true);}
+    $('inspector').append($('secSel'),$('secObjs'),$('secMods'));$('forcesCard').append($('secForces'));$('depotCard').append($('secDepot'));}
+  placeCards();updateHUD(true);}
 
 // an objective's ring: the owner's colour, filled as far as the owner's hold on it; orange while it's being taken
 const takeFrac=o=>o.owner==='D'?(1-o.p)/2:o.owner==='A'?(1+o.p)/2:Math.abs(o.p);
@@ -71,13 +76,14 @@ function updateHUD(force){
   for(const id of ['sideBadge','sideBadge2']){const b=$(id);b.textContent=badge[0];b.className='side-badge '+badge[1];}
   $('scenName').textContent=sc.name;
   $('goalCard').textContent=rp?`${word} · ${G.over.reason}`:sc.goal[me];
-  const meta=`${MAP_MODES[G.mode].name} · ${CLIMATES[G.climate].name} · ${G.code||''}`;$('sector').textContent=`${sc.name} · ${meta}`;$('sector2').textContent=meta;
+  const meta=`${MAP_MODES[G.mode].name}${M.look?' · '+M.look.name:''} · ${CLIMATES[G.climate].name} · ${G.code||''}`;$('sector').textContent=`${sc.name} · ${meta}`;$('sector2').textContent=meta;
   $('scenCard').hidden=!docked&&ui.compact.scen;if(docked)delete $('scenCard').dataset.tip;else $('scenCard').dataset.tip='Collapse';$('scenPill').hidden=docked||!ui.compact.scen;
   // status capsule: the clock, the three objectives, and the next reinforcements or the A hold timer
   const st=$('status'),cmp=compactTop&&!docked;st.classList.toggle('compact',cmp);
   let extra='',plus='';
   const nx=nextReinf();
-  if(sc.holdA&&G.holdA>0){extra=`<b class="tn">${fmt(G.holdA)} / ${fmt(sc.holdA)}</b><span>attacker holding A</span>`;plus=`A ${fmt(G.holdA)}`;}
+  if(G.econ&&sc.vp){extra=vpHTML(me);plus=`${Math.ceil(G.econ[me].vp)}–${Math.ceil(G.econ[me==='A'?'D':'A'].vp)}`;}
+  else if(sc.holdA&&G.holdA>0){extra=`<b class="tn">${fmt(G.holdA)} / ${fmt(sc.holdA)}</b><span>attacker holding A</span>`;plus=`A ${fmt(G.holdA)}`;}
   else if(nx&&!rp){extra=`<b class="tn">${fmt(nx.r.t-G.time)}</b><span>reinforcements</span>`;plus='+'+fmt(nx.r.t-G.time);}
   const clock=dep?'':fmt(G.limit-G.time);
   if(cmp)setH(st,`<b class="tn" style="font-size:17px;font-weight:600;letter-spacing:-.02em">${dep?'Deployment':clock}</b><span class="rings">${G.objs.map(o=>ring(o,24)).join('')}</span>${plus?`<span class="plus tn">${plus}</span>`:''}${ICON.down}`);
@@ -96,7 +102,7 @@ function updateHUD(force){
   // battle starts with it folded ('folded'), and it stays folded until you open it from the rail
   if(ui.panel==='closed'&&!ns)ui.panel='auto';
   // (on a phone a selection doesn't pop the Selection sheet over another open sheet)
-  const showInsp=!rp&&(ui.panel==='open'||(ui.panel==='auto'&&ns>0&&!(phone()&&(ui.forces||ui.modsG))));
+  const showInsp=!rp&&(ui.panel==='open'||(ui.panel==='auto'&&ns>0&&!(phone()&&(ui.forces||ui.modsG||ui.depot))));
   // Selection, Forces and Modifiers are separate cards beside the rail, each opened by its own rail button
   const showF=!rp&&!docked&&!!ui.forces;
   $('inspector').hidden=docked||!showInsp;$('forcesCard').hidden=!showF;$('rail').hidden=rp;
@@ -104,7 +110,10 @@ function updateHUD(force){
   $('sideR').classList.toggle('off',!showInsp);$('sideL').classList.toggle('off',rp||!ui.left);
   $('btnSideL').classList.toggle('on',ui.left);$('btnSideR').classList.toggle('on',showInsp);
   document.documentElement.style.setProperty('--logL',docked&&ui.left&&!rp?'272px':'0px');
-  for(const s of ['objs','forces','mods'])$(s==='objs'?'secObjs':s==='forces'?'secForces':'secMods').classList.toggle('shut',!ui.sec[s]);
+  for(const s of ['objs','forces','mods','depot'])$({objs:'secObjs',forces:'secForces',mods:'secMods',depot:'secDepot'}[s]).classList.toggle('shut',!ui.sec[s]);
+  // Company Command: the Depot card (Docked: a section of the left bar)
+  {const ec=!!G.econ&&!rp,open=ec&&!docked&&!!ui.depot,b=$('railDepot');b.hidden=!ec;$('depotCard').hidden=!open;$('secDepot').hidden=!ec;
+    b.classList.toggle('on',open);b.setAttribute('aria-pressed',open);if(open||(ec&&docked))setH($('depot'),depotHTML(me));}
   // the Modifiers card; the docked outliner has its own Modifiers section
   {const open=!!ui.modsG&&!rp&&!docked;$('modsGame').hidden=!open;$('railMods').classList.toggle('on',open);$('railMods').setAttribute('aria-pressed',open);
     if(open||docked){const gm=gameMods();if(open){setH($('modsGameList'),gm.html);$('modsGameN').textContent=gm.n;}if(docked)setH($('modsSide'),gm.html);}}
@@ -129,7 +138,7 @@ function updateHUD(force){
   const cb=ui.compact.bottom&&!docked&&!phone();$('selBar').hidden=cb;$('selPill').hidden=!cb;
   const md=$('modes');md.hidden=!play;md.classList.toggle('compact',cb);$('deployTools').hidden=!dep||me!=='D';
   const hasT=t=>sel.some(u=>u.type===t),air=G.air[me]||0;
-  const can={move:ns>0,amove:ns>0,fire:hasT('art'),bridge:hasT('eng'),repair:hasT('eng'),air:air>0};
+  const can={move:ns>0,fire:hasT('art'),bridge:hasT('eng'),repair:hasT('eng'),air:air>0};
   document.querySelectorAll('#modes [data-mode]').forEach(b=>{const m=b.dataset.mode;b.disabled=!can[m];b.classList.toggle('on',can[m]&&G.orderMode===m);b.setAttribute('aria-pressed',b.classList.contains('on'));});
   $('btnHold').disabled=!ns;$('airLeft').textContent=air;$('airLeft').hidden=!air;
   const lt=$('btnOrdersCompact');lt.dataset.tip=cb?'Show labels':'Hide labels';lt.setAttribute('aria-label',lt.dataset.tip);lt.firstElementChild.style.transform=cb?'rotate(180deg)':'';
@@ -142,12 +151,13 @@ function updateHUD(force){
   if(dep&&me!=='D'){lead='Deployment';bt='The defender is deploying. The battle starts when they’re ready'+dclk;}
   else if(dep){lead='Deployment';bt=(G.tool==='trench'?'Drag on the map to dig a trench':ns?`Click the map to place ${units}`:'Select units, click the map to place them north of the dashed line, then Begin Battle')+dclk;}
   else if(play){const om=G.orderMode,ne=sel.filter(u=>u.type==='eng').length,na=G.air[me];let hint;
-    const name={move:'Move',amove:'Attack-move',fire:'Fire mission',bridge:'Pontoon',repair:'Repair road',air:'Air strike'}[om];
-    if(om==='air')hint=na?`Click a target, or a bridge to destroy it · ${na} left`:'No air strikes left';
+    const name={move:'Move',fire:'Fire mission',bridge:'Pontoon',repair:'Repair road',air:'Air strike',rally:'Rally point'}[om];
+    if(om==='rally')hint='Click the map where new units should gather';
+    else if(om==='air')hint=na?`Click a target, or a bridge to destroy it · ${na} left`:'No air strikes left';
     else if(om==='repair')hint=ne?`Click cratered road to repair it with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click cratered road';
     else if(om==='bridge')hint=ne?`Click the river to build a pontoon bridge with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click the river';
-    else hint=ns?`Click the map to ${{move:'move',amove:'attack-move',fire:'call a fire mission with'}[om]} ${units}${om==='move'||om==='amove'?' · Ctrl-click to go straight · Shift to queue':''}`:'Click a unit or drag a box to select';
-    const special=om==='air'||om==='bridge'||om==='repair';
+    else hint=ns?`Click the map to ${{move:'move',fire:'call a fire mission with'}[om]} ${units}${om==='move'?' · Ctrl-click to go straight · Shift to queue':''}`:'Click a unit or drag a box to select';
+    const special=om==='air'||om==='bridge'||om==='repair'||om==='rally';
     if(G.paused&&G.mp&&G.mp.role==='guest'){lead='Paused';bt='The host has paused the battle';}
     else if(G.paused){lead='Paused';bt=`${ns||special?name+': '+hint:hint} · Space to ${G.time<1?'start':'resume'}`;}
     else if(ns||special){lead=name;bt=hint+(special?' · Esc to cancel':'');}}
@@ -165,17 +175,18 @@ function updateHUD(force){
 // the selection inspector
 function selHTML(sel,me){const close=`<button class="bt ic" data-act="closePanel" aria-label="Collapse inspector" data-tip="Collapse">${ICON.left}</button>`;
   if(!sel.length)return `<div class="selHd"><b>Nothing selected</b>${close}</div><div class="selNone">Click a unit or drag a box around several. Double-click a unit to select every unit of its type.</div>`;
-  const c={inf:0,tank:0,art:0,eng:0};sel.forEach(u=>c[u.type]++);const hp=sel.reduce((s,u)=>s+u.hp/u.max,0)/sel.length,cut=sel.filter(u=>!u.sup).length,dug=sel.filter(dugIn).length;
+  const c={inf:0,tank:0,art:0,eng:0};sel.forEach(u=>c[u.type]++);const hp=sel.reduce((s,u)=>s+u.hp/u.max,0)/sel.length,cut=sel.filter(u=>u.supR===0).length,spv=sel.reduce((a,u)=>a+(u.sp??(u.sup?1:0)),0)/sel.length,spR=sel.reduce((a,u)=>a+(u.supR??spv),0)/sel.length,dug=sel.filter(dugIn).length;
   // best high-ground range bonus among the selection
   const hg=Math.max(...sel.map(u=>(u.type==='art'?HILL.artRange:HILL.range)*hillK(u.x,u.y)));
   const md=sel.some(u=>u.build)&&sel.every(u=>u.build||u.type!=='eng')?'bridging':sel.some(u=>u.repair)&&sel.every(u=>u.repair||u.type!=='eng')?'repairing':sel.every(u=>u.mode===sel[0].mode)?sel[0].mode:'mixed';
-  const pct=Math.round(hp*100),hc=hp>.5?'var(--ok)':hp>.25?'var(--contested)':'var(--danger)',ice=sel.filter(onIce).length;
+  const pct=Math.round(hp*100),hc=hp>.5?'var(--ok)':hp>.25?'var(--contested)':'var(--danger)',ice=sel.filter(onIce).length,wnd=sel.filter(u=>u.wounded).length;
   return `<div class="selHd"><b class="tn">${sel.length} Selected</b>${close}</div>
     <div class="selTypes">${UNIT_TYPES.filter(t=>c[t]).map(t=>`<span>${uIco(t,me,13)}<b class="tn">${c[t]}</b><span class="s2">${TNAME[t]}</span></span>`).join('')}</div>
-    <div class="selHp"><div><span class="s2">Average health</span><b class="tn">${pct}%</b></div><div class="bar6"><i style="width:${pct}%;background:${hc}"></i></div></div>
+    <div class="selHp"><div><span class="s2">Average health</span><b class="tn">${pct}%${wnd?` <span class="s2" data-tip="Knocked below ${Math.round(WOUND.at*100)}%: heals back to ${Math.round(WOUND.cap*100)}% at most">· ${wnd} wounded</span>`:''}</b></div><div class="bar6"><i style="width:${pct}%;background:${hc}"></i></div></div>
     <div class="secBody"><div class="grp">
       <div class="rw"><span>State</span><span class="s2">${{idle:'Ready',move:'Moving',amove:'Attacking',hold:'Holding',mixed:'Mixed',bridging:'Bridging',repairing:'Repairing'}[md]}</span></div>
-      <div class="rw"><span>Supply</span>${cut?`<span class="warn" style="display:flex;align-items:center;gap:6px;font-weight:500"><span class="dot"></span>${cut} out of supply</span>`:`<span class="okt" style="display:flex;align-items:center;gap:6px;font-weight:500"><span class="dot" style="background:var(--ok)"></span>In supply</span>`}</div>
+      <div class="rw"><span>Supply</span>${(()=>{const p=Math.round(spv*100),col=spv>=SUPPLY.ok?'var(--ok)':spv>=.3?'var(--contested)':'var(--danger)',tr=spR>spv+.02?'rising':spR<spv-.02?'falling':'steady';
+        return `<span class="tn" style="display:flex;align-items:center;gap:6px;font-weight:500;color:${col}" data-tip="Stocks ${p}% · ${tr} · route efficiency ${Math.round(spR*100)}%. Below ${Math.round(SUPPLY.ok*100)}% units move slower, fire weaker and heal less."><span class="dot" style="background:${col}"></span>${p}%${cut?` · ${cut} cut off`:''}</span>`;})()}</div>
       <div class="rw"><span>Dug in</span><span class="s2 tn">${dug} of ${sel.length}</span></div>
       <div class="rw"><span>High ground</span><span class="s2">${hg>.05?`+${Math.round(hg*100)}% range`:'None'}</span></div>${ice?`
       <div class="rw"><span>On the ice</span><span class="tn" style="color:var(--contested-text);font-weight:500">${ice} of ${sel.length} · exposed</span></div>`:''}</div></div>`;}
@@ -231,7 +242,10 @@ function renderSettings(){document.querySelectorAll('#settingsModal [data-set]')
   document.querySelectorAll('#setView [data-view],#ngView [data-view]').forEach(b=>b.classList.toggle('on',b.dataset.view===settings.style));
   document.querySelectorAll('#setFrontStyle [data-fs]').forEach(b=>b.classList.toggle('on',b.dataset.fs===settings.frontStyle));
   document.querySelectorAll('#settingsModal [data-layout]').forEach(b=>{b.classList.toggle('on',b.dataset.layout===ui.layout);b.setAttribute('aria-checked',b.dataset.layout===ui.layout);});
-  document.querySelectorAll('#setAppear [data-ap]').forEach(b=>b.classList.toggle('on',b.dataset.ap===ui.appearance));}
+  document.querySelectorAll('#setAppear [data-ap]').forEach(b=>b.classList.toggle('on',b.dataset.ap===ui.appearance));
+  document.querySelectorAll('#setSymbols [data-sym]').forEach(b=>b.classList.toggle('on',b.dataset.sym===ui.symbols));}
+// unit symbols: 'simple' (circle, square, triangle, hexagon) or 'nato' (APP-6 frames); the map and the HUD icons follow
+document.querySelectorAll('#setSymbols [data-sym]').forEach(b=>b.onclick=()=>{ui.symbols=b.dataset.sym;saveUI();renderSettings();if(G)updateHUD(true);if($('startModal')&&!$('startModal').hidden&&typeof renderMods==='function')renderMods();});
 document.querySelectorAll('#setFrontStyle [data-fs]').forEach(b=>b.onclick=()=>{settings.frontStyle=b.dataset.fs;renderSettings();if(G&&G.ctrl&&settings.front)frontShape(true);});
 // map view: 'satellite' or 'paper' (shown as Strategic, the original printed map); only the terrain drawing changes
 function setView(v){if(settings.style===v)return;settings.style=v;renderSettings();if(M)renderTerrain();}
@@ -257,12 +271,13 @@ $('status').onclick=e=>{const o=e.target.closest('[data-obj]');if(o){panToObj(+o
 $('objList').onclick=e=>{const o=e.target.closest('[data-obj]');if(o)panToObj(+o.dataset.obj);};
 $('panel').onclick=e=>{if(e.target.closest('[data-act="closePanel"]')){ui.panel='closed';updateHUD(true);}};
 // each rail button opens or closes its own card; on a phone the cards are bottom sheets, so opening one closes the others
-const cardOpen=c=>c==='sel'?!$('inspector').hidden:c==='forces'?!!ui.forces:!!ui.modsG;
+const cardOpen=c=>c==='sel'?!$('inspector').hidden:c==='forces'?!!ui.forces:c==='depot'?!!ui.depot:!!ui.modsG;
 function toggleCard(c){const on=!cardOpen(c);
-  if(on&&phone()){if(c!=='sel'&&!$('inspector').hidden)ui.panel='closed';if(c!=='forces')ui.forces=false;if(c!=='mods')ui.modsG=false;}
-  if(c==='sel')ui.panel=on?'open':'closed';else if(c==='forces')ui.forces=on;else ui.modsG=on;updateHUD(true);}
+  if(on&&phone()){if(c!=='sel'&&!$('inspector').hidden)ui.panel='closed';if(c!=='forces')ui.forces=false;if(c!=='mods')ui.modsG=false;if(c!=='depot')ui.depot=false;}
+  if(c==='sel')ui.panel=on?'open':'closed';else if(c==='forces')ui.forces=on;else if(c==='depot')ui.depot=on;else ui.modsG=on;updateHUD(true);}
 document.querySelectorAll('#rail [data-open]').forEach(b=>b.onclick=()=>toggleCard(b.dataset.open));
 $('forcesX').onclick=()=>{ui.forces=false;updateHUD(true);};
+$('depotX').onclick=()=>{ui.depot=false;updateHUD(true);};
 document.querySelectorAll('.secHd[data-sec]').forEach(b=>b.onclick=()=>{const s=b.dataset.sec;ui.sec[s]=!ui.sec[s];saveUI();updateHUD(true);});
 $('btnSideL').onclick=()=>{ui.left=!ui.left;saveUI();updateHUD(true);};
 $('btnSideR').onclick=()=>{const vis=!$('sideR').classList.contains('off');ui.panel=vis?'closed':'open';updateHUD(true);};
@@ -292,3 +307,22 @@ $('btnTrench').onclick=()=>setTool(G.tool==='trench'?null:'trench');
 $('btnUndo').onclick=()=>act({k:'undo'});
 $('btnBegin').onclick=()=>{if(!act({k:'begin'})&&!(G.mp&&G.mp.role==='guest'))return;setTool(null);$('deployTools').hidden=true;updateHUD(true);};
 
+
+// the cards beside the rail (Selection, Forces, Depot, Modifiers) can be dragged by their header anywhere on screen, in
+// the Floating layout on screens wider than a phone. Where each was put is kept with the preferences; double-click the
+// header to put it back beside the rail.
+const canDrag=()=>ui.layout==='floating'&&innerWidth>=600;
+function placeCard(el){const p=ui.cardPos[el.id];
+  if(!p||!canDrag()){el.classList.remove('moved');el.style.left=el.style.top=el.style.maxHeight='';return;}
+  const w=el.offsetWidth||300,x=clamp(p.x,60-w,innerWidth-60),y=clamp(p.y,8,innerHeight-44);
+  el.classList.add('moved');el.style.left=x+'px';el.style.top=y+'px';el.style.maxHeight=`calc(100% - ${y+16}px)`;}
+function placeCards(){for(const el of $('cards').children)placeCard(el);}
+{let drag=null,zTop=4;
+  $('cards').addEventListener('pointerdown',e=>{const hd=e.target.closest('.selHd,.modsHd');if(!hd||e.button||e.target.closest('button')||!canDrag())return;
+    const el=hd.closest('#cards>*'),r=el.getBoundingClientRect();
+    drag={el,dx:e.clientX-r.left,dy:e.clientY-r.top};el.style.zIndex=++zTop;el.classList.add('dragging');e.preventDefault();});
+  addEventListener('pointermove',e=>{if(!drag)return;ui.cardPos[drag.el.id]={x:e.clientX-drag.dx,y:e.clientY-drag.dy};placeCard(drag.el);});
+  addEventListener('pointerup',()=>{if(!drag)return;drag.el.classList.remove('dragging');drag=null;saveUI();});
+  $('cards').addEventListener('dblclick',e=>{const hd=e.target.closest('.selHd,.modsHd');if(!hd||e.target.closest('button'))return;
+    const el=hd.closest('#cards>*');delete ui.cardPos[el.id];placeCard(el);saveUI();});
+  addEventListener('resize',placeCards);}

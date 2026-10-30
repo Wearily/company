@@ -2,7 +2,17 @@
 // The per-frame dynamic layer: units, objectives, trenches, effects, labels.
 // Loaded as a classic script in the order index.html lists: the files share one scope.
 'use strict';
-function shapePath(type,x,y,r){ctx.beginPath();if(type==='inf')ctx.arc(x,y,r,0,Math.PI*2);
+// NATO (APP-6) symbols, a Settings option (ui.symbols): your units in a rectangle frame and the enemy's in a diamond,
+// each with its branch inside (natoIcon): infantry a cross, armor an oval for its tracks, artillery a dot, engineers a bridge
+const nato=()=>ui.symbols==='nato';
+function framePath(x,y,r,hostile){ctx.beginPath();if(hostile){const d=r*1.4;ctx.moveTo(x,y-d);ctx.lineTo(x+d,y);ctx.lineTo(x,y+d);ctx.lineTo(x-d,y);ctx.closePath();}
+  else ctx.rect(x-r*1.3,y-r*.88,r*2.6,r*1.76);}
+function natoIcon(type,x,y,r,hostile){const w=hostile?r*.7:r*1.3,h=hostile?r*.7:r*.88;ctx.strokeStyle=ctx.fillStyle='#fff';ctx.lineWidth=Math.max(1.2,r*.16);ctx.beginPath();
+  if(type==='inf'){ctx.moveTo(x-w,y-h);ctx.lineTo(x+w,y+h);ctx.moveTo(x+w,y-h);ctx.lineTo(x-w,y+h);ctx.stroke();}
+  else if(type==='tank'){ctx.ellipse(x,y,w*.62,h*.52,0,0,Math.PI*2);ctx.stroke();}
+  else if(type==='art'){ctx.arc(x,y,r*.3,0,Math.PI*2);ctx.fill();}
+  else{const a=w*.55,t=y-h*.3,b=y+h*.38;ctx.moveTo(x-a,b);ctx.lineTo(x-a,t);ctx.lineTo(x+a,t);ctx.lineTo(x+a,b);ctx.moveTo(x,t);ctx.lineTo(x,b);ctx.stroke();}}
+function shapePath(type,x,y,r,hostile){if(nato())return framePath(x,y,r,hostile);ctx.beginPath();if(type==='inf')ctx.arc(x,y,r,0,Math.PI*2);
   else if(type==='tank')ctx.rect(x-r*.92,y-r*.92,r*1.84,r*1.84);
   else if(type==='eng'){for(let k=0;k<6;k++){const a=Math.PI/6+k*Math.PI/3,px=x+Math.cos(a)*r*1.08,py=y+Math.sin(a)*r*1.08;k?ctx.lineTo(px,py):ctx.moveTo(px,py);}ctx.closePath();}
   else{ctx.moveTo(x,y-r*1.15);ctx.lineTo(x+r*1.05,y+r*.75);ctx.lineTo(x-r*1.05,y+r*.75);ctx.closePath();}}
@@ -72,12 +82,18 @@ function draw(){
       if(settings.frontStyle==='two'){pass(G.frontSegP,'rgba(255,255,255,.8)',6,o);pass(G.frontSegE,'rgba(255,255,255,.8)',6,o);pass(G.frontSegE,foe,2.2,o);pass(G.frontSegP,COL[G.player],2.2,o);}
       else{pass(G.frontSeg,'rgba(255,255,255,.8)',6,0);pass(G.frontSeg,foe,2.2,-o);pass(G.frontSeg,COL[G.player],2.2,o);}
       ctx.lineCap='butt';}
-    // supply coverage as one cell-per-pixel image scaled up, so the tint has no seams between cells
-    if(G.showSup){const cv=G.cov[G.player],img=covCtx.createImageData(GW,GH),[r,g,bl]=G.player==='A'?[23,24,28]:[122,44,191];
-      for(let i=0;i<N;i++)if(cv[i]){img.data[i*4]=r;img.data[i*4+1]=g;img.data[i*4+2]=bl;img.data[i*4+3]=20;}
-      covCtx.putImageData(img,0,0);ctx.imageSmoothingEnabled=false;ctx.drawImage(covCv,0,0,W,H);ctx.imageSmoothingEnabled=true;
-      const s=G.sup[G.player];ctx.fillStyle=G.player==='A'?'rgba(23,24,28,.45)':'rgba(122,44,191,.45)';
-      for(let i=0;i<N;i++)if(s[i])ctx.fillRect((i%GW)*C-1,Math.floor(i/GW)*C-1,C+2,C+2);
+    // supply efficiency as one cell-per-pixel image scaled up (no seams between cells): the side's colour, stronger where
+    // supply is better, and amber (stronger the worse it is) below SUPPLY.ok, where the out-of-supply penalties begin
+    // supply as a heat map (one cell per pixel, scaled up smoothly): green at full supply through yellow at SUPPLY.ok,
+    // where the penalties begin, to red; deep red where your own ground has none (a pocket, or ground the enemy holds).
+    // The image is rebuilt only when the supply map changes.
+    if(G.showSup){const cv=G.cov[G.player];
+      if(covCv._src!==cv){covCv._src=cv;const img=covCtx.createImageData(GW,GH),home=G.player==='A'?1:-1;
+        for(let i=0;i<N;i++){const o=i*4;let c,a;
+          if(cv[i]){c=supHeat(cv[i]);a=80;}else if(M.side((i%GW)*C+C/2,Math.floor(i/GW)*C+C/2)===home&&(M.cls[i]!==WATER||M.road[i])){c=[150,20,30];a=95;}else continue;
+          img.data[o]=c[0];img.data[o+1]=c[1];img.data[o+2]=c[2];img.data[o+3]=a;}
+        covCtx.putImageData(img,0,0);}
+      ctx.drawImage(covCv,0,0,W,H);
       const dp=G.depot[G.player];ctx.strokeStyle=COL[G.player];ctx.setLineDash([6/z,5/z]);ctx.lineWidth=1.2/z;ctx.beginPath();ctx.arc(dp.x,dp.y,240,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}}
   ctx.setTransform(dpr,0,0,dpr,0,0);
   // place labels
@@ -136,9 +152,15 @@ function draw(){
   // depots
   for(const s of ['A','D']){const d=G.depot[s],[x,y]=ws(d.x,d.y);ctx.fillStyle='#fff';ctx.strokeStyle=COL[s];ctx.lineWidth=2;ctx.fillRect(x-18,y-8,36,16);ctx.strokeRect(x-18,y-8,36,16);
     ctx.fillStyle=COL[s];ctx.font=`500 9px ${css('--mono')}`;ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('DEPOT',x,y+.5);}
+  // Company Command: your rally point (a flag, dashed from the depot), the unit being built, and a raided depot
+  if(G.econ&&!G.replay){const e=G.econ[G.player],d=G.depot[G.player],[x,y]=ws(d.x,d.y),[rx,ry]=ws(e.rally.x,e.rally.y),q=e.q[0];
+    ctx.strokeStyle=COL[G.player];ctx.lineWidth=1.2;ctx.setLineDash([4,4]);ctx.beginPath();ctx.moveTo(x,y);ctx.lineTo(rx,ry);ctx.stroke();ctx.setLineDash([]);
+    ctx.lineWidth=2;ctx.beginPath();ctx.moveTo(rx,ry);ctx.lineTo(rx,ry-18);ctx.stroke();ctx.fillStyle=COL[G.player];ctx.beginPath();ctx.moveTo(rx,ry-18);ctx.lineTo(rx+11,ry-14);ctx.lineTo(rx,ry-10);ctx.closePath();ctx.fill();
+    if(q){ctx.fillStyle='rgba(255,255,255,.92)';ctx.fillRect(x-19,y+11,38,5);ctx.fillStyle=COL[G.player];ctx.fillRect(x-18,y+12,36*Math.min(1,q.t/q.T),3);}
+    if(e.raid){ctx.strokeStyle='rgba(255,59,48,'+(.55+.35*Math.sin(performance.now()/180))+')';ctx.lineWidth=2;ctx.setLineDash([6,5]);ctx.beginPath();ctx.arc(x,y,ECON.depotR*cam.z,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);}}
   const r=unitR(),vis=G.vis[G.player],showAll=G.phase==='over';
   // ghosts
-  ctx.setLineDash([3,3]);for(const g of G.ghosts.values()){const [x,y]=ws(g.x,g.y);ctx.globalAlpha=.55*(1-(G.time-g.t)/30);shapePath(g.type,x,y,r);ctx.strokeStyle=COL[G.player==='A'?'D':'A'];ctx.lineWidth=1.4;ctx.stroke();}
+  ctx.setLineDash([3,3]);for(const g of G.ghosts.values()){const [x,y]=ws(g.x,g.y);ctx.globalAlpha=.55*(1-(G.time-g.t)/30);shapePath(g.type,x,y,r,true);ctx.strokeStyle=COL[G.player==='A'?'D':'A'];ctx.lineWidth=1.4;ctx.stroke();}
   ctx.globalAlpha=1;ctx.setLineDash([]);
   // orders: an arrow along each unit's route, solid while paused and faint while the clock runs
   const still=G.paused||G.phase!=='play';
@@ -156,14 +178,18 @@ function draw(){
     if(x<-30||y<-30||x>vw+30||y>vh+30)continue;
     if(u.sel){ctx.strokeStyle=COL.sel;ctx.lineWidth=3;shapePath(u.type,x,y,r+4);ctx.stroke();}
     if(u.flash>0){ctx.fillStyle='rgba(255,170,0,.55)';ctx.beginPath();ctx.arc(x,y,r+5,0,Math.PI*2);ctx.fill();}
-    shapePath(u.type,x,y,r);ctx.fillStyle=COL[u.side];ctx.fill();
+    const foe=u.side!==G.player,N6=nato();shapePath(u.type,x,y,r,foe);ctx.fillStyle=COL[u.side];ctx.fill();
     ctx.lineWidth=settings.style==='paper'?1.5:2;ctx.strokeStyle=u.sup?'#fff':COL.road;if(!u.sup)ctx.setLineDash([2.5,2]);ctx.stroke();ctx.setLineDash([]);
-    if(u.type==='art'&&u.deployT>=3&&!u.moving){ctx.fillStyle='#fff';ctx.fillRect(x-r*.45,y+r*.15,r*.9,1.6);}
-    if(u.mode==='hold'&&u.side===G.player){ctx.fillStyle='#fff';ctx.fillRect(x-1.2,y-r*.55,2.4,r*.9);}
+    if(N6)natoIcon(u.type,x,y,r,foe);
+    // guns set up: a bar under the gun; holding: a bar down the middle (NATO: along the top of the frame)
+    if(u.type==='art'&&u.deployT>=3&&!u.moving){ctx.fillStyle='#fff';ctx.fillRect(x-r*.45,y+r*(N6?.5:.15),r*.9,1.6);}
+    if(u.mode==='hold'&&!foe){ctx.fillStyle='#fff';if(N6)ctx.fillRect(x-r*.7,y-r*.88-4.5,r*1.4,2.6);else ctx.fillRect(x-1.2,y-r*.55,2.4,r*.9);}
     // dug in: a parapet arc in front of the unit, toward the enemy's side of the map
-    if(dugIn(u)){const up=u.side==='A'?-1:1;ctx.strokeStyle='#fff';ctx.lineWidth=4.5;ctx.beginPath();ctx.arc(x,y,r+4,up<0?Math.PI*1.15:Math.PI*.15,up<0?Math.PI*1.85:Math.PI*.85);ctx.stroke();
+    if(dugIn(u)){const up=u.side==='A'?-1:1;ctx.strokeStyle='#fff';ctx.lineWidth=4.5;ctx.beginPath();ctx.arc(x,y,N6?r*1.45+4:r+4,up<0?Math.PI*1.15:Math.PI*.15,up<0?Math.PI*1.85:Math.PI*.85);ctx.stroke();
       ctx.strokeStyle=COL.trench;ctx.lineWidth=2.4;ctx.stroke();}
-    if(u.hp<u.max){const w=r*2.2;ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(x-w/2-1,y+r+3,w+2,4);ctx.fillStyle=u.hp/u.max>.35?COL[u.side]:COL.road;ctx.fillRect(x-w/2,y+r+4,w*u.hp/u.max,2);}}
+    if(u.hp<u.max){const w=r*2.2,hy=y+r+(N6&&foe?r*.45:0);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(x-w/2-1,hy+3,w+2,4);
+      // a wounded unit's bar: the part it can't heal back is grey, after a white gap at the cap
+      if(u.wounded){ctx.fillStyle='#a3a3aa';ctx.fillRect(x-w/2+w*WOUND.cap+1.5,hy+4,w*(1-WOUND.cap)-1.5,2);}ctx.fillStyle=u.hp/u.max>.35?COL[u.side]:COL.road;ctx.fillRect(x-w/2,hy+4,w*u.hp/u.max,2);}}
   // effects
   for(const t of G.tracers){const [x1,y1]=ws(t.x1,t.y1),[x2,y2]=ws(t.x2,t.y2);ctx.strokeStyle=t.side==='A'?'rgba(255,140,0,.85)':'rgba(190,90,255,.85)';ctx.lineWidth=t.heavy?2:1;
     ctx.globalAlpha=t.t/.2;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}ctx.globalAlpha=1;
@@ -176,9 +202,19 @@ function draw(){
     const x=Math.min(drag.x0,drag.x1),y=Math.min(drag.y0,drag.y1),w=Math.abs(drag.x1-drag.x0),h=Math.abs(drag.y1-drag.y0);ctx.fillRect(x,y,w,h);ctx.strokeRect(x+.5,y+.5,w,h);}
   drawScale();}
 // the scale bar: white on the map, just above the command dock (scaleAnchor)
+// supply heat map colours, by efficiency 0–100
+const SUP_RAMP=[[0,[205,30,40]],[30,[255,110,30]],[60,[255,204,0]],[80,[150,215,50]],[100,[40,190,90]]];
+function supHeat(v){for(let k=1;k<SUP_RAMP.length;k++){const [b,cb]=SUP_RAMP[k];if(v<=b){const [a,ca]=SUP_RAMP[k-1],t=(v-a)/(b-a);return ca.map((c,j)=>Math.round(c+(cb[j]-c)*t));}}return SUP_RAMP[SUP_RAMP.length-1][1];}
+// the heat map's key, left of the scale bar while supply is shown
+function drawSupKey(){const w=130,x1=scaleAt.x-150,x0=x1-w,y=scaleAt.y;ctx.save();
+  const g=ctx.createLinearGradient(x0,0,x1,0);for(const [v,c] of SUP_RAMP)g.addColorStop(v/100,`rgb(${c})`);
+  ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=3;ctx.shadowOffsetY=1;ctx.fillStyle=g;ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y-6,w,6,3);else ctx.rect(x0,y-6,w,6);ctx.fill();
+  ctx.fillStyle='#fff';ctx.font=`600 11px ${css('--font')}`;ctx.textBaseline='alphabetic';ctx.textAlign='left';ctx.fillText('Supply 0%',x0,y-11);ctx.textAlign='right';ctx.fillText('100%',x1,y-11);
+  ctx.fillRect(x0+w*SUPPLY.ok-.75,y-9,1.5,12);ctx.restore();}
 function drawScale(){if(!scaleAt)scaleAnchor();const target=110/cam.z*M_PER_PX,nice=[100,200,250,500,1000,2000].reduce((b,v)=>Math.abs(v-target)<Math.abs(b-target)?v:b),px=nice/M_PER_PX*cam.z;
   const x1=scaleAt.x,x0=x1-px,y=scaleAt.y;ctx.save();ctx.shadowColor='rgba(0,0,0,.55)';ctx.shadowBlur=3;ctx.shadowOffsetY=1;ctx.fillStyle='#fff';
   ctx.beginPath();if(ctx.roundRect)ctx.roundRect(x0,y-4,px,4,2);else ctx.rect(x0,y-4,px,4);ctx.fill();
-  ctx.font=`600 11px ${css('--font')}`;ctx.textAlign='right';ctx.textBaseline='alphabetic';ctx.fillText(nice>=1000?nice/1000+' km':nice+' m',x1,y-9);ctx.restore();}
+  ctx.font=`600 11px ${css('--font')}`;ctx.textAlign='right';ctx.textBaseline='alphabetic';ctx.fillText(nice>=1000?nice/1000+' km':nice+' m',x1,y-9);ctx.restore();
+  if(G&&G.showSup&&!G.replay&&G.cov[G.player])drawSupKey();}
 const cssCache={};function css(v){return cssCache[v]||(cssCache[v]=getComputedStyle(document.documentElement).getPropertyValue(v).trim());}
 

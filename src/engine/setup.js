@@ -21,6 +21,8 @@ function rebuildTrenchMask(){M.trench.fill(0);for(const t of G.trenches)for(let 
 // A side's force: the base table, the battlefield's changes, then difficulty if the computer plays that side.
 // o: a setup {mode, scen, player, diff}; the running game's by default (the New game screen passes the chosen options)
 function forceFor(side,base,o){o=o||{mode:M.mode,scen:G.scen,player:G.player,diff:G.diff,mp:!!G.mp};const sc=SCENARIOS[o.scen]||SCENARIOS.standard,f={...base},dm=(MAP_MODES[o.mode].forces||{})[side]||{};
+  // (Company Command: both sides start with the same small company, whatever the battlefield or difficulty)
+  if(sc.econ)return{...ECON.start};
   for(const k in dm)f[k]=Math.max(k==='inf'?3:0,(f[k]||0)+dm[k]);
   const sf=(sc.forces||{})[side]||{};for(const k in sf)f[k]=Math.max(k==='inf'?3:0,(f[k]||0)+sf[k]);
   if(side!==o.player&&!o.mp){const k=DIFFICULTY[o.diff].force;for(const t of ['inf','tank','art'])if(f[t])f[t]=Math.max(1,Math.round(f[t]*k));}
@@ -82,16 +84,16 @@ function newGame(opts){
   if(RP){RP=null;document.body.classList.remove('replaying');$('replayBar').hidden=true;}
   opts.mode=MAP_MODES[opts.mode]?opts.mode:'river';opts.diff=DIFFICULTY[opts.diff]?opts.diff:'normal';
   opts.climate=CLIMATES[opts.climate]?opts.climate:'temperate';opts.scen=SCENARIOS[opts.scen]?opts.scen:'standard';const sc=SCENARIOS[opts.scen];
-  opts.gen2=!!opts.gen2;const fresh=!M||M.seed!==opts.seed||M.mode!==opts.mode||!!M.gen2!==opts.gen2;if(fresh)M=makeMap(opts.seed,opts.mode,opts.gen2);
+  opts.gen2=genV(opts.gen2);const fresh=!M||M.seed!==opts.seed||M.mode!==opts.mode||genV(M.gen2)!==opts.gen2;if(fresh)M=makeMap(opts.seed,opts.mode,opts.gen2);
   if(fresh||M.climate!==opts.climate){setClimate(opts.climate);renderTerrain();}fieldCache.clear();
   G={player:opts.side,strength:opts.strength,seed:opts.seed,mode:opts.mode,gen2:opts.gen2,diff:opts.diff,climate:opts.climate,scen:opts.scen,limit:sc.limit,holdA:0,reinfDone:new Set(),nextId:1,units:[],trenches:[],userTrench:[],undo:[],time:0,paused:!opts.mp,speed:opts.mp?1:G?G.speed:1,mp:opts.mp||null,
     phase:(opts.side==='D'||opts.mp)&&sc.deploy!==false?'deploy':'play',fog:opts.mp?true:settings.fog,orderMode:'move',tool:null,budget:BUDGET[opts.strength]*MAP_MODES[opts.mode].budget,
     objs:M.objs.map(o=>({...o,owner:sc.neutral?'N':'D',p:sc.neutral?0:1,contested:false})),depot:{A:M.depA,D:M.depD},
     vis:{A:new Set(),D:new Set()},sup:{A:new Uint8Array(N),D:new Uint8Array(N)},cov:{A:new Uint8Array(N),D:new Uint8Array(N)},claim:{A:new Uint8Array(N),D:new Uint8Array(N)},acc:{vis:0,sup:0,ai:0,cap:0,front:0},ctrl:null,ctrlS:null,frontSeg:[],frontSegP:[],frontSegE:[],
-    bridges:M.spans.map((b,id)=>({id,x:b.sym.x,y:b.sym.y,ang:b.sym.ang,len:b.sym.len,kind:b.sym.kind,cells:b.cells,down:false,hp:CROSSING_HP.bridge,max:CROSSING_HP.bridge})),
+    bridges:M.spans.map((b,id)=>({id,x:b.sym.x,y:b.sym.y,ang:b.sym.ang,len:b.sym.len,kind:b.sym.kind,cells:b.cells,down:false,hp:CROSSING_HP.bridge,max:CROSSING_HP.bridge})),econ:null,
     pontoons:[],pid:0,dmg:new Uint8Array(N),dmgList:[],dmgSpots:[],dmgLines:[],air:{A:0,D:0},airT:{A:-99,D:-99},strikes:[],
     seen:{A:new Map(),D:new Map()},dai:null,shells:[],tracers:[],booms:[],craters:[],ghosts:new Map(),marks:[],log:[],stats:{lost:{A:0,D:0}},showSup:false,over:null};
-  M.dmg=G.dmg;G.air={A:airFor('A'),D:airFor('D')};applyCrossings();G.trenches=sc.trenches===false?[]:autoTrenches(opts.strength);rebuildTrenchMask();spawn();scenarioSetup();G.plan=G.player==='D'&&!opts.mp?planAttack():null;computeVis();computeSupply('A');computeSupply('D');
+  M.dmg=G.dmg;G.air={A:airFor('A'),D:airFor('D')};applyCrossings();G.trenches=sc.trenches===false?[]:autoTrenches(opts.strength);rebuildTrenchMask();if(sc.econ)econInit();spawn();scenarioSetup();G.plan=G.player==='D'&&!opts.mp?planAttack():null;computeVis();computeSupply('A');computeSupply('D');
   $('startModal').hidden=true;$('endModal').hidden=true;$('startModal').classList.remove('showmap');$('ngShowMapT').textContent='Show Map';closePops();ui.panel='folded';ui.modsG=false;
   $('deployTools').hidden=G.phase!=='deploy'||G.player!=='D';updateBudget();setMode('move');setTool(null);
   G.code=encodeGame(opts);G.budget0=G.budget;
