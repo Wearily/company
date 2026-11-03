@@ -10,7 +10,7 @@ const TYPES={
   inf:{name:'Infantry',hp:100,speed:15,range:85,vision:175},
   tank:{name:'Armor',hp:240,speed:27,range:125,vision:150},
   art:{name:'Artillery',hp:80,speed:12,range:430,minRange:90,vision:120},
-  eng:{name:'Engineers',hp:80,speed:14,range:70,vision:140},
+  eng:{name:'Engineers',hp:110,speed:14,range:70,vision:140},
 };
 // the HUD fonts have no hexagon glyph, so engineers get an inline SVG
 const HEX='<svg class="hex" viewBox="0 0 10 10"><polygon points="5,0 9.3,2.5 9.3,7.5 5,10 .7,7.5 .7,2.5"/></svg>';
@@ -35,6 +35,10 @@ const SHELL_VS={hit:14,bridge:10,pontoon:15,crater:.45};
 // (so it's slower than leaving the road) but still carries supply;
 // an engineer clears one cell every `cellTime` s, working on cells within `reach` px
 const ROAD_DMG={radius:14,move:.5,cellTime:2.5,reach:22};
+// Engineer works in play (works.js). A dirt road is road flag DIRT.flag, laid one cell per cellTime s per engineer from
+// within reach px, and gives half a road's benefit (mult, SUPPLY.road). A trench dug in play grows DIG.rate px a second per engineer.
+const DIRT={flag:5,cellTime:1.2,reach:22};
+const DIG={rate:10,reach:24};
 // high ground: bonuses grow with height from `from` to full at `to` (normalized height). At full height direct fire
 // reaches `range` farther, artillery `artRange` farther, vision `vision` farther, and incoming fire is cut by `cover`.
 const HILL={from:.62,to:.95,range:.4,artRange:.2,vision:.35,cover:.12};
@@ -50,7 +54,7 @@ const HILL={from:.62,to:.95,range:.4,artRange:.2,vision:.35,cover:.12};
 // `drain`, so supply lasts a while after a cut. Below `ok` the out-of-supply penalties grow (supF); healing runs at
 // `heal` HP/s times the stocks.
 const SUPPLY={depot:240,zoc:56,claim:140,
-  road:[0,.08,.03,.03,.12],field:[.8,.9,1.3,.6,1.6,1.6,2.5],crater:2,rejoin:25,
+  road:[0,.08,.03,.03,.12,.7],field:[1.6,1.8,2.6,1.1,3,3,4.5],crater:3,rejoin:25,
   ok:.6,fill:1/20,drain:1/120,heal:1.5};
 // Trenches. A unit is dug in when it stands on a trench (within about 12 px of the line) and isn't moving. Dug in, it
 // takes `fire` × direct-fire damage, `shell` × artillery and `air` × bomb damage, and is seen at `hide` × enemy vision
@@ -63,6 +67,9 @@ const STREAM_FIRE=.5,STREAM_EXPOSED=1.15;
 // wounds: a unit knocked below `at` of its health is wounded for the rest of the battle and heals back only to `cap`
 // of it (its health bar shows the lost part greyed out); hpTop(u) is the most a unit can heal to
 const WOUND={at:.25,cap:.5};
+// The battle rating (battleRating, sim.js): a score out of 100 and its grade, from the result, the exchange of losses,
+// firepower (damage dealt against taken), the force that came through, and a bonus for a quick win.
+const RATING={grades:[[90,'S','Decisive'],[75,'A','Excellent'],[60,'B','Good'],[45,'C','Fair'],[30,'D','Poor'],[0,'E','Disastrous']],speedAt:.6,speedBonus:8,campBonus:{S:120,A:60}};
 const hpTop=u=>u.wounded?u.max*WOUND.cap:u.max;
 // Frozen rivers and lakes (climates with frozen:true, i.e. Winter). Infantry and engineers can cross on foot at ICE.move; the ice won't
 // take armour or guns. Out on the ice there is nothing to hide behind: a unit there fires at ICE.fire, takes ICE.exposed
@@ -135,7 +142,32 @@ const SCENARIOS={
   command:{code:'CC',name:'Company Command',isNew:true,desc:'Both companies start small at their depots. Earn manpower and fuel, build units, and hold objectives to drain the enemy’s victory points.',
     goal:{A:'Drain the enemy’s 500 victory points by holding more objectives, or destroy their company.',D:'Drain the enemy’s 500 victory points by holding more objectives, or destroy their company.'},
     limit:1500,neutral:true,deploy:false,trenches:false,econ:true,vp:true},
+  // (campaign only, hidden from the New game list: an attack on a stronghold must take all three objectives)
+  stronghold:{code:'SH',name:'Stronghold',hidden:true,desc:'A fortified sector: take all three objectives to break it.',
+    goal:{A:'Take all three objectives before the clock runs out.',D:'Keep at least one objective until the clock runs out.'},limit:900,need:3},
 };
+// Veterancy (campaign units; u.vet is 0–3 and unset elsewhere, which counts as 0 and changes nothing). xp: the levels'
+// thresholds; a unit earns `battle` xp for each battle it survives and 1 per `perDmg` damage dealt. The rest are the
+// multipliers by level (vetK): fire dealt, damage taken, vision range, healing rate.
+const VET={xp:[4,10,20],battle:1,perDmg:250,fire:[1,1.1,1.2,1.3],take:[1,1,.95,.9],vision:[1,1.05,1.1,1.15],heal:[1,1.1,1.2,1.3],name:['','Veteran','Elite','Guards']};
+const vetK=(u,k)=>VET[k][u.vet|0];
+const vetLevel=xp=>VET.xp.filter(t=>xp>=t).length;
+// The campaign (campaign.js): a region of cols × rows sectors (a hex grid), the player holding the south row at the
+// start. start: the company's first units; mp0: its manpower. commit: the most units a battle takes. income: manpower a
+// day, base plus each held sector by kind, minus upkeep per unit, never below floor. refit: the manpower to clear a
+// wound. rest.heal: the share of its cap a unit out of battle heals a day (restHeal when the whole company rests).
+// strength: the enemy garrison by row from the north (light / standard / heavy, FORCES keys), weighted. enemy: the
+// reserve grows by growth a day; from counterAt it may counterattack (counterP a day, more with a bigger reserve), with
+// an attack force of ATK × wave[0..2] by reserve. days: the campaign's length. modeW: battlefield weights.
+const CAMP={cols:4,rows:4,days:30,commit:18,start:{inf:8,tank:3,art:2,eng:2},mp0:600,
+  income:{base:120,floor:60,sector:{town:70,works:90,crossing:40,crossroads:40,hill:30,woods:25,village:45}},upkeep:{inf:4,tank:9,art:7,eng:3},
+  refit:120,rest:{heal:.4,restHeal:.8},
+  strength:[{heavy:3,standard:1},{heavy:1,standard:2},{standard:2,light:1},{standard:1}],
+  enemy:{growth:{easy:.5,normal:.8,hard:1.1},counterP:{easy:.2,normal:.3,hard:.4},counterAt:3,blitzAt:6,wave:[.7,1,1.3]},
+  modeW:{river:4,city:2,steppe:3,forest:3,lake:1.2,mountain:1},
+  kinds:{river:['town','crossing','village','works','crossing'],lake:['crossing','village','woods','town'],city:['town','works','town'],steppe:['village','crossroads','works','hill'],
+    mountain:['hill','village','hill'],forest:['woods','village','hill','woods']}};
+const CAMP_NAMES=['Able','Baker','Charlie','Dog','Easy','Fox','George','How','Item','King'];
 // Company Command (econ.js). Rates are per minute. Each side starts with `start` at its depot and mp0 manpower / fuel0
 // fuel. cost: manpower, fuel, build time (s) and population per unit type. Income: inc (base) + obj per objective held
 // + terr × territory share (ground covered by the side's own supply network: the enemy's half in full, its own half at

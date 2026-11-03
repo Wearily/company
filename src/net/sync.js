@@ -48,7 +48,10 @@ function mpSnap(S){const gs=otherSide(G.player),f={t:r1(G.time),ph:G.phase},u=[]
   const pk=G.pontoons.map(p=>p.id+(p.done?'d':'')).join();
   if(pk!==S.pk){S.pk=pk;f.pf=G.pontoons;}else f.pn=G.pontoons.map(p=>[p.id,Math.round(p.progress*1000)/1000,Math.round(p.hp)]);
   if(G.dmgList!==S.dmg){S.dmg=G.dmgList;f.dmg=G.dmgList;}
-  const tr=G.trenches.map(t=>t.length).join()+'/'+G.userTrench.length;if(tr!==S.tr){S.tr=tr;f.tr=G.trenches;f.ut=G.userTrench.map(t=>G.trenches.indexOf(t));}
+  if(G.dirtList!==S.dirt){S.dirt=G.dirtList;f.dirt=G.dirtList;}
+  if(G.dirtRoads.length!==S.dr){S.dr=G.dirtRoads.length;f.dr=G.dirtRoads.map(r=>r.pts);}
+  const wk=JSON.stringify(G.works.filter(w=>w.side===gs).map(w=>({id:w.id,kind:w.kind,pts:w.pts,done:w.done,len:w.len,todo:w.todo})));if(wk!==S.wk){S.wk=wk;f.wk=wk;}
+  const tr=G.trenches.map(t=>t.length).join()+'/'+G.userTrench.length;if(tr!==S.tr){S.tr=tr;f.tr=G.trenches;f.ut=G.userTrench.map(t=>G.trenches.indexOf(t));f.ts=G.trenches.map(t=>t.side||'');}
   if(G.cov[gs]!==S.cov){S.cov=G.cov[gs];f.cov=rle(G.cov[gs]);f.sup=rle(G.sup[gs]);}
   // shells, bursts and air strikes since the last frame, with the game time each began
   const ev=[];for(const s of G.shells)if(!s._n){s._n=1;ev.push(['s',r1(G.time-s.t),r1(s.x0),r1(s.y0),r1(s.x1),r1(s.y1),s.T,s.side]);}
@@ -56,7 +59,7 @@ function mpSnap(S){const gs=otherSide(G.player),f={t:r1(G.time),ph:G.phase},u=[]
   for(const s of G.strikes)if(!s._n){s._n=1;ev.push(['a',s.t,r1(s.x),r1(s.y),s.ang,s.side]);}
   if(ev.length)f.ev=ev;
   if(G.mp.hostTime){f.pa=G.paused?1:0;f.sp=G.speed;}
-  if(G.over)f.over=G.over;
+  if(G.over){f.over=G.over;f.rt={A:battleRating('A'),D:battleRating('D')};}
   return f;}
 
 // A host whose tab is in the background gets no animation frames, so the keep-alive timer (about once a second)
@@ -96,7 +99,10 @@ function mpOnFrame(f){const N2=mpGuestState(),me=G.player;N2.prev=N2.cur;N2.cur=
   else if(f.pn)for(const [id,pr,hp] of f.pn){const p=G.pontoons.find(q=>q.id===id);if(p){p.progress=pr;p.hp=hp;}}
   if(roads)applyCrossings();
   if(f.dmg){G.dmg.fill(0);for(const i of f.dmg)G.dmg[i]=1;roadDamageChanged();}
-  if(f.tr){G.trenches=f.tr;G.userTrench=(f.ut||[]).map(i=>G.trenches[i]).filter(Boolean);rebuildTrenchMask();}
+  if(f.tr){G.trenches=f.tr;if(f.ts)G.trenches.forEach((t,k)=>{if(f.ts[k])t.side=f.ts[k];});G.userTrench=(f.ut||[]).map(i=>G.trenches[i]).filter(Boolean);rebuildTrenchMask();}
+  if(f.dirt){G.dirt.fill(0);for(const i of f.dirt)G.dirt[i]=1;dirtChanged();}
+  if(f.dr)G.dirtRoads=f.dr.map(pts=>({pts}));
+  if(f.wk)G.works=JSON.parse(f.wk).map(w=>({...w,side:me}));
   if(f.cov){unrle(f.cov,G.cov[me]);unrle(f.sup,G.sup[me]);covCv._src=null;}
   const R=G.rec,rec=R&&f.ph!=='deploy';
   if(f.ev)for(const e of f.ev){if(e[0]==='s'){const s={t:e[1],x0:e[2],y0:e[3],x1:e[4],y1:e[5],T:e[6],side:e[7]};N2.shells.push(s);if(rec)R.shells.push(s);}
@@ -105,6 +111,7 @@ function mpOnFrame(f){const N2=mpGuestState(),me=G.player;N2.prev=N2.cur;N2.cur=
   if(f.rf&&rec)for(const k of f.rf)if(!N2.rf.has(k)){N2.rf.add(k);const r=(SC().reinf||[])[k];if(r)R.events.push({t:f.t,k:'reinf',side:r.side});}
   // (the recording starts again when the battle begins, as the host's does)
   if(f.ph!==G.phase&&G.phase!=='over'&&f.ph!=='over'){G.phase=f.ph;if(f.ph==='play')recInit();mpPhaseUI();}
+  if(f.rt)G.mpRating=f.rt;
   if(f.over&&!N2.over){N2.over=true;G.phase='over';G.over=f.over;G.time=f.t;mpRec(f,true);const g=G;setTimeout(()=>{if(!RP&&G===g)showEnd(f.over.winner,f.over.reason);},900);}
   else if(rec&&!N2.over)mpRec(f);}
 // The guest records the battle from the stream, in the host's format (a snapshot every REC_DT s of game time), so it

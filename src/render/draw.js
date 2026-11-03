@@ -106,10 +106,20 @@ function draw(){
   if(G.phase==='deploy'){ctx.strokeStyle=COL.D;ctx.lineWidth=1.5;ctx.setLineDash([8,6]);ctx.beginPath();for(let x=0;x<=W;x+=20){const [sx,sy]=ws(x,M.ry(x)+ZONE);x?ctx.lineTo(sx,sy):ctx.moveTo(sx,sy);}ctx.stroke();ctx.setLineDash([]);
     const [lx,ly]=ws(W*.5,M.ry(W*.5)+ZONE+14);label('DEFENDER DEPLOYMENT LIMIT',lx,ly,`600 10px ${css('--body')}`,COL.D,'2px');}
   // (under fog, an attacker sees only the stretches of the defender's trenches it has had in sight)
-  for(const t of G.trenches){if(G.replay||G.player==='D'||!G.fog){drawTrench(t);continue;}let run=[];
+  for(const t of G.trenches){if(G.replay||G.player==='D'||!G.fog||t.side===G.player){drawTrench(t);continue;}let run=[];
     for(let k=0;k<t.length-1;k++){if(trenchKnown(G.player,t[k],t[k+1])){if(!run.length)run.push(t[k]);run.push(t[k+1]);}else{if(run.length>1)drawTrench(run);run=[];}}
     if(run.length>1)drawTrench(run);}
   if(tdraw)drawTrench(tdraw,true);
+  // dirt roads: each road's line, the stretches whose cells are laid (a tan track with a dark edge); then the player's
+  // planned works and a road being drawn
+  if(G.dirtRoads&&G.dirtRoads.length){const z=cam.z,ds=G.dirt;ctx.lineCap='round';ctx.lineJoin='round';
+    for(const [col,lw] of [['rgba(70,50,28,.55)',5.5*z],['#b8956a',3.6*z]]){ctx.strokeStyle=col;ctx.lineWidth=Math.max(1.2,lw);ctx.beginPath();
+      for(const rd of G.dirtRoads){const sm=roadSamples(rd);let on=false;for(let k=0;k<sm.length;k++){const q=sm[k];if(!ds[q.i]){on=false;continue;}const [x,y]=ws(q.x,q.y);if(on)ctx.lineTo(x,y);else{ctx.moveTo(x,y);ctx.lineTo(x+.01,y);on=true;}}}
+      ctx.stroke();}ctx.lineCap='butt';ctx.lineJoin='miter';}
+  if(!G.replay)for(const w of G.works||[]){if(w.side!==G.player)continue;ctx.setLineDash([5,5]);ctx.lineWidth=2;ctx.strokeStyle=w.kind==='road'?'rgba(120,85,40,.75)':'rgba(74,53,35,.6)';ctx.beginPath();
+    const pts=w.kind==='road'?w.pts:[alongPts(w.pts,w.done),...w.pts.slice(alongPts(w.pts,w.done).k+1)];pts.forEach((p,k)=>{const [x,y]=ws(p.x,p.y);k?ctx.lineTo(x,y):ctx.moveTo(x,y);});ctx.stroke();ctx.setLineDash([]);}
+  if(rdraw&&rdraw.length){ctx.setLineDash([6,5]);ctx.lineWidth=2;ctx.strokeStyle='rgba(120,85,40,.9)';ctx.beginPath();rdraw.forEach((p,k)=>{const [x,y]=ws(p.x,p.y);k?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    if(hoverPt)ctx.lineTo(hoverPt.x,hoverPt.y);ctx.stroke();ctx.setLineDash([]);for(const p of rdraw){const [x,y]=ws(p.x,p.y);ctx.fillStyle='#fff';ctx.beginPath();ctx.arc(x,y,4,0,Math.PI*2);ctx.fill();ctx.strokeStyle='rgba(120,85,40,.9)';ctx.lineWidth=1.5;ctx.stroke();}}
   // a crossing worn down by shelling shows how much is left
   for(const c of strikable()){if(c.hp>=c.max)continue;const [x,y]=ws(c.x,c.y);label(Math.max(0,Math.round(c.hp/c.max*100))+'%',x,y-14,`600 10px ${css('--mono')}`,COL.road);}
   // pontoons: your own and finished ones always show, an enemy site only once your units can see it
@@ -189,7 +199,10 @@ function draw(){
       ctx.strokeStyle=COL.trench;ctx.lineWidth=2.4;ctx.stroke();}
     if(u.hp<u.max){const w=r*2.2,hy=y+r+(N6&&foe?r*.45:0);ctx.fillStyle='rgba(255,255,255,.9)';ctx.fillRect(x-w/2-1,hy+3,w+2,4);
       // a wounded unit's bar: the part it can't heal back is grey, after a white gap at the cap
-      if(u.wounded){ctx.fillStyle='#a3a3aa';ctx.fillRect(x-w/2+w*WOUND.cap+1.5,hy+4,w*(1-WOUND.cap)-1.5,2);}ctx.fillStyle=u.hp/u.max>.35?COL[u.side]:COL.road;ctx.fillRect(x-w/2,hy+4,w*u.hp/u.max,2);}}
+      if(u.wounded){ctx.fillStyle='#a3a3aa';ctx.fillRect(x-w/2+w*WOUND.cap+1.5,hy+4,w*(1-WOUND.cap)-1.5,2);}ctx.fillStyle=u.hp/u.max>.35?COL[u.side]:COL.road;ctx.fillRect(x-w/2,hy+4,w*u.hp/u.max,2);}
+    // veterancy (campaign): one chevron a level above the symbol
+    if(u.vet>0){const top=y-r-(N6?9:4);ctx.lineCap='round';ctx.lineJoin='round';for(const [col,lw] of [['rgba(0,0,0,.55)',2.6],['#fff',1.4]]){ctx.strokeStyle=col;ctx.lineWidth=lw;
+      for(let k=0;k<u.vet;k++){const cy=top-k*4;ctx.beginPath();ctx.moveTo(x-3.5,cy+2);ctx.lineTo(x,cy-1);ctx.lineTo(x+3.5,cy+2);ctx.stroke();}}ctx.lineCap='butt';ctx.lineJoin='miter';}}
   // effects
   for(const t of G.tracers){const [x1,y1]=ws(t.x1,t.y1),[x2,y2]=ws(t.x2,t.y2);ctx.strokeStyle=t.side==='A'?'rgba(255,140,0,.85)':'rgba(190,90,255,.85)';ctx.lineWidth=t.heavy?2:1;
     ctx.globalAlpha=t.t/.2;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();}ctx.globalAlpha=1;

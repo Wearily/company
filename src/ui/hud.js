@@ -76,7 +76,7 @@ function updateHUD(force){
   for(const id of ['sideBadge','sideBadge2']){const b=$(id);b.textContent=badge[0];b.className='side-badge '+badge[1];}
   $('scenName').textContent=sc.name;
   $('goalCard').textContent=rp?`${word} · ${G.over.reason}`:sc.goal[me];
-  const meta=`${MAP_MODES[G.mode].name}${M.look?' · '+M.look.name:''} · ${CLIMATES[G.climate].name} · ${G.code||''}`;$('sector').textContent=`${sc.name} · ${meta}`;$('sector2').textContent=meta;
+  const meta=`${G.camp?`Day ${G.camp.day} · ${G.camp.company} · ${G.camp.name} · `:''}${MAP_MODES[G.mode].name}${M.look?' · '+M.look.name:''} · ${CLIMATES[G.climate].name} · ${G.code||''}`;$('sector').textContent=`${sc.name} · ${meta}`;$('sector2').textContent=meta;
   $('scenCard').hidden=!docked&&ui.compact.scen;if(docked)delete $('scenCard').dataset.tip;else $('scenCard').dataset.tip='Collapse';$('scenPill').hidden=docked||!ui.compact.scen;
   // status capsule: the clock, the three objectives, and the next reinforcements or the A hold timer
   const st=$('status'),cmp=compactTop&&!docked;st.classList.toggle('compact',cmp);
@@ -97,6 +97,7 @@ function updateHUD(force){
   // (in multiplayer only a host given the time controls can pause or change speed; without them the speed is hidden)
   const tc=timeCtl(),pb=$('btnPause');setH(pb,G.paused?ICON.play:ICON.pause);pb.disabled=!play||!tc;pb.dataset.tip=G.paused?(G.time<1?'Start':'Resume'):'Pause';pb.setAttribute('aria-label',pb.dataset.tip+' (Space)');
   document.querySelectorAll('#speed button').forEach(b=>{b.disabled=!play||!tc;b.classList.toggle('on',+b.dataset.s===G.speed);});$('btnSpeedC').disabled=!play||!tc;$('btnSpeedC').textContent=G.speed+'×';
+  $('btnRetreat').hidden=!(G.camp&&G.phase!=='over'&&!rp);
   const noSpeed=!!(G.mp&&!G.mp.hostTime);$('speed').style.display=noSpeed?'none':'';$('btnSpeedC').style.display=noSpeed?'none':'';
   // the inspector (Floating: the left panel; Docked: the right bar) opens with a selection unless you closed it; a new
   // battle starts with it folded ('folded'), and it stays folded until you open it from the rail
@@ -138,7 +139,7 @@ function updateHUD(force){
   const cb=ui.compact.bottom&&!docked&&!phone();$('selBar').hidden=cb;$('selPill').hidden=!cb;
   const md=$('modes');md.hidden=!play;md.classList.toggle('compact',cb);$('deployTools').hidden=!dep||me!=='D';
   const hasT=t=>sel.some(u=>u.type===t),air=G.air[me]||0;
-  const can={move:ns>0,fire:hasT('art'),bridge:hasT('eng'),repair:hasT('eng'),air:air>0};
+  const can={move:ns>0,fire:hasT('art'),bridge:hasT('eng'),repair:hasT('eng'),road:hasT('eng')&&G.phase==='play',dig:hasT('eng')&&G.phase==='play',air:air>0};
   document.querySelectorAll('#modes [data-mode]').forEach(b=>{const m=b.dataset.mode;b.disabled=!can[m];b.classList.toggle('on',can[m]&&G.orderMode===m);b.setAttribute('aria-pressed',b.classList.contains('on'));});
   $('btnHold').disabled=!ns;$('airLeft').textContent=air;$('airLeft').hidden=!air;
   const lt=$('btnOrdersCompact');lt.dataset.tip=cb?'Show labels':'Hide labels';lt.setAttribute('aria-label',lt.dataset.tip);lt.firstElementChild.style.transform=cb?'rotate(180deg)':'';
@@ -151,13 +152,15 @@ function updateHUD(force){
   if(dep&&me!=='D'){lead='Deployment';bt='The defender is deploying. The battle starts when they’re ready'+dclk;}
   else if(dep){lead='Deployment';bt=(G.tool==='trench'?'Drag on the map to dig a trench':ns?`Click the map to place ${units}`:'Select units, click the map to place them north of the dashed line, then Begin Battle')+dclk;}
   else if(play){const om=G.orderMode,ne=sel.filter(u=>u.type==='eng').length,na=G.air[me];let hint;
-    const name={move:'Move',fire:'Fire mission',bridge:'Pontoon',repair:'Repair road',air:'Air strike',rally:'Rally point'}[om];
+    const name={move:'Move',fire:'Fire mission',bridge:'Pontoon',repair:'Repair road',road:'Dirt road',dig:'Dig trench',air:'Air strike',rally:'Rally point'}[om];
     if(om==='rally')hint='Click the map where new units should gather';
     else if(om==='air')hint=na?`Click a target, or a bridge to destroy it · ${na} left`:'No air strikes left';
     else if(om==='repair')hint=ne?`Click cratered road to repair it with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click cratered road';
     else if(om==='bridge')hint=ne?`Click the river to build a pontoon bridge with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then click the river';
+    else if(om==='road')hint=ne?(rdraw&&rdraw.length?`Click to add the next node · click the last node, Enter or double-click to start laying it with ${ne} engineer${ne>1?'s':''} · Esc to cancel`:'Click the map where the dirt road starts, then each node along it'):'Select engineers, then click the map';
+    else if(om==='dig')hint=ne?`Drag on the map to dig a trench with ${ne} engineer${ne>1?'s':''}`:'Select engineers, then drag on the map';
     else hint=ns?`Click the map to ${{move:'move',fire:'call a fire mission with'}[om]} ${units}${om==='move'?' · Ctrl-click to go straight · Shift to queue':''}`:'Click a unit or drag a box to select';
-    const special=om==='air'||om==='bridge'||om==='repair'||om==='rally';
+    const special=om==='air'||om==='bridge'||om==='repair'||om==='rally'||om==='road'||om==='dig';
     if(G.paused&&G.mp&&G.mp.role==='guest'){lead='Paused';bt='The host has paused the battle';}
     else if(G.paused){lead='Paused';bt=`${ns||special?name+': '+hint:hint} · Space to ${G.time<1?'start':'resume'}`;}
     else if(ns||special){lead=name;bt=hint+(special?' · Esc to cancel':'');}}
@@ -179,7 +182,7 @@ function selHTML(sel,me){const close=`<button class="bt ic" data-act="closePanel
   // best high-ground range bonus among the selection
   const hg=Math.max(...sel.map(u=>(u.type==='art'?HILL.artRange:HILL.range)*hillK(u.x,u.y)));
   const md=sel.some(u=>u.build)&&sel.every(u=>u.build||u.type!=='eng')?'bridging':sel.some(u=>u.repair)&&sel.every(u=>u.repair||u.type!=='eng')?'repairing':sel.every(u=>u.mode===sel[0].mode)?sel[0].mode:'mixed';
-  const pct=Math.round(hp*100),hc=hp>.5?'var(--ok)':hp>.25?'var(--contested)':'var(--danger)',ice=sel.filter(onIce).length,wnd=sel.filter(u=>u.wounded).length;
+  const pct=Math.round(hp*100),hc=hp>.5?'var(--ok)':hp>.25?'var(--contested)':'var(--danger)',ice=sel.filter(onIce).length,wnd=sel.filter(u=>u.wounded).length,byV={};sel.forEach(u=>{if(u.vet>0)byV[u.vet]=(byV[u.vet]||0)+1;});
   return `<div class="selHd"><b class="tn">${sel.length} Selected</b>${close}</div>
     <div class="selTypes">${UNIT_TYPES.filter(t=>c[t]).map(t=>`<span>${uIco(t,me,13)}<b class="tn">${c[t]}</b><span class="s2">${TNAME[t]}</span></span>`).join('')}</div>
     <div class="selHp"><div><span class="s2">Average health</span><b class="tn">${pct}%${wnd?` <span class="s2" data-tip="Knocked below ${Math.round(WOUND.at*100)}%: heals back to ${Math.round(WOUND.cap*100)}% at most">· ${wnd} wounded</span>`:''}</b></div><div class="bar6"><i style="width:${pct}%;background:${hc}"></i></div></div>
@@ -187,7 +190,9 @@ function selHTML(sel,me){const close=`<button class="bt ic" data-act="closePanel
       <div class="rw"><span>State</span><span class="s2">${{idle:'Ready',move:'Moving',amove:'Attacking',hold:'Holding',mixed:'Mixed',bridging:'Bridging',repairing:'Repairing'}[md]}</span></div>
       <div class="rw"><span>Supply</span>${(()=>{const p=Math.round(spv*100),col=spv>=SUPPLY.ok?'var(--ok)':spv>=.3?'var(--contested)':'var(--danger)',tr=spR>spv+.02?'rising':spR<spv-.02?'falling':'steady';
         return `<span class="tn" style="display:flex;align-items:center;gap:6px;font-weight:500;color:${col}" data-tip="Stocks ${p}% · ${tr} · route efficiency ${Math.round(spR*100)}%. Below ${Math.round(SUPPLY.ok*100)}% units move slower, fire weaker and heal less."><span class="dot" style="background:${col}"></span>${p}%${cut?` · ${cut} cut off`:''}</span>`;})()}</div>
-      <div class="rw"><span>Dug in</span><span class="s2 tn">${dug} of ${sel.length}</span></div>
+      <div class="rw"><span>Dug in</span><span class="s2 tn">${dug} of ${sel.length}</span></div>${Object.keys(byV).length?`
+      <div class="rw"><span>Veterans</span><span class="s2">${[3,2,1].filter(l=>byV[l]).map(l=>byV[l]+' '+VET.name[l]).join(' · ')}</span></div>`:''}${sel.length===1&&sel[0].name?`
+      <div class="rw"><span>${esc(sel[0].name)}</span><span class="s2">${VET.name[sel[0].vet|0]||'Green'} · ${sel[0].battles||0} battle${(sel[0].battles||0)===1?'':'s'}</span></div>`:''}
       <div class="rw"><span>High ground</span><span class="s2">${hg>.05?`+${Math.round(hg*100)}% range`:'None'}</span></div>${ice?`
       <div class="rw"><span>On the ice</span><span class="tn" style="color:var(--contested-text);font-weight:500">${ice} of ${sel.length} · exposed</span></div>`:''}</div></div>`;}
 
@@ -233,7 +238,7 @@ function toggleUI(){ui.hidden=!ui.hidden;closePops();document.body.classList.tog
     tip.style.left=clamp(x,8,ar.width-tw-8)+'px';tip.style.top=y+'px';});
   addEventListener('pointerdown',()=>{tip.hidden=true;tipEl=null;},true);}
 
-const modalOpen=()=>!$('startModal').hidden;
+const modalOpen=()=>!$('startModal').hidden||!$('campModal').hidden;
 // in a multiplayer game fog of war stays on (it decides what each side can target)
 function toggleSetting(k){if(k==='fog'&&G&&G.mp)return;settings[k]=!settings[k];if(k==='fog'&&G){G.fog=settings.fog;computeVis();}renderSettings();}
 // (in multiplayer fog of war is always on: its switch shows on, greyed out)
@@ -257,6 +262,7 @@ document.querySelectorAll('#setAppear [data-ap]').forEach(b=>b.onclick=()=>{ui.a
 $('btnSettings').onclick=()=>{renderSettings();togglePop('settingsModal',$('btnSettings'));};
 $('btnHelp').onclick=()=>togglePop('helpModal',$('btnHelp'));
 $('btnMore').onclick=()=>togglePop('moreMenu',$('btnMore'));
+$('btnRetreat').onclick=()=>{if(G&&G.camp&&G.phase!=='over'&&!G.replay)openWithdraw();};
 $('btnHide').onclick=toggleUI;$('btnShowUI').onclick=toggleUI;
 document.querySelectorAll('#moreMenu [data-more]').forEach(b=>b.onclick=()=>{const a=b.dataset.more;closePops();
   if(a==='settings')togglePop('settingsModal',$('btnMore'));else if(a==='help')togglePop('helpModal',$('btnMore'));else if(a==='hide')toggleUI();
@@ -287,7 +293,7 @@ $('log').onclick=()=>{ui.compact.log=!ui.compact.log;saveUI();updateHUD(true);};
 $('undoKey').textContent=$('undoKbd').textContent=MAC?'⌘Z':'Ctrl Z';$('ctlStraight').textContent=MAC?'⌘- or Ctrl-click':'Ctrl-click';
 $('btnUndo').dataset.tip='Undo';$('btnUndo').dataset.key=MAC?'⌘Z':'Ctrl Z';
 
-function setMode(m){if(G)G.orderMode=m;document.querySelectorAll('#modes [data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===m&&!b.disabled));}
+function setMode(m){if(G&&m!=='road'&&typeof cancelRoad==='function')cancelRoad();if(G)G.orderMode=m;document.querySelectorAll('#modes [data-mode]').forEach(b=>b.classList.toggle('on',b.dataset.mode===m&&!b.disabled));}
 function setTool(t){if(G)G.tool=t;$('btnTrench').classList.toggle('on',t==='trench');if(G&&G.phase==='deploy')updateBudget();}
 function setSpeed(s){if(!timeCtl())return;if(G)G.speed=s;document.querySelectorAll('#speed button').forEach(b=>b.classList.toggle('on',+b.dataset.s===s));$('btnSpeedC').textContent=s+'×';}
 const timeCtl=()=>!G||!G.mp||(G.mp.hostTime&&G.mp.role==='host');
@@ -302,7 +308,9 @@ $('btnPause').onclick=togglePause;$('btnSup').onclick=toggleSup;$('btnHold').onc
 $('btnSpeedC').onclick=()=>{if(!G)return;const sp=[1,2,4];setSpeed(sp[(sp.indexOf(G.speed)+1)%3]);};
 document.querySelectorAll('#speed button').forEach(b=>b.onclick=()=>setSpeed(+b.dataset.s));
 document.querySelectorAll('#modes [data-mode]').forEach(b=>b.onclick=()=>{setMode(b.dataset.mode);updateHUD();});
-document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=()=>{if(!G)return;const t=b.dataset.sel;clearSel();if(t!=='none'){mine().forEach(u=>{if(t==='all'||u.type===t)u.sel=true;});selectionChanged();}updateHUD();});
+// the select bar: a type button selects every unit of that type; Shift-click adds them to the selection instead
+// (so a tank plus Shift-click on infantry selects the tank and all the infantry)
+document.querySelectorAll('[data-sel]').forEach(b=>b.onclick=e=>{if(!G)return;const t=b.dataset.sel;if(!(e&&e.shiftKey&&TNAME[t]))clearSel();if(t!=='none'){mine().forEach(u=>{if(t==='all'||u.type===t)u.sel=true;});selectionChanged();}updateHUD();});
 $('btnTrench').onclick=()=>setTool(G.tool==='trench'?null:'trench');
 $('btnUndo').onclick=()=>act({k:'undo'});
 $('btnBegin').onclick=()=>{if(!act({k:'begin'})&&!(G.mp&&G.mp.role==='guest'))return;setTool(null);$('deployTools').hidden=true;updateHUD(true);};

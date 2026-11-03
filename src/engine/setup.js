@@ -20,9 +20,11 @@ function rebuildTrenchMask(){M.trench.fill(0);for(const t of G.trenches)for(let 
     for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){const nx=cx+dx,ny=cy+dy;if(nx>=0&&ny>=0&&nx<GW&&ny<GH)M.trench[ny*GW+nx]=1;}}}}
 // A side's force: the base table, the battlefield's changes, then difficulty if the computer plays that side.
 // o: a setup {mode, scen, player, diff}; the running game's by default (the New game screen passes the chosen options)
-function forceFor(side,base,o){o=o||{mode:M.mode,scen:G.scen,player:G.player,diff:G.diff,mp:!!G.mp};const sc=SCENARIOS[o.scen]||SCENARIOS.standard,f={...base},dm=(MAP_MODES[o.mode].forces||{})[side]||{};
+function forceFor(side,base,o){o=o||{mode:M.mode,scen:G.scen,player:G.player,diff:G.diff,mp:!!G.mp,forces:G.forces};const sc=SCENARIOS[o.scen]||SCENARIOS.standard,f={...base},dm=(MAP_MODES[o.mode].forces||{})[side]||{};
   // (Company Command: both sides start with the same small company, whatever the battlefield or difficulty)
   if(sc.econ)return{...ECON.start};
+  // (a campaign battle: the side's force is given outright, every type set; difficulty still scales the computer's)
+  if(o.forces&&o.forces[side]){const g={inf:0,tank:0,art:0,eng:0,...o.forces[side]};if(side!==o.player&&!o.mp){const k=DIFFICULTY[o.diff].force;for(const t of ['inf','tank','art'])if(g[t])g[t]=Math.max(1,Math.round(g[t]*k));}return g;}
   for(const k in dm)f[k]=Math.max(k==='inf'?3:0,(f[k]||0)+dm[k]);
   const sf=(sc.forces||{})[side]||{};for(const k in sf)f[k]=Math.max(k==='inf'?3:0,(f[k]||0)+sf[k]);
   if(side!==o.player&&!o.mp){const k=DIFFICULTY[o.diff].force;for(const t of ['inf','tank','art'])if(f[t])f[t]=Math.max(1,Math.round(f[t]*k));}
@@ -32,7 +34,7 @@ const airFor=(side,o)=>{o=o||{mode:M.mode,scen:G.scen,player:G.player,diff:G.dif
 function spawn(){const f=forceFor('D',FORCES[G.strength]),atk=forceFor('A',ATK),o=M.objs;let id=0;
   const mk=(side,type,x,y)=>{const p=cc(nearestPassable(type,clamp(x,6,W-6),clamp(y,6,H-6)));const T=TYPES[type];
     const u={id:++id,side,type,x:p.x+(Math.random()-.5)*3,y:p.y+(Math.random()-.5)*3,hp:T.hp,max:T.hp,path:[],mode:'idle',tgt:null,rev:0,sup:true,lastHit:-99,
-      sel:false,build:null,buildEnd:null,cd:Math.random()*3,deployT:3,fx:0,fireAt:null,role:null,obj:-1,via:null,flash:0,moving:false};G.units.push(u);return u;};
+      sel:false,build:null,buildEnd:null,cd:Math.random()*3,deployT:3,fx:0,fireAt:null,role:null,obj:-1,via:null,flash:0,moving:false};G.units.push(u);G.stats.hp0[side]+=T.hp;return u;};
   const reserveInf=f.inf>=11?3:2,nLine=f.inf-reserveInf;
   const segs=[];let total=0;for(const t of G.trenches)for(let k=0;k<t.length-1;k++){const L=dist(t[k],t[k+1]);segs.push({a:t[k],b:t[k+1],s0:total,L});total+=L;}
   for(let k=0;k<nLine;k++){let x,y;
@@ -55,7 +57,7 @@ function spawn(){const f=forceFor('D',FORCES[G.strength]),atk=forceFor('A',ATK),
 // a unit added after the start (reinforcements)
 function addUnit(side,type,x,y){const p=cc(nearestPassable(type,clamp(x,6,W-6),clamp(y,6,H-6))),T=TYPES[type];
   const u={id:G.nextId++,side,type,x:p.x,y:p.y,hp:T.hp,max:T.hp,path:[],mode:'idle',tgt:null,rev:0,sup:true,lastHit:-99,
-    sel:false,build:null,buildEnd:null,cd:Math.random()*3,deployT:3,fx:0,fireAt:null,role:null,obj:-1,via:null,flash:0,moving:false};G.units.push(u);return u;}
+    sel:false,build:null,buildEnd:null,cd:Math.random()*3,deployT:3,fx:0,fireAt:null,role:null,obj:-1,via:null,flash:0,moving:false};G.units.push(u);if(G.stats.hp0)G.stats.hp0[side]+=T.hp;return u;}
 // Scheduled reinforcements reach their side's depot. The computer's units join its reserve (defender) or its biggest
 // attacking group (attacker); the player's wait at the depot.
 function reinforce(){(SC().reinf||[]).forEach((r,k)=>{if(G.reinfDone.has(k)||G.time<r.t)return;G.reinfDone.add(k);
@@ -92,9 +94,9 @@ function newGame(opts){
     vis:{A:new Set(),D:new Set()},sup:{A:new Uint8Array(N),D:new Uint8Array(N)},cov:{A:new Uint8Array(N),D:new Uint8Array(N)},claim:{A:new Uint8Array(N),D:new Uint8Array(N)},acc:{vis:0,sup:0,ai:0,cap:0,front:0},ctrl:null,ctrlS:null,frontSeg:[],frontSegP:[],frontSegE:[],
     bridges:M.spans.map((b,id)=>({id,x:b.sym.x,y:b.sym.y,ang:b.sym.ang,len:b.sym.len,kind:b.sym.kind,cells:b.cells,down:false,hp:CROSSING_HP.bridge,max:CROSSING_HP.bridge})),econ:null,
     pontoons:[],pid:0,dmg:new Uint8Array(N),dmgList:[],dmgSpots:[],dmgLines:[],air:{A:0,D:0},airT:{A:-99,D:-99},strikes:[],
-    seen:{A:new Map(),D:new Map()},dai:null,shells:[],tracers:[],booms:[],craters:[],ghosts:new Map(),marks:[],log:[],stats:{lost:{A:0,D:0}},showSup:false,over:null};
-  M.dmg=G.dmg;G.air={A:airFor('A'),D:airFor('D')};applyCrossings();G.trenches=sc.trenches===false?[]:autoTrenches(opts.strength);rebuildTrenchMask();if(sc.econ)econInit();spawn();scenarioSetup();G.plan=G.player==='D'&&!opts.mp?planAttack():null;computeVis();computeSupply('A');computeSupply('D');
-  $('startModal').hidden=true;$('endModal').hidden=true;$('startModal').classList.remove('showmap');$('ngShowMapT').textContent='Show Map';closePops();ui.panel='folded';ui.modsG=false;
+    seen:{A:new Map(),D:new Map()},dai:null,shells:[],tracers:[],booms:[],craters:[],ghosts:new Map(),marks:[],log:[],stats:{lost:{A:0,D:0},lostW:{A:0,D:0},dealt:{A:0,D:0},taken:{A:0,D:0},hp0:{A:0,D:0}},showSup:false,over:null,forces:opts.forces||null,camp:opts.camp||null,works:[],wid:1,dirt:new Uint8Array(N),dirtList:[],dirtRoads:[]};
+  M.dmg=G.dmg;G.air={A:airFor('A'),D:airFor('D')};applyCrossings();G.trenches=sc.trenches===false?[]:autoTrenches(opts.strength);rebuildTrenchMask();if(sc.econ)econInit();if(G.camp&&G.camp.state)campRestore(G.camp.state);spawn();if(G.camp)campPatch();scenarioSetup();G.plan=G.player==='D'&&!opts.mp?planAttack():null;computeVis();computeSupply('A');computeSupply('D');
+  $('startModal').hidden=true;$('endModal').hidden=true;$('campModal').hidden=true;$('startModal').classList.remove('showmap');$('ngShowMapT').textContent='Show Map';closePops();ui.panel='folded';ui.modsG=false;
   $('deployTools').hidden=G.phase!=='deploy'||G.player!=='D';updateBudget();setMode('move');setTool(null);
   G.code=encodeGame(opts);G.budget0=G.budget;
   recInit();addLog(sc.goal[G.player],G.player);

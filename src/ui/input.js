@@ -24,6 +24,7 @@ function orderAt(sx,sy,shift,direct){const w=s2w(sx,sy);
   // past the border is scenery: no orders, strikes, pontoons or repairs there
   if(w.x<0||w.y<0||w.x>W||w.y>H)return;if(G.orderMode==='air'){if(G.phase==='play')airAt(w.x,w.y);return;}
   if(G.orderMode==='rally'){rallyAt(w.x,w.y);return;}
+  if(G.orderMode==='road'&&G.phase==='play'){roadNode(w);return;}
   const sel=selected();if(!sel.length)return;
   const queue=shift&&G.phase==='play'&&G.orderMode==='move';
   const dir=direct&&G.phase==='play'&&G.orderMode==='move';
@@ -33,10 +34,10 @@ function airAt(x,y){const a=act({k:'air',x,y});if(a)G.marks.push({x:a.x,y:a.y,t:
 // hold the selected units
 function holdSel(){const sel=selected();if(sel.length)act({k:'hold',ids:sel.map(u=>u.id)});}
 // Click a unit to select it (Shift adds or removes it); click the map to order the selection (Shift queues the order).
-function clickAt(sx,sy,shift){if((G.orderMode==='air'&&G.phase==='play')||G.orderMode==='rally')return orderAt(sx,sy);const u=pick(sx,sy);
+function clickAt(sx,sy,shift){if(((G.orderMode==='air'||G.orderMode==='road')&&G.phase==='play')||G.orderMode==='rally')return orderAt(sx,sy);const u=pick(sx,sy);
   if(u){if(!shift)clearSel();u.sel=shift?!u.sel:true;selectionChanged();}
   else if(selected().length&&(G.phase==='play'||G.phase==='deploy'))orderAt(sx,sy,shift);}
-function tapAt(sx,sy){if((G.orderMode==='air'&&G.phase==='play')||G.orderMode==='rally')return orderAt(sx,sy);const u=pick(sx,sy);if(u){u.sel=!u.sel;selectionChanged();}else if(selected().length)orderAt(sx,sy);}
+function tapAt(sx,sy){if(((G.orderMode==='air'||G.orderMode==='road')&&G.phase==='play')||G.orderMode==='rally')return orderAt(sx,sy);const u=pick(sx,sy);if(u){u.sel=!u.sel;selectionChanged();}else if(selected().length)orderAt(sx,sy);}
 // An order mode that needs a unit type the selection doesn't have (engineers for pontoon and repair, artillery for a
 // fire mission) drops back to move when the selection changes. The player can pick the mode again afterwards.
 // S splits the selection, as in Hearts of Iron: it keeps half of it, half of each unit type (an odd one out goes to the
@@ -48,23 +49,33 @@ function splitSel(){const sel=selected();if(sel.length<2)return;
   let need=Math.ceil(sel.length/2)-take.reduce((a,b)=>a+b,0);of.forEach((a,k)=>{if(need>0&&a.length%2){take[k]++;need--;}});
   of.forEach((a,k)=>a.forEach((u,j)=>{if(j>=take[k])u.sel=false;}));selectionChanged();updateHUD(true);}
 function selectionChanged(){const sel=selected();if(!G||!sel.length)return;const m=G.orderMode;
-  if((m==='repair'||m==='bridge')&&!sel.some(u=>u.type==='eng'))setMode('move');
+  if((m==='repair'||m==='bridge'||m==='road'||m==='dig')&&!sel.some(u=>u.type==='eng')){setMode('move');cancelRoad();}
   else if(m==='fire'&&!sel.some(u=>u.type==='art'))setMode('move');}
-const ptrs=new Map();let drag=null,tdraw=null;
-function startTrench(p){tdraw=[];tdraw.budget0=G.budget;addTrenchPt(s2w(p.x,p.y));drag={kind:'trench'};}
-function addTrenchPt(w){if(!tdraw||!inZone(w.x,w.y)||M.water(w.x,w.y))return;const last=tdraw[tdraw.length-1];
-  if(last){const d=dist(last,w);if(d<12||d>G.budget)return;if(d>40){tdraw.push(null);}G.budget-=d;}tdraw.push({x:w.x,y:w.y});updateBudget();}
+const ptrs=new Map();let drag=null,tdraw=null,rdraw=null;
+// (free: engineers digging in play, with no zone and no budget)
+function startTrench(p,free){tdraw=[];tdraw.budget0=G.budget;tdraw.free=!!free;addTrenchPt(s2w(p.x,p.y));drag={kind:'trench'};}
+function addTrenchPt(w){if(!tdraw||M.water(w.x,w.y)||(!tdraw.free&&!inZone(w.x,w.y))||w.x<0||w.y<0||w.x>W||w.y>H)return;const last=tdraw[tdraw.length-1];
+  if(last){const d=dist(last,w);if(d<12||(!tdraw.free&&d>G.budget))return;if(d>40){tdraw.push(null);}if(!tdraw.free)G.budget-=d;}tdraw.push({x:w.x,y:w.y});updateBudget();}
 function endTrench(){if(!tdraw)return;let cur=[];const parts=[];for(const p of tdraw){if(!p){if(cur.length>1)parts.push(cur);cur=[];}else cur.push(p);}if(cur.length>1)parts.push(cur);
-  if(!act({k:'trench',parts,spent:tdraw.budget0-G.budget,live:true}))G.budget=tdraw.budget0;
+  if(tdraw.free){const ids=selected().filter(u=>u.type==='eng').map(u=>u.id);if(parts.length&&ids.length)act({k:'dig',ids,parts});}
+  else if(!act({k:'trench',parts,spent:tdraw.budget0-G.budget,live:true}))G.budget=tdraw.budget0;
   tdraw=null;updateBudget();}
+// a dirt road is laid node to node: each click adds a node; clicking the last node again, Enter or a double-click
+// hands it to the selected engineers, and Esc drops it
+function roadNode(w){const ids=selected().filter(u=>u.type==='eng').map(u=>u.id);if(!ids.length){setMode('move');return;}
+  if(!rdraw)rdraw=[];const last=rdraw[rdraw.length-1];
+  if(last&&dist(last,w)<10/cam.z*2){endRoad();return;}rdraw.push({x:w.x,y:w.y});G.marks.push({x:w.x,y:w.y,t:.5,mode:'move'});}
+function endRoad(){const pts=rdraw;rdraw=null;if(!pts||pts.length<2)return;const ids=selected().filter(u=>u.type==='eng').map(u=>u.id);
+  if(ids.length&&act({k:'road',ids,pts}))setMode('move');}
+const cancelRoad=()=>{rdraw=null;};
 cv.addEventListener('contextmenu',e=>e.preventDefault());
 cv.addEventListener('pointerdown',e=>{cv.setPointerCapture(e.pointerId);const p={x:e.offsetX,y:e.offsetY,sx:e.offsetX,sy:e.offsetY,moved:false};ptrs.set(e.pointerId,p);
   if(!G||G.phase==='over'||!$('startModal').hidden){drag={kind:'pan'};return;}
-  const deployTrench=G.tool==='trench'&&G.phase==='deploy'&&G.player==='D';
+  const deployTrench=G.tool==='trench'&&G.phase==='deploy'&&G.player==='D',digging=G.orderMode==='dig'&&G.phase==='play'&&selected().some(u=>u.type==='eng');
   if(e.pointerType==='touch'){if(ptrs.size===2){if(drag&&drag.kind==='trench')endTrench();const [a,b]=[...ptrs.values()];
       drag={kind:'pinch',d0:Math.hypot(a.x-b.x,a.y-b.y),z0:cam.z,w:s2w((a.x+b.x)/2,(a.y+b.y)/2)};}
-    else if(ptrs.size===1)deployTrench?startTrench(p):(drag={kind:'tpan'});return;}
-  if(e.button===0&&!e.ctrlKey&&!e.metaKey)deployTrench?startTrench(p):(drag={kind:'box',x0:p.x,y0:p.y,x1:p.x,y1:p.y});
+    else if(ptrs.size===1)deployTrench?startTrench(p):digging?startTrench(p,true):(drag={kind:'tpan'});return;}
+  if(e.button===0&&!e.ctrlKey&&!e.metaKey)deployTrench?startTrench(p):digging?startTrench(p,true):(drag={kind:'box',x0:p.x,y0:p.y,x1:p.x,y1:p.y});
   else drag={kind:'rpan',btn:e.button===0?2:e.button,direct:e.ctrlKey||e.metaKey};});
 // the mouse position over the map, for previews such as the air strike ring
 let hoverPt=null;cv.addEventListener('pointerleave',()=>{hoverPt=null;});
@@ -87,7 +98,7 @@ function pointerEnd(e){const p=ptrs.get(e.pointerId);ptrs.delete(e.pointerId);if
 cv.addEventListener('pointerup',pointerEnd);cv.addEventListener('pointercancel',pointerEnd);
 cv.addEventListener('wheel',e=>{e.preventDefault();zoomAt(e.offsetX,e.offsetY,Math.exp(-e.deltaY*(e.ctrlKey?.01:.0015)));},{passive:false});
 // double-click a unit to select every unit of its type; any click on the map closes an open popover
-cv.addEventListener('dblclick',e=>{if(!G||G.phase==='over'||G.replay||!$('startModal').hidden)return;const u=pick(e.offsetX,e.offsetY);if(!u)return;if(!e.shiftKey)clearSel();mine().forEach(v=>{if(v.type===u.type)v.sel=true;});selectionChanged();updateHUD();});
+cv.addEventListener('dblclick',e=>{if(!G||G.phase==='over'||G.replay||!$('startModal').hidden)return;if(rdraw){endRoad();updateHUD();return;}const u=pick(e.offsetX,e.offsetY);if(!u)return;if(!e.shiftKey)clearSel();mine().forEach(v=>{if(v.type===u.type)v.sel=true;});selectionChanged();updateHUD();});
 cv.addEventListener('pointerdown',()=>closePops());
 addEventListener('resize',()=>{scaleAnchor();if(G)updateHUD(true);});
 const keys=new Set();
@@ -108,10 +119,13 @@ addEventListener('keydown',e=>{if(e.target.tagName==='INPUT')return;keys.add(e.k
     else if(k==='z'&&!e.shiftKey){e.preventDefault();act({k:'undo'});}return;}
   if(e.code==='Space'){e.preventDefault();togglePause();}
   else if(depotKey(k)){}
+  else if(k==='enter'&&rdraw){endRoad();updateHUD();}
+  else if(k==='d'&&G.phase==='play')setMode(G.orderMode==='road'?'move':'road');else if(k==='e'&&G.phase==='play')setMode(G.orderMode==='dig'?'move':'dig');
+  else if(k==='j'&&G.econ)musterSel(e.shiftKey);
   else if(k==='m')setMode('move');else if(k==='a'){mine().forEach(u=>u.sel=true);selectionChanged();}else if(k==='f')setMode('fire');else if(k==='p')setMode('bridge');else if(k==='x')setMode('air');else if(k==='r')setMode('repair');else if(k==='h')holdSel();
   else if(k==='1')toggleSup();else if(k==='s')splitSel();
   else if(k==='o')toggleSetting('arrows');else if(k==='v')toggleSetting('fog');else if(k==='y')setView(settings.style==='paper'?'satellite':'paper');
-  else if(k==='escape'){clearSel();setMode('move');setTool(null);updateHUD();}
+  else if(k==='escape'){if(rdraw){cancelRoad();setMode('move');updateHUD();return;}clearSel();setMode('move');setTool(null);updateHUD();}
   // . and , step the speed up and down
   else if(e.key==='.'||e.key==='>'||e.key===','||e.key==='<'){const sp=[1,2,4],i=Math.max(0,sp.indexOf(G.speed)),up=e.key==='.'||e.key==='>';setSpeed(sp[clamp(i+(up?1:-1),0,2)]);}
   else if(k==='l')toggleFront();

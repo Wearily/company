@@ -61,7 +61,7 @@ function mpHoldUI(){const on=!!(G&&G.mp&&G.mpHold&&L.inGame&&G.phase!=='over'&&!
   const b=$('holdClaim');b.disabled=c>0;b.textContent=c>0?`Claim Victory in ${fmt(c)}`:'Claim Victory';}
 $('holdClaim').onclick=()=>mpClaim();
 // leaving a battle: the New game button (and More → New game) asks first, and leaving means surrendering
-function openQuit(){closePops();$('mpQuit').hidden=false;}
+function openQuit(){closePops();const q=$('mpQuit');q.querySelector('h1').textContent='Leave the battle?';q.querySelector('p').textContent='Surrendering ends the battle for both of you, and your opponent wins.';$('quitGo').textContent='Surrender';q.hidden=false;}
 const closeQuit=()=>{$('mpQuit').hidden=true;};
 $('quitX').onclick=$('quitStay').onclick=closeQuit;
 $('quitGo').onclick=()=>{closeQuit();act({k:'surrender'});};

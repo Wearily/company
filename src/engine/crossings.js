@@ -10,7 +10,8 @@ function segDist(p,a,b){const vx=b.x-a.x,vy=b.y-a.y,L=vx*vx+vy*vy||1,t=clamp(((p
 const crossingName=c=>c.a?'pontoon bridge near '+placeName(c):dist(c,G.objs[0])<40?G.objs[0].name:'the bridge near '+placeName(c);
 // Rebuild M.road from the untouched grid plus this game's fallen bridges and finished pontoons (road flag 4).
 function applyCrossings(){M.road.set(M.road0);for(const b of G.bridges)if(b.down)for(const i of b.cells)M.road[i]=0;
-  for(const p of G.pontoons)if(p.done)for(const i of p.cells)if(!M.road[i])M.road[i]=4;fieldCache.clear();}
+  for(const p of G.pontoons)if(p.done)for(const i of p.cells)if(!M.road[i])M.road[i]=4;
+  if(G.dirtList)for(const i of G.dirtList)if(!M.road[i])M.road[i]=DIRT.flag;fieldCache.clear();}
 // After crossings fall: units standing on them are thrown to the bank and hurt (25%), and routes over them are replanned.
 function crossingsFell(cut){applyCrossings();G.acc.sup=0;const lost={A:0,D:0};
   const crosses=u=>{let a=u;for(const b of u.path){const n=Math.ceil(dist(a,b)/4);for(let k=1;k<=n;k++)if(cut.has(cellOf(a.x+(b.x-a.x)*k/n,a.y+(b.y-a.y)*k/n)))return true;a=b;}return false;};
@@ -90,7 +91,7 @@ function resolveStrike(s){s.done=true;const dx=Math.cos(s.ang),dy=Math.sin(s.ang
   const bombs=[-36,-12,12,36].map(o=>({x:s.x+dx*o+(Math.random()-.5)*12,y:s.y+dy*o+(Math.random()-.5)*12}));
   for(const b of bombs){G.booms.push({x:b.x,y:b.y,t:0,r:42});G.craters.push(b);
     for(const e of G.units){const d=dist(e,b);if(d>=AIR.radius)continue;const ci=cellOf(e.x,e.y);
-      let k=1;if(dugIn(e))k=TRENCH.air;else if(M.cls[ci]===URBAN)k=.65;else if(M.cls[ci]===FOREST)k=.75;else if(iceAt(ci))k=ICE.exposed;if(e.type==='tank')k*=.6;hit(e,AIR.dmg*(1-d/AIR.radius)*k);}}
+      let k=1;if(dugIn(e))k=TRENCH.air;else if(M.cls[ci]===URBAN)k=.65;else if(M.cls[ci]===FOREST)k=.75;else if(iceAt(ci))k=ICE.exposed;if(e.type==='tank')k*=.6;const dm=AIR.dmg*(1-d/AIR.radius)*k*vetK(e,'take');hit(e,dm);if(s.side&&e.side!==s.side)G.stats.dealt[s.side]+=dm;}}
   // bombs crater ordinary roads and highways (bridges are handled below): still a supply route, but slow going
   let cratered=0;for(const b of bombs){const cx=Math.floor(b.x/C),cy=Math.floor(b.y/C),r=Math.ceil(ROAD_DMG.radius/C);
     for(let dy=-r;dy<=r;dy++)for(let dx=-r;dx<=r;dx++){const nx=cx+dx,ny=cy+dy;if(nx<0||ny<0||nx>=GW||ny>=GH)continue;const i=ny*GW+nx,c=cc(i);

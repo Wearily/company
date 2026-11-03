@@ -4,7 +4,7 @@
 'use strict';
 // bridges (3) run at highway speed, pontoons (4) at road speed, so crossing water never slows a column down
 // off-road movement is scaled by the climate (M.offroad: sand, snow, bog)
-function mult(type,i){const rd=M.road[i],k=M.offroad||1;if(M.dmg&&M.dmg[i])return MOVE[type][M.cls[i]]*ROAD_DMG.move*k;if(rd)return ROADMOVE[type]*(rd===2||rd===3?HIGHWAY:1);
+function mult(type,i){const rd=M.road[i],k=M.offroad||1;if(M.dmg&&M.dmg[i])return MOVE[type][M.cls[i]]*ROAD_DMG.move*k;if(rd===DIRT.flag)return(MOVE[type][M.cls[i]]*k+ROADMOVE[type])/2;if(rd)return ROADMOVE[type]*(rd===2||rd===3?HIGHWAY:1);
   if(M.cls[i]===WATER)return M.frozen&&(type==='inf'||type==='eng')?ICE.move:0;return MOVE[type][M.cls[i]]*k;}
 // frozen water a unit can stand on (not a bridge or pontoon)
 const iceAt=i=>M.frozen&&M.cls[i]===WATER&&!M.road[i],onIce=u=>iceAt(cellOf(u.x,u.y));

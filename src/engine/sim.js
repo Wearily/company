@@ -5,7 +5,7 @@
 const hillK=(x,y)=>clamp((M.hgt[cellOf(x,y)]-HILL.from)/(HILL.to-HILL.from),0,1);
 // effective firing range, with the high-ground bonus for where the unit stands now
 function rangeOf(u){return TYPES[u.type].range*(1+(u.type==='art'?HILL.artRange:HILL.range)*hillK(u.x,u.y));}
-const visionR=u=>TYPES[u.type].vision*MAP_MODES[M.mode].vision*CLIMATES[G.climate||'temperate'].vision*(SC().vision||1)*(1+HILL.vision*hillK(u.x,u.y));
+const visionR=u=>TYPES[u.type].vision*MAP_MODES[M.mode].vision*CLIMATES[G.climate||'temperate'].vision*(SC().vision||1)*(1+HILL.vision*hillK(u.x,u.y))*vetK(u,'vision');
 function computeVis(){const prev=G.vis[G.player];trenchSight();
   if(!G.fog){for(const s of ['A','D'])G.vis[s]=new Set(G.units.filter(e=>e.side!==s).map(e=>e.id));G.ghosts.clear();return;}
   for(const s of ['A','D']){const set=new Set(),mine=G.units.filter(u=>u.side===s).map(u=>({x:u.x,y:u.y,vr:visionR(u)}));
@@ -162,7 +162,7 @@ const supF=u=>clamp((u.sp??1)/SUPPLY.ok,0,1);
 const dugIn=u=>!u.moving&&M.trench[cellOf(u.x,u.y)]===1;
 function cover(e){const i=cellOf(e.x,e.y);let m=1;if(dugIn(e))m=TRENCH.fire;else if(M.cls[i]===URBAN)m=.55;else if(M.cls[i]===FOREST)m=.7;else if(M.cls[i]===STREAM&&!M.road[i])m=STREAM_EXPOSED;else if(iceAt(i))m=ICE.exposed;
   if(e.moving)m*=1.15;m*=1-HILL.cover*hillK(e.x,e.y);return m;}
-function hit(e,amt){e.hp-=amt;e.lastHit=G.time;if(e.hp<e.max*WOUND.at)e.wounded=true;}
+function hit(e,amt){e.hp-=amt;e.lastHit=G.time;if(e.hp<e.max*WOUND.at)e.wounded=true;if(G.stats.taken)G.stats.taken[e.side]+=amt;}
 function moveUnit(u,dt){const p=u.path[0],dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,dy);let m=mult(u.type,cellOf(u.x,u.y));if(m<=0)m=.3;
   const s=TYPES[u.type].speed*m*(.8+.2*supF(u))*dt;
   // units sharing a waypoint push each other apart, so count it as reached once close
@@ -176,7 +176,7 @@ function moveUnit(u,dt){const p=u.path[0],dx=p.x-u.x,dy=p.y-u.y,d=Math.hypot(dx,
   u.x=nx;u.y=ny;}
 const inStream=u=>{const i=cellOf(u.x,u.y);return M.cls[i]===STREAM&&!M.road[i];};
 function directFire(u,dt){const e=u.tgt;let amt=DPS[u.type][e.type]*cover(e)*(.6+.4*supF(u))*(.5+.5*u.hp/u.max)*dt;if(u.moving)amt*=.6;if(inStream(u))amt*=STREAM_FIRE;else if(onIce(u))amt*=ICE.fire;
-  hit(e,amt);u.rev=Math.max(u.rev,2.5);u.fx-=dt;
+  amt*=vetK(u,'fire')*vetK(e,'take');u.dealt=(u.dealt||0)+amt;G.stats.dealt[u.side]+=amt;hit(e,amt);u.rev=Math.max(u.rev,2.5);u.fx-=dt;
   if(u.fx<=0){u.fx=.3+Math.random()*.6;G.tracers.push({x1:u.x,y1:u.y,x2:e.x+(Math.random()-.5)*8,y2:e.y+(Math.random()-.5)*8,t:.2,side:u.side,heavy:u.type==='tank'});u.flash=.12;}}
 function artStep(u,dt){const T=TYPES.art;if(u.moving||inStream(u)){u.deployT=0;return;}
   u.deployT=Math.min(3,u.deployT+dt);u.cd-=dt;if(u.deployT<3||u.cd>0)return;
@@ -184,7 +184,7 @@ function artStep(u,dt){const T=TYPES.art;if(u.moving||inStream(u)){u.deployT=0;r
   if(u.fireAt){const d=dist(u,u.fireAt);if(d<=rngR&&d>=T.minRange)aim=u.fireAt;}
   if(!aim){let bd=1e9;for(const e of G.units){if(e.side===u.side||!G.vis[u.side].has(e.id))continue;const d=dist(u,e);if(d>=T.minRange&&d<=rngR&&d<bd){bd=d;aim=e;spotted=true;}}}
   if(!aim)return;const d=dist(u,aim),sc=(spotted?12:20)+d*.04,a=Math.random()*Math.PI*2,rr=Math.sqrt(Math.random())*sc;
-  G.shells.push({x0:u.x,y0:u.y,x1:aim.x+Math.cos(a)*rr,y1:aim.y+Math.sin(a)*rr,t:0,T:.8+d/300,side:u.side,mission:aim===u.fireAt});
+  G.shells.push({x0:u.x,y0:u.y,x1:aim.x+Math.cos(a)*rr,y1:aim.y+Math.sin(a)*rr,t:0,T:.8+d/300,side:u.side,mission:aim===u.fireAt,by:u.id,vk:vetK(u,'fire')});
   u.cd=6+Math.random()*2*(2.2-1.2*supF(u));u.rev=Math.max(u.rev,1.5);u.flash=.2;}
 function separate(){const U=G.units;for(let i=0;i<U.length;i++)for(let j=i+1;j<U.length;j++){const a=U[i],b=U[j];if(a.side!==b.side)continue;
   const dx=b.x-a.x,dy=b.y-a.y,d2=dx*dx+dy*dy;if(d2>=196||d2<1e-4)continue;const d=Math.sqrt(d2),push=(14-d)*.25,nx=dx/d*push,ny=dy/d*push;
@@ -207,7 +207,7 @@ function step(dt){
   if((G.acc.sup-=dt)<=0){G.acc.sup=.5;G.supSide=G.supSide==='A'?'D':'A';computeSupply(G.supSide);}
   if((G.acc.ai-=dt)<=0){G.acc.ai=2;if(!G.mp){if(G.econ){const cs=G.player==='A'?'D':'A';aiCommander(cs);aiMuster(cs);}G.player==='A'?aiDefender():aiAttacker();aiAir(G.player==='A'?'D':'A');recAI();}}
   if((G.acc.cap-=dt)<=0){G.acc.cap=.5;capture(.5);}
-  reinforce();if(G.econ)econStep(dt);
+  reinforce();if(G.econ)econStep(dt);if(G.works&&G.works.length)pruneWorks();
   if((G.acc.front-=dt)<=0){G.acc.front=.5;updateFront();}
   for(const u of G.units){u.rev=Math.max(0,u.rev-dt);u.flash=Math.max(0,u.flash-dt);
     if(u.type!=='art'){let best=null,bd=rangeOf(u);
@@ -217,22 +217,22 @@ function step(dt){
     // a finished leg hands over to the next queued one
     if(!u.path.length&&u.queue&&u.queue.length&&u.mode!=='hold'){const q=u.queue.shift();route(u,q.x,q.y,q.mode,q.fx,q.fy,q.direct);}
     if(u.type==='art')artStep(u,dt);else if(u.tgt)directFire(u,dt);
-    if(u.type==='eng'&&!u.build&&!u.repair&&!u.moving)resumeBuild(u);
-    if(u.build)buildStep(u,dt);else if(u.repair)repairStep(u,dt);
+    if(u.type==='eng'&&!u.build&&!u.repair&&!u.work&&!u.moving)resumeBuild(u);
+    if(u.build)buildStep(u,dt);else if(u.repair)repairStep(u,dt);else if(u.work)workStep(u,dt);
     // stocks follow the route's efficiency, filling quickly and running down slowly; healing goes with them
     u.sp=(u.sp??1)+clamp((u.supR??1)-(u.sp??1),-SUPPLY.drain*dt,SUPPLY.fill*dt);u.sup=supF(u)>=1;
-    if(G.time-u.lastHit>10&&u.hp<hpTop(u))u.hp=Math.min(hpTop(u),u.hp+SUPPLY.heal*u.sp*dt);}
+    if(G.time-u.lastHit>10&&u.hp<hpTop(u))u.hp=Math.min(hpTop(u),u.hp+SUPPLY.heal*u.sp*dt*vetK(u,'heal'));}
   separate();
   for(const s of G.shells){s.t+=dt;if(s.t>=s.T){s.done=true;G.booms.push({x:s.x1,y:s.y1,t:0,r:30});G.craters.push({x:s.x1,y:s.y1});
     for(const e of G.units){if(e.side===s.side)continue;const d=Math.hypot(e.x-s.x1,e.y-s.y1);if(d>=44)continue;const ci=cellOf(e.x,e.y);
-      let k=1;if(dugIn(e))k=TRENCH.shell;else if(M.cls[ci]===URBAN)k=.6;else if(M.cls[ci]===FOREST)k=.75;else if(iceAt(ci))k=ICE.exposed;if(e.type==='tank')k*=.45;hit(e,62*(1-d/44)*k);}
+      let k=1;if(dugIn(e))k=TRENCH.shell;else if(M.cls[ci]===URBAN)k=.6;else if(M.cls[ci]===FOREST)k=.75;else if(iceAt(ci))k=ICE.exposed;if(e.type==='tank')k*=.45;const dm=62*(1-d/44)*k*(s.vk||1)*vetK(e,'take');hit(e,dm);G.stats.dealt[s.side]+=dm;if(s.by){const sh=G.units.find(v=>v.id===s.by);if(sh)sh.dealt=(sh.dealt||0)+dm;}}
     if(s.mission)shellOnInfrastructure(s);}}
   G.shells=G.shells.filter(s=>!s.done);
   for(const s of G.strikes)if(!s.done&&G.time>=s.t)resolveStrike(s);G.strikes=G.strikes.filter(s=>G.time<s.t+1.5);if(G.craters.length>400)G.craters.splice(0,G.craters.length-400);
   for(const t of G.tracers)t.t-=dt;G.tracers=G.tracers.filter(t=>t.t>0);
   for(const b of G.booms)b.t+=dt;G.booms=G.booms.filter(b=>b.t<.9);
   const dead=G.units.filter(u=>u.hp<=0);
-  if(dead.length){for(const u of dead){G.booms.push({x:u.x,y:u.y,t:0,r:22});G.stats.lost[u.side]++;G.ghosts.delete(u.id);
+  if(dead.length){for(const u of dead){G.booms.push({x:u.x,y:u.y,t:0,r:22});G.stats.lost[u.side]++;if(G.stats.lostW)G.stats.lostW[u.side]+=W8[u.type];G.ghosts.delete(u.id);
       tell(r=>u.side===r?[`Lost ${TYPES[u.type].name.toLowerCase()} near ${placeName(u)}`,'a']:G.vis[r].has(u.id)?[`Enemy ${TYPES[u.type].name.toLowerCase()} destroyed near ${placeName(u)}`,'d']:null);}
     G.units=G.units.filter(u=>u.hp>0);for(const u of G.units)if(u.tgt&&u.tgt.hp<=0)u.tgt=null;}
   recScan();checkEnd();}
@@ -245,5 +245,19 @@ function checkEnd(){if(SC().vp)return checkVP();const sc=SC(),ownA=G.objs.filter
   if(sc.holdA&&G.holdA>=sc.holdA)return end('A',`The attacker held ${G.objs[0].name} for ${sc.holdA/60} minutes.`);
   if(G.time>=G.limit){if(sc.neutral)return ownA>ownD?end('A',`The attacker held ${ownA} objectives to ${ownD} when time ran out.`):ownD>ownA?end('D',`The defender held ${ownD} objectives to ${ownA} when time ran out.`):end(null,`Both sides held ${ownA} objectives when time ran out.`);
     return ownA>=sc.need?end('A',`The attacker held ${ownA} of 3 objectives when time ran out.`):end('D',sc.need>=3?'The defenders held out until time ran out.':'The line held until time ran out.');}}
+// The battle rating for a side: five parts. Result (win 25, draw 12, a loss up to 8 by objectives held); exchange, the
+// enemy's losses against ours weighted by type (W8), 12.5 × log2(1 + ratio), 25 at 3:1; firepower, damage dealt against
+// taken, the same way; the force that came through (health left against the health it started with, 0–25); and a
+// speed bonus for a win inside RATING.speedAt of the clock. Grades from RATING.grades.
+function battleRating(side){const S=G.stats,them=side==='A'?'D':'A',win=G.over&&G.over.winner===side,draw=G.over&&G.over.winner===null;
+  const held=G.objs.filter(o=>o.owner===side).length,ratio=(a,b)=>b>0?a/b:(a>0?4:1),log=r=>clamp(12.5*Math.log2(1+r),0,25);
+  const result=win?25:draw?12:held/3*8,xr=ratio(S.lostW[them],S.lostW[side]),exchange=S.lostW[them]||S.lostW[side]?log(xr):12.5;
+  const fr=ratio(S.dealt[side],S.taken[side]),fire=S.dealt[side]||S.taken[side]?log(fr):12.5;
+  let left=0;for(const u of G.units)if(u.side===side)left+=u.hp;const kept=S.hp0[side]?clamp(left/S.hp0[side],0,1):0,preserved=25*kept;
+  const speed=win&&G.time<G.limit*RATING.speedAt?RATING.speedBonus:0;
+  const score=Math.round(Math.min(100,result+exchange+fire+preserved+speed)),g=RATING.grades.find(x=>score>=x[0]);
+  // shown as a mark out of 10 with one decimal (the user asked for it to read like a FotMob or Chess.com rating)
+  return{score,mark:(score/10).toFixed(1),grade:g[1],label:g[2],result:Math.round(result),exchange:Math.round(exchange),fire:Math.round(fire),preserved:Math.round(preserved),speed,
+    lost:S.lost[side],killed:S.lost[them],xr:+xr.toFixed(1),dealt:Math.round(S.dealt[side]),taken:Math.round(S.taken[side]),fr:+fr.toFixed(1),kept:Math.round(kept*100),win,draw};}
 function end(winner,reason){if(G.phase==='over')return;if(G.rec)recFrame();G.phase='over';G.over={winner,reason};
   const g=G;setTimeout(()=>{if(RP||G!==g)return;showEnd(winner,reason);},900);}

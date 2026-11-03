@@ -18,18 +18,24 @@ function depotHTML(me){const e=G.econ[me],r=e.rate,pm=v=>(v>=0?'+':'')+Math.roun
   const pop=`<div class="rw"><span class="s2">Population</span><span class="tn">${e.pop} / ${ECON.popCap}</span></div><div class="bar6"><i style="width:${Math.min(100,e.pop/ECON.popCap*100)}%"></i></div>`;
   const raid=e.raid?'<div class="dRaid">Depot under attack · production slowed</div>':'';
   const buy=`<div class="buy">${UNIT_TYPES.map(t=>{const c=ECON.cost[t],no=buyBlock(e,t);
-    return `<button class="bt buyB" data-buy="${t}" ${no?'disabled ':''}data-tip="${no?esc(no):'Build '+TNAME[t].toLowerCase()}" data-key="${BUY_KEY[t]}" aria-label="Build ${TNAME[t].toLowerCase()}: ${c.mp} manpower${c.fuel?', '+c.fuel+' fuel':''}, ${c.t} seconds">
+    return `<button class="bt buyB" data-buy="${t}" ${no?'disabled ':''}data-tip="${no?esc(no):'Build '+TNAME[t].toLowerCase()+' · Shift-click for a batch'}" data-key="${BUY_KEY[t]}" aria-label="Build ${TNAME[t].toLowerCase()}: ${c.mp} manpower${c.fuel?', '+c.fuel+' fuel':''}, ${c.t} seconds">
       ${uIco(t,me,14)}<b>${TNAME[t]}</b><span class="cost tn">${RES_IC.mp}${c.mp}${c.fuel?` ${RES_IC.fuel}${c.fuel}`:''}</span><span class="s2 tn">${c.t} s</span></button>`;}).join('')}</div>`;
   const q=e.q.length?`<div class="dq">${e.q.map((x,i)=>`<div class="dqI">${uIco(x.type,me,12)}<span>${TNAME[x.type]}</span>${i?'<span class="s2">waiting</span>':`<span class="bar6 acc"><i style="width:${Math.min(100,x.t/x.T*100)}%"></i></span><span class="s2 tn">${Math.ceil(x.T-x.t)} s</span>`}
       <button class="bt ic dqX" data-cancel="${i}" aria-label="Cancel and refund" data-tip="Cancel (refunded)"><svg width="10" height="10" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" aria-hidden="true"><path d="M3.5 3.5l9 9M12.5 3.5l-9 9"/></svg></button></div>`).join('')}</div>`
     :'<p class="s2 dqE">Nothing in production</p>';
-  const rally=`<button class="bt fill dRally${G.orderMode==='rally'?' on':''}" data-act="rally" data-tip="Choose where new units gather" data-key="G">Set rally point</button>`;
+  const rally=`<div class="row8"><button class="bt fill dRally${G.orderMode==='rally'?' on':''}" data-act="rally" data-tip="Choose where new units gather" data-key="G">Set rally point</button><button class="bt fill dRally" data-act="muster" data-tip="Send the selected units to the rally point, to form up with new ones · Shift to queue it after their orders" data-key="J" ${selected().length?'':'disabled'}>Muster</button></div>`;
   return res+pop+raid+buy+q+rally;}
 // the victory points in the status capsule: both sides, and who is losing points
 function vpHTML(me){const E=G.econ,them=me==='A'?'D':'A',a=Math.ceil(E[me].vp),b=Math.ceil(E[them].vp),w=v=>Math.max(0,Math.min(100,v/ECON.vp0*100));
   return `<div class="vpx"><span class="vpS ${me}"><b class="tn">${a}</b><span>You</span></span><span class="vpBars"><i class="${me}" style="width:${w(a)}%"></i><i class="${them}" style="width:${w(b)}%"></i></span><span class="vpS ${them}"><b class="tn">${b}</b><span>Them</span></span></div>`;}
+// a batch: Shift-click queues as many as the depot's manpower, fuel and queue allow
+function buyBatch(t,shift){const e=G.econ[G.player],c=ECON.cost[t];let n=shift?Math.max(1,Math.min(ECON.queue-e.q.length,Math.floor(e.mp/c.mp),c.fuel?Math.floor(e.fuel/c.fuel):99,Math.floor((ECON.popCap-e.pop)/c.pop))):1;
+  while(n-->0&&act({k:'build',type:t}));}
+// Muster: the selected units go to the rally point and line up there with the units the depot turns out
+function musterSel(shift){const sel=selected();if(!sel.length||!G.econ||G.phase!=='play')return;const r=G.econ[G.player].rally;
+  if(act({k:'order',ids:sel.map(u=>u.id),x:r.x,y:r.y,mode:'move',queue:!!shift}))G.marks.push({x:r.x,y:r.y,t:.7,mode:'move'});}
 $('depot').onclick=e=>{const b=e.target.closest('[data-buy],[data-cancel],[data-act]');if(!b||!G||!G.econ)return;
-  if(b.dataset.buy)act({k:'build',type:b.dataset.buy});else if(b.dataset.cancel)act({k:'cancel',i:+b.dataset.cancel});
+  if(b.dataset.buy)buyBatch(b.dataset.buy,e.shiftKey);else if(b.dataset.act==='muster')musterSel(e.shiftKey);else if(b.dataset.cancel)act({k:'cancel',i:+b.dataset.cancel});
   else if(b.dataset.act==='rally')setMode(G.orderMode==='rally'?'move':'rally');updateHUD(true);};
 // a click on the map in rally mode
 function rallyAt(x,y){const p=act({k:'rally',x,y});if(p)G.marks.push({x,y,t:.7,mode:'move'});
@@ -38,6 +44,6 @@ function rallyAt(x,y){const p=act({k:'rally',x,y});if(p)G.marks.push({x,y,t:.7,m
 // keys: B opens or closes the Depot card, 4–7 build, G sets the rally point
 function depotKey(k){if(!G||!G.econ||G.replay)return false;
   if(k==='b'){toggleCard('depot');return true;}
-  const t=Object.keys(BUY_KEY).find(t=>BUY_KEY[t]===k);if(t){act({k:'build',type:t});updateHUD(true);return true;}
+  const t=Object.keys(BUY_KEY).find(t=>BUY_KEY[t]===k);if(t){buyBatch(t,keys.has('Shift'));updateHUD(true);return true;}
   if(k==='g'){setMode(G.orderMode==='rally'?'move':'rally');updateHUD(true);return true;}
   return false;}

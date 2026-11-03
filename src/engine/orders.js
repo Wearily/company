@@ -7,7 +7,7 @@ const selected=()=>mine().filter(u=>u.sel);
 // The nearest point on any trench to (x, y), within maxD: {t: trench, s: distance along it, d}. With a side, only
 // stretches that side knows of count (an attacker's order doesn't snap to a trench it hasn't seen).
 function trenchNear(x,y,maxD,side){let best=null;for(const t of G.trenches){let s0=0;for(let k=0;k<t.length-1;k++){const a=t[k],b=t[k+1],L=dist(a,b);
-  if(L>0&&(!side||trenchKnown(side,a,b))){const f=clamp(((x-a.x)*(b.x-a.x)+(y-a.y)*(b.y-a.y))/(L*L),0,1),px=a.x+(b.x-a.x)*f,py=a.y+(b.y-a.y)*f,d=Math.hypot(px-x,py-y);
+  if(L>0&&(!side||t.side===side||trenchKnown(side,a,b))){const f=clamp(((x-a.x)*(b.x-a.x)+(y-a.y)*(b.y-a.y))/(L*L),0,1),px=a.x+(b.x-a.x)*f,py=a.y+(b.y-a.y)*f,d=Math.hypot(px-x,py-y);
     if(d<=maxD&&(!best||d<best.d))best={t,s:s0+f*L,d};}s0+=L;}}return best;}
 function trenchAt(t,s){for(let k=0;k<t.length-1;k++){const a=t[k],b=t[k+1],L=dist(a,b);if(s<=L||k===t.length-2){const f=L?clamp(s/L,0,1):0;return{x:a.x+(b.x-a.x)*f,y:a.y+(b.y-a.y)*f};}s-=L;}return t[0];}
 // Spots along a trench for n units, TRENCH.gap apart, centred on the point clicked and kept within the trench's ends
@@ -37,7 +37,7 @@ function order(units,x,y,mode,direct){if(!units.length)return;x=clamp(x,4,W-4);y
     const ti=nearestPassable(type,x,y),fd=flowField(type,ti,direct);
     for(const u of grp){let ox=u.x-cx,oy=u.y-cy;const L=Math.hypot(ox,oy),lim=Math.min(L*.6,70);if(L>0){ox=ox/L*lim;oy=oy/L*lim;}
       const sp=spots&&spots.get(u),dx=sp?sp.x:clamp(x+ox,4,W-4),dy=sp?sp.y:clamp(y+oy,4,H-4),p=direct?descendDirect(type,fd,u.x,u.y):descend(type,fd,u.x,u.y);if(!p){fail++;continue;}
-      u.path=finish(type,p,u,dx,dy,ti);u.mode=mode;u.direct=!!direct;u.build=null;u.repair=null;u.queue=null;if(type==='art')u.fireAt=null;}}
+      u.path=finish(type,p,u,dx,dy,ti);u.mode=mode;u.direct=!!direct;u.build=null;u.repair=null;u.work=null;u.queue=null;if(type==='art')u.fireAt=null;}}
   if(fail)tellTo(me,'No route there for some units','a');return true;}
 function deployMove(units,x,y){const cx=units.reduce((s,u)=>s+u.x,0)/units.length,cy=units.reduce((s,u)=>s+u.y,0)/units.length;let bad=0;
   const th=trenchNear(x,y,TRENCH.snap),spots=th?trenchSpots(units,th):null;
@@ -54,7 +54,7 @@ function queueOrder(units,x,y,mode,direct){x=clamp(x,4,W-4);y=clamp(y,4,H-4);
   const cx=ends.reduce((s,e)=>s+e.x,0)/ends.length,cy=ends.reduce((s,e)=>s+e.y,0)/ends.length;
   units.forEach((u,k)=>{let ox=ends[k].x-cx,oy=ends[k].y-cy;const L=Math.hypot(ox,oy),lim=Math.min(L*.6,70);if(L>0){ox=ox/L*lim;oy=oy/L*lim;}
     const leg={x:clamp(x+ox,4,W-4),y:clamp(y+oy,4,H-4),fx:x,fy:y,mode,direct:!!direct};
-    if(!u.path.length&&!(u.queue&&u.queue.length)){u.build=null;u.repair=null;if(u.type==='art')u.fireAt=null;route(u,leg.x,leg.y,mode,x,y,direct);}
+    if(!u.path.length&&!(u.queue&&u.queue.length)){u.build=null;u.repair=null;u.work=null;if(u.type==='art')u.fireAt=null;route(u,leg.x,leg.y,mode,x,y,direct);}
     else(u.queue=u.queue||[]).push(leg);});
   return true;}
 // Player actions push an undo entry: a snapshot of the units an order touched, or a trench and the budget it spent.

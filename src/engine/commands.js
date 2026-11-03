@@ -13,6 +13,8 @@
 //   begin  {}                                the defender ends deployment and the battle starts
 //   surrender {}                             give up (multiplayer)
 //   build  {type}  cancel {i}  rally {x, y}  Company Command: queue a unit at the depot, cancel one, set the rally point
+//   road   {ids, pts}                       engineers lay a dirt road along the nodes (works.js)
+//   dig    {ids, parts}                     engineers dig trenches along the lines
 function act(c){if(!G)return null;
   // the guest's screen sends the order to the host, whose battle carries it out (a trench's cost is charged there)
   if(G.mp&&G.mp.role==='guest'){G.mp.send(c.k==='trench'?{...c,live:false}:c);return c.k==='air'?(G.air[G.player]>0?airAim(c.x,c.y):null):true;}
@@ -38,6 +40,9 @@ function runCmd(side,c){if(!G||G.phase==='over')return null;
     case 'build':return econBuild(side,c.type);
     case 'cancel':return econCancel(side,c.i);
     case 'rally':return econRally(side,c.x,c.y);
+    // engineer works: the first unit given the job starts it; the rest join it
+    case 'road':{const eng=us().filter(u=>u.type==='eng');if(!eng.length||G.phase!=='play')return null;const w=planRoad(side,c.pts);if(!w)return null;for(const u of eng)startWork(u,w);return true;}
+    case 'dig':{const eng=us().filter(u=>u.type==='eng');if(!eng.length||G.phase!=='play')return null;const ws=planDig(side,c.parts);if(!ws)return null;eng.forEach((u,k)=>startWork(u,ws[k%ws.length]));return true;}
     case 'begin':{if(G.phase!=='deploy')return null;G.phase='play';recInit();G.ctrl=null;updateFront();if(settings.front)frontShape(true);G.undo=[];G.paused=false;
       tell(()=>['The attack has begun','a']);return true;}}
   return null;}

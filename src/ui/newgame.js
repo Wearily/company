@@ -21,7 +21,7 @@ function preview(){M=makeMap(opts.seed,opts.mode,opts.gen2);setClimate(opts.clim
 // scenario picker: one row each, with its description
 // a blue ★ New badge after a scenario's name (SCENARIOS[k].isNew)
 const NEW_BADGE='<span class="newB"><svg width="10" height="10" viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 1.2l2.1 4.3 4.7.7-3.4 3.3.8 4.7L8 12l-4.2 2.2.8-4.7L1.2 6.2l4.7-.7z"/></svg>New</span>';
-function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).map(([k,c])=>`<button class="sr${k===opts.scen?' on':''}" role="radio" aria-checked="${k===opts.scen}" data-v="${k}"><span><b>${c.name}${c.isNew?NEW_BADGE:''}</b><span class="s2">${esc(c.desc)}</span></span>${ICON.tick}</button>`).join('');
+function renderScens(){$('optScen').innerHTML=Object.entries(SCENARIOS).filter(([k,c])=>!c.hidden).map(([k,c])=>`<button class="sr${k===opts.scen?' on':''}" role="radio" aria-checked="${k===opts.scen}" data-v="${k}"><span><b>${c.name}${c.isNew?NEW_BADGE:''}</b><span class="s2">${esc(c.desc)}</span></span>${ICON.tick}</button>`).join('');
   renderScensRule();
   document.querySelectorAll('#optScen button').forEach(b=>b.onclick=()=>{if(opts.scen===b.dataset.v)return;opts.scen=b.dataset.v;renderScens();syncCode();});}
 // the game code for the current options, shown on the setup screen. The page address is left alone: a game URL
@@ -66,7 +66,7 @@ const modIcon=(k,col)=>`<svg width="14" height="14" viewBox="0 0 20 20" fill="no
 // Only what differs from a standard game (Standard Battle, River Town, Temperate, Normal, standard defense) is listed.
 // Each row: icon, what changes, the value; the reason is in its tooltip.
 function setupMods(o){const sc=SCENARIOS[o.scen],mm=MAP_MODES[o.mode],cl=CLIMATES[o.climate],dif=DIFFICULTY[o.diff],me=o.side,them=me==='A'?'D':'A',R=[];
-  const ctx={mode:o.mode,scen:o.scen,player:me,diff:o.diff},sideCol={A:'var(--atk-ring)',D:'var(--defender-ring)'};
+  const ctx={mode:o.mode,scen:o.scen,player:me,diff:o.diff,forces:o.forces},sideCol={A:'var(--atk-ring)',D:'var(--defender-ring)'};
   const pct=v=>{const p=Math.round((v-1)*100);return (p>0?'+':p<0?'−':'')+Math.abs(p)+'%';},tone=v=>v>1?'up':v<1?'down':'';
   const TN={inf:'infantry',tank:'armor',art:'artillery',eng:'engineers'};
   // a force as changes against the standard one: +2 armor, −2 infantry
@@ -117,7 +117,7 @@ function renderMods(){const R=setupMods(opts),el=$('mods'),shut=!!ui.compact.mod
 const modsRows=R=>R.length?R.map(r=>`<div class="mrow"${r.tip?` data-tip="${esc(r.tip)}"`:''}>${modIcon(r.ic,r.col)}<span class="ml">${r.label}</span><span class="mv tn${r.tone?' '+r.tone:''}">${r.val}</span></div>`).join('')
   :'<div class="mnone">None: standard rules</div>';
 // the battle in progress as a setup, for the in-game Modifiers card (rail button) and the docked outliner's section
-const gameSetup=()=>({scen:G.scen,mode:G.mode,climate:G.climate,diff:G.diff,side:G.player,strength:G.strength,gen2:G.gen2});
+const gameSetup=()=>({scen:G.scen,mode:G.mode,climate:G.climate,diff:G.diff,side:G.player,strength:G.strength,gen2:G.gen2,forces:G.forces});
 function gameMods(){if(!G._mods){const R=setupMods(gameSetup());G._mods={n:R.length,html:modsRows(R)};}return G._mods;}
 $('railMods').onclick=()=>toggleCard('mods');
 $('modsGameX').onclick=()=>{ui.modsG=false;updateHUD(true);};

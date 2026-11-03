@@ -10,10 +10,10 @@ function startReplay(){const real=G;if(!real||!real.rec||real.rec.frames.length<
   const RV={player:real.player,scen:real.scen,limit:real.limit,mode:real.mode,climate:real.climate,seed:real.seed,diff:real.diff,strength:real.strength,
     depot:real.depot,trenches:real.trenches,phase:'over',paused:true,fog:false,orderMode:'move',tool:null,showSup:false,sup:real.sup,cov:real.cov,
     units:[],vis:{A:new Set(),D:new Set()},objs:real.objs.map(o=>({...o})),bridges:real.bridges.map(b=>({...b,down:false})),pontoons:[],
-    dmg:new Uint8Array(N),dmgList:[],dmgSpots:[],dmgLines:[],craters:[],booms:[],shells:[],tracers:[],strikes:[],marks:[],ghosts:new Map(),
+    dmg:new Uint8Array(N),dmgList:[],dmgSpots:[],dmgLines:[],dirt:new Uint8Array(N),dirtList:[],works:[],dirtRoads:real.dirtRoads||[],craters:[],booms:[],shells:[],tracers:[],strikes:[],marks:[],ghosts:new Map(),
     frontSeg:[],frontSegP:[],frontSegE:[],ctrl:null,log:[],logDirty:true,stats:{lost:{A:0,D:0}},air:{...real.air},holdA:0,reinfDone:real.reinfDone,
     acc:{},time:0,speed:1,over:real.over,undo:[],replay:true,code:real.code,gen2:real.gen2};
-  RP={real,R,RV,t:0,end:R.frames[R.frames.length-1].t,playing:true,speed:4,uc:new Map(),dmgIdx:-2,logN:-1,drag:false};G=RV;
+  RP={real,R,RV,t:0,end:R.frames[R.frames.length-1].t,playing:true,speed:4,uc:new Map(),dmgIdx:-2,dirtIdx:-2,logN:-1,drag:false};G=RV;
   closePops();document.body.classList.add('replaying');$('replayBar').hidden=false;$('endModal').hidden=true;
   // the HUD is hidden behind the end sheet; show it before the timeline measures its width
   document.body.classList.remove('endopen');rpSpeedUI();buildTimeline();fit();replayView(0);updateHUD(true);}
@@ -26,13 +26,13 @@ function exitReplay(){if(!RP)return;const loaded=RP.real.loaded;G=RP.real;RP=nul
    It can be opened again from Settings, and read outside the game. */
 const REPLAY_FMT='company-replay';
 function replayData(g){const R=g.rec;
-  return{format:REPLAY_FMT,version:1,saved:new Date().toISOString(),code:g.code,
+  return{format:REPLAY_FMT,version:1,saved:new Date().toISOString(),code:g.code,dirtRoads:(g.dirtRoads||[]).map(r=>({pts:r.pts})),
     opts:{scen:g.scen,mode:g.mode,climate:g.climate,side:g.player,strength:g.strength,diff:g.diff,seed:g.seed,gen2:genV(g.gen2)},
     over:g.over,time:g.time,plan:g.plan?{name:g.plan.name,key:g.plan.key}:null,trenches:g.trenches,
     names:{objs:g.objs.map(o=>({key:o.key,name:o.name,kind:o.kind||'',x:o.x,y:o.y})),bridges:g.bridges.map(b=>({id:b.id,x:Math.round(b.x),y:Math.round(b.y)}))},
     rec:{frames:R.frames.map(f=>({t:Math.round(f.t*100)/100,id:[...f.id],x:[...f.x],y:[...f.y],hp:[...f.hp],fl:[...f.fl],fire:f.fire,obj:f.obj,bh:f.bh,air:f.air,holdA:f.holdA,pont:f.pont,vp:f.vp})),
       meta:[...R.meta].map(([id,m])=>[id,m.side,m.type,m.max,m.died===Infinity?-1:m.died]),
-      booms:R.booms,shells:R.shells,strikes:R.strikes,log:R.log,dmg:R.dmg.map(d=>({t:d.t,list:[...d.list]})),downs:R.downs,events:R.events,ai:R.ai||[]}};}
+      booms:R.booms,shells:R.shells,strikes:R.strikes,log:R.log,dmg:R.dmg.map(d=>({t:d.t,list:[...d.list]})),dirt:(R.dirt||[]).map(d=>({t:d.t,list:[...d.list]})),downs:R.downs,events:R.events,ai:R.ai||[]}};}
 async function downloadReplay(g){g=g||(RP?RP.real:G);if(!g||!g.rec||g.rec.frames.length<2){addLog('No replay recorded yet');return;}
   let blob=new Blob([JSON.stringify(replayData(g))],{type:'application/json'}),ext='.json';
   try{if(window.CompressionStream){blob=await new Response(blob.stream().pipeThrough(new CompressionStream('gzip'))).blob();ext='.json.gz';}}catch(e){}
@@ -47,11 +47,11 @@ function loadReplay(d){const o=d.opts,sc=SCENARIOS[o.scen]||SCENARIOS.standard;c
   M=makeMap(o.seed,o.mode,o.gen2);setClimate(o.climate);fieldCache.clear();
   const R={...d.rec,meta:new Map(d.rec.meta.map(([id,side,type,max,died])=>[id,{side,type,max,died:died<0?Infinity:died}])),
     frames:d.rec.frames.map(f=>({...f,id:Uint16Array.from(f.id),x:Int16Array.from(f.x),y:Int16Array.from(f.y),hp:Uint8Array.from(f.hp),fl:Uint8Array.from(f.fl)})),
-    dmg:d.rec.dmg.map(q=>({t:q.t,list:Int32Array.from(q.list)}))};
+    dmg:d.rec.dmg.map(q=>({t:q.t,list:Int32Array.from(q.list)})),dirt:(d.rec.dirt||[]).map(q=>({t:q.t,list:Int32Array.from(q.list)}))};
   G={player:o.side,strength:o.strength,seed:o.seed,mode:o.mode,gen2:o.gen2,diff:o.diff,climate:o.climate,scen:o.scen,limit:sc.limit,code:d.code,loaded:true,
     depot:{A:M.depA,D:M.depD},trenches:d.trenches||[],sup:{A:new Uint8Array(N),D:new Uint8Array(N)},cov:{A:new Uint8Array(N),D:new Uint8Array(N)},
     objs:M.objs.map((q,k)=>({...q,...((d.names&&d.names.objs&&d.names.objs[k])||{}),owner:'D',p:1,contested:false})),bridges:M.spans.map((b,id)=>({id,x:b.sym.x,y:b.sym.y,ang:b.sym.ang,len:b.sym.len,kind:b.sym.kind,cells:b.cells,down:false,hp:CROSSING_HP.bridge,max:CROSSING_HP.bridge})),
-    air:{A:0,D:0},reinfDone:new Set(),over:d.over,rec:R,plan:d.plan,dmg:new Uint8Array(N),dmgList:[],pontoons:[],units:[],acc:{}};
+    air:{A:0,D:0},reinfDone:new Set(),over:d.over,rec:R,plan:d.plan,dmg:new Uint8Array(N),dmgList:[],dirt:new Uint8Array(N),dirtList:[],works:[],dirtRoads:(d.dirtRoads||[]).map(r=>({pts:r.pts})),pontoons:[],units:[],acc:{}};
   M.dmg=G.dmg;rebuildTrenchMask();applyCrossings();settings.style=settings.style||'satellite';renderTerrain();
   $('startModal').hidden=true;$('startModal').classList.remove('showmap');$('endModal').hidden=true;startReplay();}
 const frameIndex=f=>f._ix||(f._ix=new Map(Array.from(f.id,(id,k)=>[id,k])));
@@ -72,6 +72,8 @@ function replayView(t){const {R,RV}=RP,F=R.frames;let lo=0,hi=F.length-1;while(l
   RV.pontoons=f.pont;RV.air=f.air;RV.holdA=f.holdA;
   let di=-1;for(let k=0;k<R.dmg.length&&R.dmg[k].t<=t;k++)di=k;
   if(di!==RP.dmgIdx){RP.dmgIdx=di;RV.dmg.fill(0);if(di>=0)for(const i of R.dmg[di].list)RV.dmg[i]=1;roadDamageChanged();}
+  let dr=-1;for(let k=0;k<(R.dirt||[]).length&&R.dirt[k].t<=t;k++)dr=k;
+  if(dr!==RP.dirtIdx){RP.dirtIdx=dr;RV.dirt.fill(0);if(dr>=0)for(const i of R.dirt[dr].list)RV.dirt[i]=1;dirtChanged();}
   const B=R.booms;RV.booms=[];const cr=[];for(let k=0;k<B.length;k+=4){if(B[k]>t)continue;cr.push({x:B[k+1],y:B[k+2]});if(t-B[k]<.9)RV.booms.push({x:B[k+1],y:B[k+2],r:B[k+3],t:t-B[k]});}
   RV.craters=cr.length>400?cr.slice(-400):cr;
   RV.shells=R.shells.filter(q=>q.t<=t&&t<q.t+q.T).map(q=>({...q,t:t-q.t}));

@@ -6,7 +6,7 @@
 // control, pontoons, bridge health and air strikes left. Events in between (shell launches, impacts, air strikes, the log,
 // road damage, bridges falling, captures) are kept with their times. The replay plays this back without fog of war.
 const REC_DT=.5;
-function recInit(){const log=G.rec?G.rec.log:[];G.rec={frames:[],meta:new Map(),booms:[],shells:[],strikes:[],log,dmg:[],downs:[],events:[],ai:[],aiLast:new Map(),next:REC_DT,lastDmg:null};recFrame();}
+function recInit(){const log=G.rec?G.rec.log:[];G.rec={frames:[],meta:new Map(),booms:[],shells:[],strikes:[],log,dmg:[],dirt:[],downs:[],events:[],ai:[],aiLast:new Map(),next:REC_DT,lastDmg:null,lastDirt:null};recFrame();}
 // What the computer was thinking, every AI turn (2 s), for shared replays: the defender's reserve mode, focus objective
 // and threat per objective; the attacker's plan and each group's stance, state and objective order; and, for each of the
 // computer's units whose orders changed since the last turn, [id, role, group, mode, goal, retake, sector, falling,
@@ -41,5 +41,6 @@ function recAdd(f){const R=G.rec,prev=R.frames[R.frames.length-1];
     for(const p of f.pont)if(p.done&&!prev.pont.some(q=>q.id===p.id&&q.done))R.events.push({t:f.t,k:'pont',side:p.side});}
   for(const b of G.bridges)if(b.down&&!R.downs.some(d=>d.id===b.id)){R.downs.push({id:b.id,t:f.t});R.events.push({t:f.t,k:'bridge'});}
   if(G.dmgList!==R.lastDmg){R.lastDmg=G.dmgList;R.dmg.push({t:f.t,list:Int32Array.from(G.dmgList)});}
+  if(G.dirtList!==R.lastDirt){R.lastDirt=G.dirtList;R.dirt.push({t:f.t,list:Int32Array.from(G.dirtList)});}
   R.frames.push(f);}
 

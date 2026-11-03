@@ -291,3 +291,13 @@ body.replaying .log{bottom:200px}
 .vpS{display:flex;flex-direction:column;align-items:center;line-height:1.15}.vpS b{font-size:15px}
 .vpS.D b{color:var(--defender-text)}
 .vpBars{display:flex;flex-direction:column;gap:3px;width:64px}.vpBars i{display:block;height:4px;border-radius:2px;background:var(--atk-ring)}.vpBars i.D{background:var(--defender-ring)}
+
+/* the battle rating on the end sheet */
+.rating{display:flex;gap:14px;align-items:flex-start;padding:12px 14px;margin-bottom:16px}
+.rGrade{flex:none;min-width:58px;height:54px;padding:0 8px;box-sizing:border-box;border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800;letter-spacing:-.03em;color:#fff;background:var(--neutral)}
+.rGrade.rc9{background:#0a84ff}.rGrade.rc7{background:#34c759}.rGrade.rc6{background:#ffcc00;color:#1b1d1a}.rGrade.rc4{background:#ff9500}.rGrade.rc0{background:#ff3b30}
+.rBody{flex:1;min-width:0}.rBody>b{display:block;font-size:12px;font-weight:600;margin:2px 0 6px}
+.rr{display:grid;grid-template-columns:92px 1fr auto;align-items:center;gap:10px;font-size:12.5px;min-height:22px}
+.rr i{display:block;height:6px;border-radius:3px;background:var(--track)}.rr i b{display:block;height:100%;border-radius:3px;background:var(--accent)}
+.rr>span:last-child{white-space:nowrap}
+@media (max-width:599px){.rr{grid-template-columns:78px 1fr auto;font-size:11.5px}}
