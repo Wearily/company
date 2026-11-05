@@ -246,13 +246,14 @@ function checkEnd(){if(SC().vp)return checkVP();const sc=SC(),ownA=G.objs.filter
   if(G.time>=G.limit){if(sc.neutral)return ownA>ownD?end('A',`The attacker held ${ownA} objectives to ${ownD} when time ran out.`):ownD>ownA?end('D',`The defender held ${ownD} objectives to ${ownA} when time ran out.`):end(null,`Both sides held ${ownA} objectives when time ran out.`);
     return ownA>=sc.need?end('A',`The attacker held ${ownA} of 3 objectives when time ran out.`):end('D',sc.need>=3?'The defenders held out until time ran out.':'The line held until time ran out.');}}
 // The battle rating for a side: five parts. Result (win 25, draw 12, a loss up to 8 by objectives held); exchange, the
-// enemy's losses against ours weighted by type (W8), 12.5 × log2(1 + ratio), 25 at 3:1; firepower, damage dealt against
-// taken, the same way; the force that came through (health left against the health it started with, 0–25); and a
-// speed bonus for a win inside RATING.speedAt of the clock. Grades from RATING.grades.
+// enemy's losses against ours weighted by type (W8; no losses of our own count as one), 25 × log2(1 + ratio) /
+// log2(1 + exchFull), so the full 25 needs 7:1; firepower, damage dealt against taken the same way, full at 5:1; the
+// force that came through (health left against the health it started with, 0–25); and a bonus for a win inside
+// RATING.speedAt of the clock. Grades from RATING.grades. (Tightened Nov 3, 2026: 3:1 used to fill the bars.)
 function battleRating(side){const S=G.stats,them=side==='A'?'D':'A',win=G.over&&G.over.winner===side,draw=G.over&&G.over.winner===null;
-  const held=G.objs.filter(o=>o.owner===side).length,ratio=(a,b)=>b>0?a/b:(a>0?4:1),log=r=>clamp(12.5*Math.log2(1+r),0,25);
-  const result=win?25:draw?12:held/3*8,xr=ratio(S.lostW[them],S.lostW[side]),exchange=S.lostW[them]||S.lostW[side]?log(xr):12.5;
-  const fr=ratio(S.dealt[side],S.taken[side]),fire=S.dealt[side]||S.taken[side]?log(fr):12.5;
+  const held=G.objs.filter(o=>o.owner===side).length,ratio=(a,b)=>a/Math.max(1,b),log=(r,full)=>clamp(25*Math.log2(1+r)/Math.log2(1+full),0,25);
+  const result=win?25:draw?12:held/3*8,xr=ratio(S.lostW[them],S.lostW[side]),exchange=S.lostW[them]||S.lostW[side]?log(xr,RATING.exchFull):12.5;
+  const fr=ratio(S.dealt[side],S.taken[side]),fire=S.dealt[side]||S.taken[side]?log(fr,RATING.fireFull):12.5;
   let left=0;for(const u of G.units)if(u.side===side)left+=u.hp;const kept=S.hp0[side]?clamp(left/S.hp0[side],0,1):0,preserved=25*kept;
   const speed=win&&G.time<G.limit*RATING.speedAt?RATING.speedBonus:0;
   const score=Math.round(Math.min(100,result+exchange+fire+preserved+speed)),g=RATING.grades.find(x=>score>=x[0]);

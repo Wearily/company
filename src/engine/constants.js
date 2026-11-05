@@ -69,7 +69,7 @@ const STREAM_FIRE=.5,STREAM_EXPOSED=1.15;
 const WOUND={at:.25,cap:.5};
 // The battle rating (battleRating, sim.js): a score out of 100 and its grade, from the result, the exchange of losses,
 // firepower (damage dealt against taken), the force that came through, and a bonus for a quick win.
-const RATING={grades:[[90,'S','Decisive'],[75,'A','Excellent'],[60,'B','Good'],[45,'C','Fair'],[30,'D','Poor'],[0,'E','Disastrous']],speedAt:.6,speedBonus:8,campBonus:{S:120,A:60}};
+const RATING={grades:[[90,'S','Decisive'],[75,'A','Excellent'],[60,'B','Good'],[45,'C','Fair'],[30,'D','Poor'],[0,'E','Disastrous']],speedAt:.5,speedBonus:6,exchFull:7,fireFull:5,campBonus:{S:120,A:60}};
 const hpTop=u=>u.wounded?u.max*WOUND.cap:u.max;
 // Frozen rivers and lakes (climates with frozen:true, i.e. Winter). Infantry and engineers can cross on foot at ICE.move; the ice won't
 // take armour or guns. Out on the ice there is nothing to hide behind: a unit there fires at ICE.fire, takes ICE.exposed

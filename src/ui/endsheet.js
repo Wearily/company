@@ -31,8 +31,8 @@ const ratingBand=m=>m>=9?'rc9':m>=7?'rc7':m>=6?'rc6':m>=4.5?'rc4':'rc0';
 function ratingHTML(r){const row=(l,v,max,t)=>`<div class="rr"><span>${l}</span><i><b style="width:${Math.round(v/max*100)}%"></b></i><span class="s2 tn">${t}</span></div>`;
   return `<div class="grp rating" data-tip="How well the battle was fought: the result, the exchange of losses, firepower, the force that came through, and a bonus for a quick win"><div class="rGrade ${ratingBand(r.mark)} tn" aria-label="Battle rating ${r.mark} out of 10">${r.mark}</div><div class="rBody"><b class="s2">Battle rating</b>
     ${row('Result',r.result,25,r.win?`Victory at ${fmt(G.time)}`:r.draw?'Draw':'Defeat')}
-    ${row('Exchange',r.exchange,25,`Lost ${r.lost}, destroyed ${r.killed}${r.lost||r.killed?` · ${r.xr}×`:''}`)}
-    ${row('Firepower',r.fire,25,`Dealt ${r.dealt.toLocaleString()}, took ${r.taken.toLocaleString()}${r.dealt||r.taken?` · ${r.fr}×`:''}`)}
+    ${row('Exchange',r.exchange,25,`Lost ${r.lost}, destroyed ${r.killed}${r.lost&&r.killed?` · ${r.xr}×`:''}`)}
+    ${row('Firepower',r.fire,25,`Dealt ${r.dealt.toLocaleString()}, took ${r.taken.toLocaleString()}${r.dealt&&r.taken?` · ${r.fr}×`:''}`)}
     ${row('Force intact',r.preserved,25,`${r.kept}% of its strength`)}${r.speed?row('Quick win',r.speed,RATING.speedBonus,`+${r.speed}`):''}</div></div>`;}
 // the end-of-battle sheet
 function showEnd(winner,reason){const me=G.player,them=me==='A'?'D':'A',win=winner===me,draw=winner===null,cr=G.camp?campResolve()||G.camp.result:null;
